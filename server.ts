@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import { EdgeTTS } from '@andresaya/edge-tts';
-import { Groq } from 'groq-sdk';
+import Groq from 'groq-sdk';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -25,6 +25,11 @@ const groq = new Groq({
 
 app.use(cors());
 app.use(express.json());
+
+// Health Check
+app.get('/api/health', (req, res) => {
+    res.json({ status: 'ok', environment: process.env.NODE_ENV || 'development' });
+});
 
 // TTS Endpoint
 app.post('/api/tts', async (req, res) => {
@@ -73,7 +78,14 @@ app.post('/api/tts', async (req, res) => {
 app.post('/api/story', async (req, res) => {
     try {
         const { prompt, language } = req.body;
+        console.log('STORY_REQUEST:', { promptLength: prompt?.length, language });
 
+        if (!process.env.GROQ_API_KEY) {
+            console.error('CRITICAL: GROQ_API_KEY is missing from environment');
+            return res.status(500).json({ error: 'Server configuration error: Missing API Key' });
+        }
+
+        console.log('Generating story for prompt:', prompt, 'in language:', language);
         if (!prompt) {
             return res.status(400).json({ error: 'Missing prompt' });
         }
@@ -115,8 +127,9 @@ app.post('/api/story', async (req, res) => {
                     content: `Create a story about: ${prompt}`
                 }
             ],
-            model: "llama-3.3-70b-versatile",
+            model: "llama-3.1-8b-instant",
             temperature: 0.7,
+            max_tokens: 1000, // Keep it fast
             response_format: { type: "json_object" }
         });
 
@@ -129,12 +142,12 @@ app.post('/api/story', async (req, res) => {
         res.json(story);
 
     } catch (error) {
-        console.error('Story Error Details:', error);
-        if (error instanceof Error) {
-            console.error('Message:', error.message);
-            console.error('Stack:', error.stack);
-        }
-        res.status(500).json({ error: 'Story generation failed', details: error instanceof Error ? error.message : String(error) });
+        console.error('STORY_ERROR_CRITICAL:', error);
+        res.status(500).json({
+            error: 'Story generation failed',
+            details: error instanceof Error ? error.message : String(error),
+            stack: error instanceof Error ? error.stack : undefined
+        });
     }
 });
 
@@ -165,7 +178,7 @@ app.post('/api/image/generate', async (req, res) => {
             const response = await fetch('https://api.imagerouter.io/v1/openai/images/generations', {
                 method: 'POST',
                 headers: {
-                    'Authorization': 'Bearer 7f766bb0dcbf3660ca3435d5d7c20c5606f42696a8b153246876f100bca78bed',
+                    'Authorization': `Bearer ${process.env.IMAGEROUTER_TOKEN}`,
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
@@ -227,6 +240,7 @@ app.get('/api/music', (req, res) => {
     try {
         const musicDir = path.join(__dirname, 'public', 'background_music');
         if (!fs.existsSync(musicDir)) {
+            console.log('Music directory not found, returning empty list');
             return res.json([]);
         }
         const files = fs.readdirSync(musicDir)
