@@ -14,7 +14,7 @@ export const imageService = {
         for (let i = 0; i < retries; i++) {
             try {
                 console.log(`Image Service: Starting generation (Attempt ${i + 1}/${retries})...`);
-                const response = await fetch('http://localhost:3000/api/image/generate', {
+                const response = await fetch('/api/image/generate', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

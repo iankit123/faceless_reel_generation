@@ -221,12 +221,11 @@ app.post('/api/image/generate', async (req, res) => {
     });
 });
 
-// Serve Background Music
-app.use('/background_music', express.static('background_music'));
+// Background music is served from the public folder by Vite/Netlify
 
 app.get('/api/music', (req, res) => {
     try {
-        const musicDir = path.join(__dirname, 'background_music');
+        const musicDir = path.join(__dirname, 'public', 'background_music');
         if (!fs.existsSync(musicDir)) {
             return res.json([]);
         }

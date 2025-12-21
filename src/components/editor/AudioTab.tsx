@@ -15,7 +15,7 @@ export function AudioTab() {
     const audioRef = useRef<HTMLAudioElement | null>(null);
 
     useEffect(() => {
-        fetch('http://localhost:3000/api/music')
+        fetch('/api/music')
             .then(res => res.json())
             .then(setMusicFiles)
             .catch(console.error);
