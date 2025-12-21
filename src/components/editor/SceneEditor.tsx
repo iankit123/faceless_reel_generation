@@ -47,10 +47,17 @@ export function SceneEditor({ scene, onUpdate }: SceneEditorProps) {
             const { audioUrl } = await ttsService.generateAudio(scene.text);
 
             // Auto-update duration
+            console.log('Audio generated, loading metadata for duration...');
             const audio = new Audio(audioUrl);
-            await new Promise((resolve) => {
-                audio.onloadedmetadata = () => resolve(true);
-            });
+            await Promise.race([
+                new Promise((resolve) => {
+                    audio.onloadedmetadata = () => {
+                        console.log('Audio metadata loaded, duration:', audio.duration);
+                        resolve(true);
+                    };
+                }),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Audio metadata timeout')), 10000))
+            ]);
             const duration = Math.max(parseFloat(audio.duration.toFixed(1)), 0.5);
 
             onUpdate({ audioUrl, duration });

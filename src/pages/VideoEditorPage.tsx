@@ -53,10 +53,17 @@ export function VideoEditorPage() {
                 const { audioUrl } = await ttsService.generateAudio(scene.text);
 
                 // Get audio duration
+                console.log('Audio generated, loading metadata...');
                 const audio = new Audio(audioUrl);
-                await new Promise((resolve) => {
-                    audio.onloadedmetadata = () => resolve(true);
-                });
+                await Promise.race([
+                    new Promise((resolve) => {
+                        audio.onloadedmetadata = () => {
+                            console.log('Audio metadata loaded, duration:', audio.duration);
+                            resolve(true);
+                        };
+                    }),
+                    new Promise((_, reject) => setTimeout(() => reject(new Error('Audio metadata timeout')), 10000))
+                ]);
                 const duration = Math.max(parseFloat(audio.duration.toFixed(1)), 0.5);
 
                 updateScene(scene.id, {

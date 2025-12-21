@@ -95,7 +95,7 @@ export const handler = async (event: any) => {
                 'Content-Type': 'application/json',
                 'Access-Control-Allow-Origin': '*'
             },
-            body: JSON.stringify({ url: imageUrl })
+            body: JSON.stringify({ data: [{ url: imageUrl }] })
         };
 
     } catch (error: any) {

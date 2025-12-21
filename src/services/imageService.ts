@@ -1,12 +1,5 @@
 import type { ImageSettings } from '../types';
 
-interface ImageGenerationResponse {
-    data: {
-        url: string;
-        revised_prompt?: string;
-    }[];
-}
-
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 export const imageService = {
@@ -37,11 +30,17 @@ export const imageService = {
                     throw new Error(`Image API Error: ${response.statusText} - ${text}`);
                 }
 
-                const data: ImageGenerationResponse = await response.json();
-                console.log('Image Service: Data received', data);
+                const data: any = await response.json();
+                console.log('Image Service: Data received', JSON.stringify(data));
 
-                if (data.data && data.data.length > 0) {
+                if (data.data && Array.isArray(data.data) && data.data.length > 0) {
+                    console.log('Image Service: Found URL', data.data[0].url);
                     return data.data[0].url;
+                }
+
+                if (data.url) {
+                    console.log('Image Service: Found URL in root', data.url);
+                    return data.url;
                 }
 
                 throw new Error('No image URL received');
