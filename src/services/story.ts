@@ -12,7 +12,9 @@ export const storyService = {
             });
 
             if (!response.ok) {
-                throw new Error('Failed to generate story');
+                const errorData = await response.json().catch(() => ({}));
+                console.error('Server Error Details:', errorData);
+                throw new Error(errorData.details || 'Failed to generate story');
             }
 
             return await response.json();

@@ -71,6 +71,9 @@ export function SceneList({ scenes, currentSceneId, onSelectScene }: SceneListPr
                                 )}
                             >
                                 <div className="flex items-start gap-3">
+                                    <div className="flex flex-col items-center justify-center pt-1">
+                                        <span className="text-[10px] font-bold text-zinc-600 font-mono">#{index + 1}</span>
+                                    </div>
                                     <div className="w-16 h-16 bg-zinc-950 rounded-md flex items-center justify-center text-zinc-700 border border-zinc-800 shrink-0 overflow-hidden relative">
                                         {scene.status === 'generating_image' ? (
                                             <div className="absolute inset-0 flex items-center justify-center bg-zinc-900/80">
@@ -82,7 +85,7 @@ export function SceneList({ scenes, currentSceneId, onSelectScene }: SceneListPr
                                                 style={{ backgroundImage: `url(${scene.imageUrl})` }}
                                             />
                                         ) : (
-                                            <span className="text-xs font-mono text-zinc-600">#{index + 1}</span>
+                                            <ImageIcon className="w-5 h-5 opacity-20" />
                                         )}
                                     </div>
                                     <div className="flex-1 min-w-0">

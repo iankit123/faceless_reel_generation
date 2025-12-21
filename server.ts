@@ -41,12 +41,15 @@ app.post('/api/tts', async (req, res) => {
         return res.status(400).json({ error: 'Missing text' });
     }
 
+    console.log('TTS_REQUEST:', { textLength: text.length, voice });
+
     let lastError = null;
     for (let i = 0; i <= 2; i++) {
         try {
             console.log(`TTS Attempt ${i + 1} for text: ${text.substring(0, 30)}...`);
             const tts = new EdgeTTS();
-            await tts.synthesize(text, voice || 'hi-IN-SwaraNeural');
+            const selectedVoice = voice || 'hi-IN-SwaraNeural';
+            await tts.synthesize(text, selectedVoice);
             const audioBuffer = tts.toBuffer();
 
             if (!audioBuffer || audioBuffer.length === 0) {
@@ -123,7 +126,7 @@ app.post('/api/story', async (req, res) => {
                     content: `Create a story about: ${prompt}`
                 }
             ],
-            model: "llama-3.1-8b-instant",
+            model: "llama-3.3-70b-versatile",
             temperature: 0.7,
             max_tokens: 1000, // Keep it fast
             response_format: { type: "json_object" }

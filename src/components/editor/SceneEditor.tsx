@@ -7,10 +7,11 @@ import { useVideoStore } from '../../store/useVideoStore';
 
 interface SceneEditorProps {
     scene: Scene;
+    index: number;
     onUpdate: (updates: Partial<Scene>) => void;
 }
 
-export function SceneEditor({ scene, onUpdate }: SceneEditorProps) {
+export function SceneEditor({ scene, index, onUpdate }: SceneEditorProps) {
     const [isPlaying, setIsPlaying] = useState(false);
     const [isRegeneratingAudio, setIsRegeneratingAudio] = useState(false);
     const [isRegeneratingImage, setIsRegeneratingImage] = useState(false);
@@ -41,10 +42,11 @@ export function SceneEditor({ scene, onUpdate }: SceneEditorProps) {
     };
 
     const handleRegenerateAudio = async () => {
-        if (!scene.text) return;
+        if (!scene.text || !project) return;
         setIsRegeneratingAudio(true);
         try {
-            const { audioUrl } = await ttsService.generateAudio(scene.text);
+            const voice = project.language === 'english' ? 'en-GB-SoniaNeural' : 'hi-IN-SwaraNeural';
+            const { audioUrl } = await ttsService.generateAudio(scene.text, voice);
 
             // Auto-update duration
             console.log('Audio generated, loading metadata for duration...');
@@ -92,36 +94,48 @@ export function SceneEditor({ scene, onUpdate }: SceneEditorProps) {
             <div className="max-w-2xl mx-auto space-y-8">
                 {/* Script Section */}
                 <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                        <h3 className="text-lg font-medium text-zinc-100 flex items-center gap-2">
-                            <Type className="w-4 h-4 text-indigo-400" />
-                            Script & Audio
-                        </h3>
-                        <div className="flex items-center gap-2">
+                    <div className="flex flex-col">
+                        <span className="text-[30px] font-bold text-indigo-400 uppercase tracking-widest font-mono leading-none">
+                            Scene #{index + 1}
+                        </span>
+                        {/* 
+                            TIP: The 'mt-6' below controls the gap between "Scene #x" and "Script & Audio". 
+                            Change this value (e.g., mt-4, mt-8) to adjust the spacing.
+                        */}
+                        <div className="mt-6">
+                            <h3 className="text-lg font-medium text-zinc-100 flex items-center gap-2">
+                                <Type className="w-4 h-4 text-indigo-400" />
+                                Script & Audio
+                            </h3>
+                        </div>
+                    </div>
+                    <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-indigo-500/50 transition-all">
+                        <textarea
+                            value={scene.text}
+                            onChange={(e) => onUpdate({ text: e.target.value })}
+                            className="w-full h-32 bg-transparent p-4 text-zinc-100 focus:outline-none resize-none"
+                            placeholder="Enter scene script here..."
+                        />
+                        <div className="border-t border-zinc-800/50 p-3 flex items-center gap-4 bg-zinc-900/50">
                             {scene.audioUrl && (
                                 <button
                                     onClick={toggleAudio}
-                                    className="p-2 rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-100 transition-colors"
+                                    className="p-2.5 rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-100 transition-colors shadow-lg"
+                                    title={isPlaying ? "Pause" : "Play"}
                                 >
-                                    {isPlaying ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
+                                    {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
                                 </button>
                             )}
                             <button
                                 onClick={handleRegenerateAudio}
                                 disabled={isRegeneratingAudio}
-                                className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1 transition-colors disabled:opacity-50"
+                                className="text-sm text-indigo-400 hover:text-indigo-300 flex items-center gap-2 transition-colors disabled:opacity-50 font-medium"
                             >
-                                <RefreshCw className={`w-3 h-3 ${isRegeneratingAudio ? 'animate-spin' : ''}`} />
+                                <RefreshCw className={`w-4 h-4 ${isRegeneratingAudio ? 'animate-spin' : ''}`} />
                                 {isRegeneratingAudio ? 'Generating...' : 'Regenerate Audio'}
                             </button>
                         </div>
                     </div>
-                    <textarea
-                        value={scene.text}
-                        onChange={(e) => onUpdate({ text: e.target.value })}
-                        className="w-full h-32 bg-zinc-900 border border-zinc-800 rounded-xl p-4 text-zinc-100 focus:ring-2 focus:ring-indigo-500/50 focus:outline-none resize-none transition-all"
-                        placeholder="Enter scene script here..."
-                    />
                 </div>
 
                 {/* Image & Motion Section - 2 Column Layout */}

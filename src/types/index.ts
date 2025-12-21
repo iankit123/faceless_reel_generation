@@ -65,5 +65,6 @@ export interface VideoProject {
     scenes: Scene[];
     captionSettings: CaptionSettings;
     backgroundMusic?: BackgroundMusic;
+    language: string;
     createdAt: Date;
 }

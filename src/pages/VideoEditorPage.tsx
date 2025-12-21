@@ -5,7 +5,7 @@ import { VideoPreview } from '../components/editor/VideoPreview';
 import { CaptionsTab } from '../components/editor/CaptionsTab';
 import { AudioTab } from '../components/editor/AudioTab';
 import { useEffect, useState, useRef } from 'react';
-import { Layers, Type, Music } from 'lucide-react';
+import { Layers, Type, Music, ArrowLeft } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 type EditorTab = 'frames' | 'captions' | 'audio';
@@ -15,6 +15,7 @@ export function VideoEditorPage() {
     const currentSceneId = useVideoStore((state) => state.currentSceneId);
     const setCurrentSceneId = useVideoStore((state) => state.setCurrentSceneId);
     const updateScene = useVideoStore((state) => state.updateScene);
+    const resetProject = useVideoStore((state) => state.resetProject);
     const [activeTab, setActiveTab] = useState<EditorTab>('frames');
     const [isProcessing, setIsProcessing] = useState(false);
     const processingRef = useRef(false);
@@ -54,7 +55,8 @@ export function VideoEditorPage() {
             try {
                 // 1. Generate Audio
                 const { ttsService } = await import('../services/tts');
-                const { audioUrl } = await ttsService.generateAudio(scene.text);
+                const voice = project.language === 'english' ? 'en-GB-SoniaNeural' : 'hi-IN-SwaraNeural';
+                const { audioUrl } = await ttsService.generateAudio(scene.text, voice);
 
                 // Get audio duration
                 console.log('Audio generated, loading metadata...');
@@ -152,6 +154,21 @@ export function VideoEditorPage() {
                     <Music className="w-6 h-6" />
                     Audio
                 </button>
+
+                <div className="mt-auto pb-6">
+                    <button
+                        onClick={() => {
+                            if (window.confirm('Are you sure you want to change the prompt? This will clear your current project.')) {
+                                resetProject();
+                            }
+                        }}
+                        className="p-3 rounded-xl transition-all flex flex-col items-center gap-1 text-[10px] font-medium w-16 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900"
+                        title="Change Complete Prompt"
+                    >
+                        <ArrowLeft className="w-6 h-6" />
+                        Back
+                    </button>
+                </div>
             </div>
 
             {/* Sidebar Content */}
@@ -172,6 +189,7 @@ export function VideoEditorPage() {
                 <>
                     <SceneEditor
                         scene={currentScene}
+                        index={project.scenes.findIndex(s => s.id === currentSceneId)}
                         onUpdate={(updates) => updateScene(currentScene.id, updates)}
                     />
                     <VideoPreview

@@ -7,7 +7,7 @@ interface VideoState {
     currentSceneId: number | string | null;
 
     // Actions
-    initProject: (theme?: string) => void;
+    initProject: (theme?: string, language?: string) => void;
     setProject: (project: VideoProject) => void;
     updateScene: (sceneId: number | string, updates: Partial<Scene>) => void;
     addScene: (scene: Scene) => void;
@@ -18,6 +18,7 @@ interface VideoState {
     updateCaptionSettings: (settings: Partial<import('../types').CaptionSettings>) => void;
     setBackgroundMusic: (music: import('../types').BackgroundMusic | undefined) => void;
     setTheme: (theme: string) => void;
+    resetProject: () => void;
 }
 
 export const useVideoStore = create<VideoState>((set) => ({
@@ -25,7 +26,7 @@ export const useVideoStore = create<VideoState>((set) => ({
     isGenerating: false,
     currentSceneId: null,
 
-    initProject: (theme) => set({
+    initProject: (theme, language) => set({
         project: {
             id: crypto.randomUUID(),
             title: 'New Video',
@@ -37,6 +38,7 @@ export const useVideoStore = create<VideoState>((set) => ({
                 url: '/background_music/Else.mp3',
                 volume: 0.3
             },
+            language: language || 'hinglish',
             createdAt: new Date()
         }
     }),
@@ -99,4 +101,5 @@ export const useVideoStore = create<VideoState>((set) => ({
             }
         };
     }),
+    resetProject: () => set({ project: null, currentSceneId: null, isGenerating: false }),
 }));

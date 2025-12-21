@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { VideoTypeSelector } from '../components/create/VideoTypeSelector';
 import { ScriptInput } from '../components/create/ScriptInput';
 import { Wand2 } from 'lucide-react';
 import { useVideoStore } from '../store/useVideoStore';
@@ -7,7 +6,6 @@ import { storyService } from '../services/story';
 // import type { Scene } from '../types';
 
 export function CreateVideoPage() {
-    const [videoType, setVideoType] = useState('faceless');
     const [language, setLanguage] = useState('hinglish');
     const [script, setScript] = useState('');
     const isGenerating = useVideoStore((state) => state.isGenerating);
@@ -22,7 +20,7 @@ export function CreateVideoPage() {
         try {
             const story = await storyService.generateStory({ prompt: script, language });
 
-            initProject(story.theme);
+            initProject(story.theme, language);
 
             story.scenes.forEach((s) => {
                 addScene({
@@ -44,6 +42,26 @@ export function CreateVideoPage() {
         }
     };
 
+    const prompts = {
+        english: [
+            "Story of how a lion and dear became friends in jungle",
+            "Video showing why new born baby cry a lot",
+            "Ancient true story of Pyramids"
+        ],
+        hindi: [
+            "Bhagwan krishna ki kahani jisme wo gaanv waalo ko pahad uthanke baarish se bachate hai",
+            "Delhi ka itihaas ki sacchi kahani",
+            "Panipat ki ladai ka video"
+        ],
+        hinglish: [
+            "Bhagwan krishna ki kahani jisme wo gaanv waalo ko pahad uthanke baarish se bachate hai",
+            "Delhi ka itihaas ki sacchi kahani",
+            "Panipat ki ladai ka video"
+        ]
+    };
+
+    const currentPrompts = prompts[language as keyof typeof prompts] || prompts.hinglish;
+
     return (
         <div className="min-h-screen bg-zinc-950 text-zinc-100 p-8 flex items-center">
             <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 w-full">
@@ -53,18 +71,16 @@ export function CreateVideoPage() {
                         Create New Video
                     </h1>
                     <p className="text-zinc-400 mb-8">
-                        Turn your ideas into viral Hindi videos in seconds.
+                        Turn your ideas into viral videos in seconds.
                     </p>
 
-                    <VideoTypeSelector selectedType={videoType} onSelect={setVideoType} />
-
-                    <div className="flex gap-4 mb-4">
+                    <div className="flex gap-4 mb-6">
                         <div className="flex-1">
                             <label className="block text-sm font-medium text-zinc-400 mb-2">Language</label>
                             <select
                                 value={language}
                                 onChange={(e) => setLanguage(e.target.value)}
-                                className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-3 text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-3 text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
                             >
                                 <option value="hinglish">Hinglish (Default)</option>
                                 <option value="hindi">Hindi</option>
@@ -78,6 +94,19 @@ export function CreateVideoPage() {
                         onChange={setScript}
                         disabled={isGenerating}
                     />
+
+                    {/* Example Prompts */}
+                    <div className="mt-4 flex flex-col gap-2">
+                        {currentPrompts.map((p, i) => (
+                            <button
+                                key={i}
+                                onClick={() => setScript(p)}
+                                className="text-[11px] bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-700 text-zinc-400 hover:text-zinc-200 px-4 py-2.5 rounded-xl transition-all text-left w-full"
+                            >
+                                {p}
+                            </button>
+                        ))}
+                    </div>
 
                     <button
                         onClick={handleGenerate}

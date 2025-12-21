@@ -72,7 +72,7 @@ export const handler = async (event: any) => {
                     content: `Create a story about: ${prompt}`
                 }
             ],
-            model: "llama-3.1-8b-instant",
+            model: "llama-3.3-70b-versatile",
             temperature: 0.7,
             max_tokens: 1000,
             response_format: { type: "json_object" }
