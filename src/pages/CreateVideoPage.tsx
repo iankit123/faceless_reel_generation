@@ -50,13 +50,15 @@ export function CreateVideoPage() {
         ],
         hindi: [
             "Bhagwan krishna ki kahani jisme wo gaanv waalo ko pahad uthanke baarish se bachate hai",
-            "Delhi ka itihaas ki sacchi kahani",
-            "Panipat ki ladai ka video"
+            "Khargosh aur tortoise ki kahani",
+            "A short story",
+            "Panipat ki ladai"
         ],
         hinglish: [
             "Bhagwan krishna ki kahani jisme wo gaanv waalo ko pahad uthanke baarish se bachate hai",
-            "Delhi ka itihaas ki sacchi kahani",
-            "Panipat ki ladai ka video"
+            "Khargosh aur tortoise ki kahani",
+            "A short story",
+            "Panipat ki ladai"
         ]
     };
 

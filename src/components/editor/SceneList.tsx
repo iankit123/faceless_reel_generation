@@ -1,18 +1,20 @@
 import type { Scene } from '../../types';
 import { cn } from '../../lib/utils';
-import { Clock, Image as ImageIcon, Loader2, Mic, Plus, Trash2 } from 'lucide-react';
+import { Clock, Image as ImageIcon, Loader2, Mic, Plus, Trash2, Play } from 'lucide-react';
 import { useVideoStore } from '../../store/useVideoStore';
 
 interface SceneListProps {
     scenes: Scene[];
     currentSceneId: number | string | null;
     onSelectScene: (id: number | string) => void;
+    onPlayScene?: (id: number | string) => void;
+    isMobile?: boolean;
 }
 
 import { useState } from 'react';
 import { ConfirmModal } from '../ui/ConfirmModal';
 
-export function SceneList({ scenes, currentSceneId, onSelectScene }: SceneListProps) {
+export function SceneList({ scenes, currentSceneId, onSelectScene, onPlayScene, isMobile }: SceneListProps) {
     const addSceneAt = useVideoStore(state => state.addSceneAt);
     const removeScene = useVideoStore(state => state.removeScene);
     const [sceneToDelete, setSceneToDelete] = useState<number | string | null>(null);
@@ -109,11 +111,30 @@ export function SceneList({ scenes, currentSceneId, onSelectScene }: SceneListPr
                                     e.stopPropagation();
                                     setSceneToDelete(scene.id);
                                 }}
-                                className="absolute top-2 right-2 p-1.5 rounded-md text-zinc-500 hover:text-red-400 hover:bg-zinc-950/50 opacity-0 group-hover/item:opacity-100 transition-opacity z-20"
-                                title="Delete scene"
+                                className={cn(
+                                    "absolute right-2 p-2 rounded-full transition-all z-20",
+                                    isMobile
+                                        ? "top-2 bg-red-500/20 text-red-500 opacity-100"
+                                        : "top-2 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white opacity-0 group-hover/item:opacity-100"
+                                )}
+                                title="Delete Scene"
                             >
-                                <Trash2 className="w-4 h-4" />
+                                <Trash2 className={cn("w-4 h-4", isMobile && "w-3.5 h-3.5")} />
                             </button>
+
+                            {/* Play Button - Mobile Only */}
+                            {isMobile && onPlayScene && (
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onPlayScene(scene.id);
+                                    }}
+                                    className="absolute bottom-2 right-2 p-2 rounded-full bg-indigo-600 text-white shadow-lg active:scale-95 transition-transform z-20"
+                                    title="Play from here"
+                                >
+                                    <Play className="w-3.5 h-3.5 fill-current" />
+                                </button>
+                            )}
                         </div>
 
                         {/* Insert Button After */}

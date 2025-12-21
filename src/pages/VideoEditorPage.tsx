@@ -19,6 +19,7 @@ export function VideoEditorPage() {
     const [activeTab, setActiveTab] = useState<EditorTab>('frames');
     const [mobileTab, setMobileTab] = useState<'scenes' | 'preview'>('scenes');
     const [isSceneEditorOpen, setIsSceneEditorOpen] = useState(false);
+    const [forceAutoPlay, setForceAutoPlay] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
     const processingRef = useRef(false);
 
@@ -206,6 +207,33 @@ export function VideoEditorPage() {
 
             {/* Mobile Layout */}
             <div className="flex lg:hidden flex-col h-full w-full overflow-hidden">
+                {/* Mobile Top Navigation */}
+                <div className="h-14 border-b border-zinc-800 bg-zinc-950 flex items-center shrink-0">
+                    <button
+                        onClick={() => setMobileTab('scenes')}
+                        className={cn(
+                            "flex-1 h-full flex flex-col items-center justify-center gap-1 transition-all",
+                            mobileTab === 'scenes' ? "text-indigo-400" : "text-zinc-500"
+                        )}
+                    >
+                        <Layers className="w-5 h-5" />
+                        <span className="text-[10px] font-bold uppercase tracking-wider">Scenes</span>
+                    </button>
+                    <button
+                        onClick={() => {
+                            setMobileTab('preview');
+                            setForceAutoPlay(false);
+                        }}
+                        className={cn(
+                            "flex-1 h-full flex flex-col items-center justify-center gap-1 transition-all",
+                            mobileTab === 'preview' ? "text-indigo-400" : "text-zinc-500"
+                        )}
+                    >
+                        <Play className="w-5 h-5" />
+                        <span className="text-[10px] font-bold uppercase tracking-wider">Preview</span>
+                    </button>
+                </div>
+
                 {/* Mobile Content Area */}
                 <div className="flex-1 overflow-hidden relative">
                     {mobileTab === 'scenes' ? (
@@ -218,6 +246,12 @@ export function VideoEditorPage() {
                                         setCurrentSceneId(id);
                                         setIsSceneEditorOpen(true);
                                     }}
+                                    onPlayScene={(id) => {
+                                        setCurrentSceneId(id);
+                                        setMobileTab('preview');
+                                        setForceAutoPlay(true);
+                                    }}
+                                    isMobile={true}
                                 />
                             </div>
                         </div>
@@ -228,6 +262,7 @@ export function VideoEditorPage() {
                                 currentSceneId={currentSceneId || project.scenes[0].id}
                                 onSelectScene={setCurrentSceneId}
                                 isMobile={true}
+                                forceAutoPlay={forceAutoPlay}
                             />
                         </div>
                     )}
@@ -256,30 +291,6 @@ export function VideoEditorPage() {
                             </div>
                         </div>
                     )}
-                </div>
-
-                {/* Mobile Bottom Navigation */}
-                <div className="h-16 border-t border-zinc-800 bg-zinc-950 flex items-center shrink-0">
-                    <button
-                        onClick={() => setMobileTab('scenes')}
-                        className={cn(
-                            "flex-1 h-full flex flex-col items-center justify-center gap-1 transition-all",
-                            mobileTab === 'scenes' ? "text-indigo-400" : "text-zinc-500"
-                        )}
-                    >
-                        <Layers className="w-5 h-5" />
-                        <span className="text-[10px] font-bold uppercase tracking-wider">Scenes</span>
-                    </button>
-                    <button
-                        onClick={() => setMobileTab('preview')}
-                        className={cn(
-                            "flex-1 h-full flex flex-col items-center justify-center gap-1 transition-all",
-                            mobileTab === 'preview' ? "text-indigo-400" : "text-zinc-500"
-                        )}
-                    >
-                        <Play className="w-5 h-5" />
-                        <span className="text-[10px] font-bold uppercase tracking-wider">Preview</span>
-                    </button>
                 </div>
             </div>
         </div>

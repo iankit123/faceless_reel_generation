@@ -12,9 +12,10 @@ interface VideoPreviewProps {
     currentSceneId: number | string;
     onSelectScene: (id: number | string) => void;
     isMobile?: boolean;
+    forceAutoPlay?: boolean;
 }
 
-export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile }: VideoPreviewProps) {
+export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, forceAutoPlay }: VideoPreviewProps) {
     const scene = scenes.find(s => s.id === currentSceneId) || scenes[0];
     const [isPlaying, setIsPlaying] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
@@ -31,6 +32,13 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile }
     useEffect(() => {
         silenceStartRef.current = null;
     }, [scene.id]);
+
+    // Handle forceAutoPlay
+    useEffect(() => {
+        if (forceAutoPlay) {
+            autoPlayRef.current = true;
+        }
+    }, [forceAutoPlay, scene.id]);
 
     const totalDuration = useMemo(() => scenes.reduce((acc, s) => acc + s.duration, 0), [scenes]);
     const currentSceneStartTime = useMemo(() => {
@@ -90,7 +98,14 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile }
                 autoPlayRef.current = false;
             }
         }
-    }, [scene?.audioUrl, scene?.id, onSelectScene, currentSceneStartTime, scene?.duration]);
+
+        return () => {
+            if (audioRef.current) {
+                audioRef.current.pause();
+                audioRef.current = null;
+            }
+        };
+    }, [scene?.audioUrl, scene?.id, currentSceneStartTime, scene?.duration]);
 
     // Pending seek logic
     const pendingSeekRef = useRef<number | null>(null);
