@@ -141,15 +141,8 @@ app.post('/api/story', async (req, res) => {
 // Image Generation Endpoint (ImageRouter.io)
 app.post('/api/image/generate', async (req, res) => {
     const models = [
-        "stabilityai/sdxl-turbo",
         "bria/bria-3.2",
-        "black-forest-labs/FLUX-1-schnell:free",
-        "stabilityai/sdxl-turbo:free",
-        "bria/bria-3.2:free",
-        "openai/gpt-image-1.5:free",
-        "qwen/qwen-image:free",
-        "Tongyi-MAI/Z-Image-Turbo:free",
-        "HiDream-ai/HiDream-I1-Full:free"
+        "openai/gpt-image-1.5:free"
     ];
 
     const { prompt } = req.body;
@@ -178,8 +171,10 @@ app.post('/api/image/generate', async (req, res) => {
                 body: JSON.stringify({
                     prompt: prompt,
                     model: model,
-                    n: 1,
-                    size: "512x512"
+                    size: "512x512",
+                    response_format: "url",
+                    output_format: "webp", /*still gives png, some issue in api */
+                    quality: "low"
                 })
             });
 
