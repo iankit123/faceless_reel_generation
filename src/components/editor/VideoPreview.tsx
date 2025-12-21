@@ -328,11 +328,11 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene }: VideoPre
                         // Draw Captions
                         if (s.captionsEnabled) {
                             ctx.fillStyle = 'rgba(0,0,0,0.5)';
-                            const padding = 20;
+                            // const padding = 20;
                             ctx.font = 'bold 32px sans-serif';
                             const text = s.text;
-                            const metrics = ctx.measureText(text);
-                            const textWidth = Math.min(metrics.width, canvas.width - 80);
+                            // const metrics = ctx.measureText(text);
+                            // const textWidth = Math.min(metrics.width, canvas.width - 80);
 
                             // Simple text wrapping
                             const words = text.split(' ');

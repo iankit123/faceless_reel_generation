@@ -4,7 +4,7 @@ import { ScriptInput } from '../components/create/ScriptInput';
 import { Wand2 } from 'lucide-react';
 import { useVideoStore } from '../store/useVideoStore';
 import { storyService } from '../services/story';
-import type { Scene } from '../types';
+// import type { Scene } from '../types';
 
 export function CreateVideoPage() {
     const [videoType, setVideoType] = useState('faceless');
