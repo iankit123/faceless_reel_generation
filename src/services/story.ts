@@ -1,0 +1,24 @@
+import type { StoryRequest, StoryResponse } from '../types';
+
+export const storyService = {
+    generateStory: async (request: StoryRequest): Promise<StoryResponse> => {
+        try {
+            const response = await fetch('/api/story', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ prompt: request.prompt, language: request.language }),
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to generate story');
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('Story Service Error:', error);
+            throw error;
+        }
+    }
+};
