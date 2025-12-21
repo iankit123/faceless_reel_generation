@@ -65,7 +65,7 @@ export const handler = async (event: any) => {
                             }
                         ]
                     }
-                    Keep it to 5-7 scenes. ${languageInstruction}
+                    Keep it to 6-10 scenes. ${languageInstruction}
 
                     For each imagePrompt:
                     Write a single, vivid, cinematic description suitable for image generation.
@@ -74,7 +74,7 @@ export const handler = async (event: any) => {
                     Always specify mood or emotion (playful, tense, joyful, mysterious, calm, emotional).
                     Describe key visual details (setting, subject appearance, environment, colors, textures).
                     Keep the style consistent with the story context (realistic, animated, fantasy, kids-friendly, cinematic).
-                    The prompt must read like a movie frame description, not a list of keywords.
+                    The prompt must read like a movie frame description, not a list of keywords. Maintain a theme in all prompts basis story like "image is about old indian times, part of a story about fight"
                     Internal guiding pattern:
                     “cinematic [camera framing] of [subject] in [setting], [lighting], [mood], highly detailed, visually coherent”
                     `
