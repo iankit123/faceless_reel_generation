@@ -5,7 +5,7 @@ import { VideoPreview } from '../components/editor/VideoPreview';
 import { CaptionsTab } from '../components/editor/CaptionsTab';
 import { AudioTab } from '../components/editor/AudioTab';
 import { useEffect, useState, useRef } from 'react';
-import { Layers, Type, Music, ArrowLeft } from 'lucide-react';
+import { Layers, Type, Music, ArrowLeft, Play } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 type EditorTab = 'frames' | 'captions' | 'audio';
@@ -17,6 +17,8 @@ export function VideoEditorPage() {
     const updateScene = useVideoStore((state) => state.updateScene);
     const resetProject = useVideoStore((state) => state.resetProject);
     const [activeTab, setActiveTab] = useState<EditorTab>('frames');
+    const [mobileTab, setMobileTab] = useState<'scenes' | 'preview'>('scenes');
+    const [isSceneEditorOpen, setIsSceneEditorOpen] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
     const processingRef = useRef(false);
 
@@ -115,9 +117,9 @@ export function VideoEditorPage() {
     const currentScene = project.scenes.find(s => s.id === currentSceneId) || project.scenes[0];
 
     return (
-        <div className="h-screen flex bg-zinc-950 text-zinc-100 overflow-hidden">
-            {/* Sidebar Navigation */}
-            <div className="w-20 border-r border-zinc-800 bg-zinc-950 flex flex-col items-center py-6 gap-4">
+        <div className="h-screen flex flex-col lg:flex-row bg-zinc-950 text-zinc-100 overflow-hidden relative">
+            {/* Desktop Sidebar Navigation */}
+            <div className="hidden lg:flex w-20 border-r border-zinc-800 bg-zinc-950 flex-col items-center py-6 gap-4 shrink-0">
                 <button
                     onClick={() => setActiveTab('frames')}
                     className={cn(
@@ -171,8 +173,8 @@ export function VideoEditorPage() {
                 </div>
             </div>
 
-            {/* Sidebar Content */}
-            <div className="w-80 border-r border-zinc-800 bg-zinc-900/50 flex flex-col h-full">
+            {/* Desktop Sidebar Content */}
+            <div className="hidden lg:flex w-80 border-r border-zinc-800 bg-zinc-900/50 flex-col h-full shrink-0">
                 {activeTab === 'frames' && (
                     <SceneList
                         scenes={project.scenes}
@@ -184,21 +186,102 @@ export function VideoEditorPage() {
                 {activeTab === 'audio' && <AudioTab />}
             </div>
 
-            {/* Main Editor Area */}
-            {currentScene && (
-                <>
-                    <SceneEditor
-                        scene={currentScene}
-                        index={project.scenes.findIndex(s => s.id === currentSceneId)}
-                        onUpdate={(updates) => updateScene(currentScene.id, updates)}
-                    />
-                    <VideoPreview
-                        scenes={project.scenes}
-                        currentSceneId={currentSceneId || project.scenes[0].id}
-                        onSelectScene={setCurrentSceneId}
-                    />
-                </>
-            )}
+            {/* Desktop Main Editor Area */}
+            <div className="hidden lg:flex flex-1 overflow-hidden">
+                {currentScene && (
+                    <>
+                        <SceneEditor
+                            scene={currentScene}
+                            index={project.scenes.findIndex(s => s.id === currentSceneId)}
+                            onUpdate={(updates) => updateScene(currentScene.id, updates)}
+                        />
+                        <VideoPreview
+                            scenes={project.scenes}
+                            currentSceneId={currentSceneId || project.scenes[0].id}
+                            onSelectScene={setCurrentSceneId}
+                        />
+                    </>
+                )}
+            </div>
+
+            {/* Mobile Layout */}
+            <div className="flex lg:hidden flex-col h-full w-full overflow-hidden">
+                {/* Mobile Content Area */}
+                <div className="flex-1 overflow-hidden relative">
+                    {mobileTab === 'scenes' ? (
+                        <div className="h-full flex flex-col">
+                            <div className="flex-1 overflow-y-auto">
+                                <SceneList
+                                    scenes={project.scenes}
+                                    currentSceneId={currentSceneId}
+                                    onSelectScene={(id) => {
+                                        setCurrentSceneId(id);
+                                        setIsSceneEditorOpen(true);
+                                    }}
+                                />
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="h-full flex flex-col">
+                            <VideoPreview
+                                scenes={project.scenes}
+                                currentSceneId={currentSceneId || project.scenes[0].id}
+                                onSelectScene={setCurrentSceneId}
+                                isMobile={true}
+                            />
+                        </div>
+                    )}
+
+                    {/* Mobile Scene Editor Modal */}
+                    {isSceneEditorOpen && currentScene && (
+                        <div className="fixed inset-0 z-[60] bg-zinc-950 flex flex-col">
+                            <div className="h-14 border-b border-zinc-800 flex items-center px-4 justify-between shrink-0">
+                                <button
+                                    onClick={() => setIsSceneEditorOpen(false)}
+                                    className="flex items-center gap-2 text-zinc-400 hover:text-white transition-colors"
+                                >
+                                    <ArrowLeft className="w-5 h-5" />
+                                    <span className="text-sm font-medium">Back to Scenes</span>
+                                </button>
+                                <span className="text-sm font-bold text-indigo-400 font-mono">
+                                    SCENE #{project.scenes.findIndex(s => s.id === currentSceneId) + 1}
+                                </span>
+                            </div>
+                            <div className="flex-1 overflow-y-auto">
+                                <SceneEditor
+                                    scene={currentScene}
+                                    index={project.scenes.findIndex(s => s.id === currentSceneId)}
+                                    onUpdate={(updates) => updateScene(currentScene.id, updates)}
+                                />
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* Mobile Bottom Navigation */}
+                <div className="h-16 border-t border-zinc-800 bg-zinc-950 flex items-center shrink-0">
+                    <button
+                        onClick={() => setMobileTab('scenes')}
+                        className={cn(
+                            "flex-1 h-full flex flex-col items-center justify-center gap-1 transition-all",
+                            mobileTab === 'scenes' ? "text-indigo-400" : "text-zinc-500"
+                        )}
+                    >
+                        <Layers className="w-5 h-5" />
+                        <span className="text-[10px] font-bold uppercase tracking-wider">Scenes</span>
+                    </button>
+                    <button
+                        onClick={() => setMobileTab('preview')}
+                        className={cn(
+                            "flex-1 h-full flex flex-col items-center justify-center gap-1 transition-all",
+                            mobileTab === 'preview' ? "text-indigo-400" : "text-zinc-500"
+                        )}
+                    >
+                        <Play className="w-5 h-5" />
+                        <span className="text-[10px] font-bold uppercase tracking-wider">Preview</span>
+                    </button>
+                </div>
+            </div>
         </div>
     );
 }

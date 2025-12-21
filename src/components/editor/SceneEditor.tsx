@@ -90,7 +90,7 @@ export function SceneEditor({ scene, index, onUpdate }: SceneEditorProps) {
     };
 
     return (
-        <div className="flex-1 p-6 overflow-y-auto bg-zinc-950 relative">
+        <div className="flex-1 p-4 lg:p-6 overflow-y-auto bg-zinc-950 relative h-full">
             <div className="max-w-2xl mx-auto space-y-8">
                 {/* Script Section */}
                 <div className="space-y-4">

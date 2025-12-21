@@ -1,19 +1,25 @@
 import type { Scene } from '../../types';
-import { Play, Pause, Download, Loader2 } from 'lucide-react';
+import { Play, Pause, Download, Loader2, Type, Music } from 'lucide-react';
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useVideoStore } from '../../store/useVideoStore';
+import { CaptionsTab } from './CaptionsTab';
+import { AudioTab } from './AudioTab';
+import { cn } from '../../lib/utils';
+import { X } from 'lucide-react';
 
 interface VideoPreviewProps {
     scenes: Scene[];
     currentSceneId: number | string;
     onSelectScene: (id: number | string) => void;
+    isMobile?: boolean;
 }
 
-export function VideoPreview({ scenes, currentSceneId, onSelectScene }: VideoPreviewProps) {
+export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile }: VideoPreviewProps) {
     const scene = scenes.find(s => s.id === currentSceneId) || scenes[0];
     const [isPlaying, setIsPlaying] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
+    const [activeSubTab, setActiveSubTab] = useState<'preview' | 'captions' | 'audio'>('preview');
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const autoPlayRef = useRef(false);
     // Ref for silence start
@@ -466,122 +472,176 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene }: VideoPre
     if (!scene) return null;
 
     return (
-        <div className="w-96 border-l border-zinc-800 bg-zinc-900/50 p-6 flex flex-col items-center justify-center">
-            <div className="relative w-full aspect-[9/16] bg-zinc-950 rounded-2xl border border-zinc-800 overflow-hidden shadow-2xl ring-1 ring-zinc-800">
-                {/* Image Layer */}
-                {scene.imageUrl ? (
-                    <img
-                        src={scene.imageUrl}
-                        className="absolute inset-0 w-full h-full object-cover"
-                        style={{
-                            transform: isPlaying ? getMotionStyle(scene.motionType) : 'scale(1)',
-                            transition: isPlaying ? `transform ${scene.duration}s ease-out` : 'none'
-                        }}
-                        alt="Scene Preview"
-                    />
-                ) : (
-                    <div className="absolute inset-0 flex items-center justify-center text-zinc-700 bg-zinc-900">
-                        <p className="text-sm">No Image Generated</p>
+        <div className={cn(
+            "border-zinc-800 bg-zinc-900/50 flex flex-col items-center h-full",
+            isMobile ? "w-full p-4" : "w-96 border-l p-6 justify-center"
+        )}>
+            {isMobile && (
+                <div className="w-full flex gap-2 mb-4 shrink-0">
+                    <button
+                        onClick={() => setActiveSubTab(activeSubTab === 'captions' ? 'preview' : 'captions')}
+                        className={cn(
+                            "flex-1 py-2 rounded-lg text-xs font-bold uppercase tracking-wider border transition-all flex items-center justify-center gap-2",
+                            activeSubTab === 'captions'
+                                ? "bg-indigo-600 border-indigo-500 text-white"
+                                : "bg-zinc-900 border-zinc-800 text-zinc-400"
+                        )}
+                    >
+                        <Type className="w-4 h-4" />
+                        Captions
+                    </button>
+                    <button
+                        onClick={() => setActiveSubTab(activeSubTab === 'audio' ? 'preview' : 'audio')}
+                        className={cn(
+                            "flex-1 py-2 rounded-lg text-xs font-bold uppercase tracking-wider border transition-all flex items-center justify-center gap-2",
+                            activeSubTab === 'audio'
+                                ? "bg-indigo-600 border-indigo-500 text-white"
+                                : "bg-zinc-900 border-zinc-800 text-zinc-400"
+                        )}
+                    >
+                        <Music className="w-4 h-4" />
+                        Audio
+                    </button>
+                </div>
+            )}
+
+            <div className="flex-1 w-full flex flex-col items-center justify-center overflow-hidden relative">
+                {isMobile && activeSubTab !== 'preview' && (
+                    <div className="absolute inset-0 z-50 bg-zinc-950/95 backdrop-blur-sm overflow-y-auto p-4">
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="text-lg font-bold text-white uppercase tracking-widest">
+                                {activeSubTab === 'captions' ? 'Caption Settings' : 'Audio Settings'}
+                            </h3>
+                            <button
+                                onClick={() => setActiveSubTab('preview')}
+                                className="p-2 text-zinc-400 hover:text-white"
+                            >
+                                <X className="w-6 h-6" />
+                            </button>
+                        </div>
+                        {activeSubTab === 'captions' ? <CaptionsTab /> : <AudioTab />}
                     </div>
                 )}
 
-                {/* Captions Layer */}
-                {scene.captionsEnabled && (
-                    <div className={captionStyle.container}>
-                        <p className={captionStyle.text}>
-                            {scene.text}
-                        </p>
-                    </div>
-                )}
-            </div>
-
-            {/* Controls & Timeline */}
-            <div className="w-full mt-6 space-y-4">
-                {/* Timeline */}
-                <div className="space-y-2">
-                    <div className="flex justify-between text-xs text-zinc-400 font-medium">
-                        <span>{formatTime(currentTime)}</span>
-                        <span>{formatTime(totalDuration)}</span>
-                    </div>
-                    <div className="relative h-1.5 w-full flex items-center">
-                        <input
-                            type="range"
-                            min={0}
-                            max={totalDuration || 100}
-                            step={0.1}
-                            value={currentTime}
-                            onChange={onSeekChange}
-                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
+                <div className={cn(
+                    "relative aspect-[9/16] bg-zinc-950 rounded-2xl border border-zinc-800 overflow-hidden shadow-2xl ring-1 ring-zinc-800",
+                    isMobile ? "h-[60vh]" : "w-full"
+                )}>
+                    {/* Image Layer */}
+                    {scene.imageUrl ? (
+                        <img
+                            src={scene.imageUrl}
+                            className="absolute inset-0 w-full h-full object-cover"
+                            style={{
+                                transform: isPlaying ? getMotionStyle(scene.motionType) : 'scale(1)',
+                                transition: isPlaying ? `transform ${scene.duration}s ease-out` : 'none'
+                            }}
+                            alt="Scene Preview"
                         />
-                        <div className="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                    ) : (
+                        <div className="absolute inset-0 flex items-center justify-center text-zinc-700 bg-zinc-900">
+                            <p className="text-sm">No Image Generated</p>
+                        </div>
+                    )}
+
+                    {/* Captions Layer */}
+                    {scene.captionsEnabled && (
+                        <div className={captionStyle.container}>
+                            <p className={captionStyle.text}>
+                                {scene.text}
+                            </p>
+                        </div>
+                    )}
+                </div>
+
+                {/* Controls & Timeline */}
+                <div className="w-full mt-6 space-y-4">
+                    {/* Timeline */}
+                    <div className="space-y-2">
+                        <div className="flex justify-between text-[10px] lg:text-xs text-zinc-400 font-medium">
+                            <span>{formatTime(currentTime)}</span>
+                            <span>{formatTime(totalDuration)}</span>
+                        </div>
+                        <div className="relative h-1.5 w-full flex items-center">
+                            <input
+                                type="range"
+                                min={0}
+                                max={totalDuration || 100}
+                                step={0.1}
+                                value={currentTime}
+                                onChange={onSeekChange}
+                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
+                            />
+                            <div className="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                                <div
+                                    className="h-full bg-indigo-500 rounded-full"
+                                    style={{ width: `${Math.min((currentTime / (totalDuration || 1)) * 100, 100)}%` }}
+                                />
+                            </div>
+                            {/* Thumb indicator (optional visual) */}
                             <div
-                                className="h-full bg-indigo-500 rounded-full"
-                                style={{ width: `${Math.min((currentTime / (totalDuration || 1)) * 100, 100)}%` }}
+                                className="absolute h-3 w-3 bg-white rounded-full shadow-md pointer-events-none z-10"
+                                style={{ left: `${Math.min((currentTime / (totalDuration || 1)) * 100, 100)}%`, transform: 'translateX(-50%)' }}
                             />
                         </div>
-                        {/* Thumb indicator (optional visual) */}
-                        <div
-                            className="absolute h-3 w-3 bg-white rounded-full shadow-md pointer-events-none z-10"
-                            style={{ left: `${Math.min((currentTime / (totalDuration || 1)) * 100, 100)}%`, transform: 'translateX(-50%)' }}
-                        />
                     </div>
-                </div>
 
-                {/* Play & Download Buttons */}
-                <div className="flex justify-center items-center gap-4">
-                    <button
-                        onClick={togglePlayback}
-                        disabled={!scene.audioUrl || isExporting}
-                        className="p-4 rounded-full bg-zinc-100 text-zinc-900 hover:bg-white transition-colors shadow-lg shadow-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        {isPlaying ? (
-                            <Pause className="w-6 h-6 fill-current" />
-                        ) : (
-                            <Play className="w-6 h-6 fill-current ml-1" />
-                        )}
-                    </button>
+                    {/* Play & Download Buttons */}
+                    <div className="flex justify-center items-center gap-4">
+                        <button
+                            onClick={togglePlayback}
+                            disabled={!scene.audioUrl || isExporting}
+                            className="p-4 rounded-full bg-zinc-100 text-zinc-900 hover:bg-white transition-colors shadow-lg shadow-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {isPlaying ? (
+                                <Pause className="w-6 h-6 fill-current" />
+                            ) : (
+                                <Play className="w-6 h-6 fill-current ml-1" />
+                            )}
+                        </button>
 
-                    <button
-                        onClick={handleExport}
-                        disabled={isExporting || scenes.some(s => s.status !== 'ready')}
-                        className="p-4 rounded-full bg-indigo-600 text-white hover:bg-indigo-500 transition-colors shadow-lg shadow-indigo-500/20 disabled:opacity-50 disabled:cursor-not-allowed group relative"
-                        title="Download Video"
-                    >
-                        {isExporting ? (
-                            <Loader2 className="w-6 h-6 animate-spin" />
-                        ) : (
-                            <Download className="w-6 h-6" />
-                        )}
+                        <button
+                            onClick={handleExport}
+                            disabled={isExporting || scenes.some(s => s.status !== 'ready')}
+                            className="p-4 rounded-full bg-indigo-600 text-white hover:bg-indigo-500 transition-colors shadow-lg shadow-indigo-500/20 disabled:opacity-50 disabled:cursor-not-allowed group relative"
+                            title="Download Video"
+                        >
+                            {isExporting ? (
+                                <Loader2 className="w-6 h-6 animate-spin" />
+                            ) : (
+                                <Download className="w-6 h-6" />
+                            )}
 
-                        {/* Tooltip for pending scenes */}
-                        {!isExporting && scenes.some(s => s.status !== 'ready') && (
-                            <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-48 p-2 bg-zinc-800 text-[10px] rounded shadow-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity">
-                                Wait for all scenes to generate before downloading
+                            {/* Tooltip for pending scenes */}
+                            {!isExporting && scenes.some(s => s.status !== 'ready') && (
+                                <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-48 p-2 bg-zinc-800 text-[10px] rounded shadow-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity">
+                                    Wait for all scenes to generate before downloading
+                                </div>
+                            )}
+                        </button>
+                    </div>
+
+                    {/* Exporting Overlay */}
+                    {isExporting && (
+                        <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center">
+                            <div className="w-24 h-24 mb-8 relative">
+                                <div className="absolute inset-0 border-4 border-indigo-500/20 rounded-full" />
+                                <div className="absolute inset-0 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                    <Download className="w-8 h-8 text-indigo-400" />
+                                </div>
                             </div>
-                        )}
-                    </button>
-                </div>
-
-                {/* Exporting Overlay */}
-                {isExporting && (
-                    <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center">
-                        <div className="w-24 h-24 mb-8 relative">
-                            <div className="absolute inset-0 border-4 border-indigo-500/20 rounded-full" />
-                            <div className="absolute inset-0 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
-                            <div className="absolute inset-0 flex items-center justify-center">
-                                <Download className="w-8 h-8 text-indigo-400" />
+                            <h2 className="text-2xl font-bold text-white mb-2">Exporting Your Reel</h2>
+                            <p className="text-zinc-400 max-w-md">
+                                We're rendering your scenes, captions, and music into a high-quality video.
+                                Please keep this tab open.
+                            </p>
+                            <div className="mt-8 px-4 py-2 bg-zinc-800 rounded-full text-xs font-mono text-zinc-500">
+                                Rendering in Portrait (720x1280)
                             </div>
                         </div>
-                        <h2 className="text-2xl font-bold text-white mb-2">Exporting Your Reel</h2>
-                        <p className="text-zinc-400 max-w-md">
-                            We're rendering your scenes, captions, and music into a high-quality video.
-                            Please keep this tab open.
-                        </p>
-                        <div className="mt-8 px-4 py-2 bg-zinc-800 rounded-full text-xs font-mono text-zinc-500">
-                            Rendering in Portrait (720x1280)
-                        </div>
-                    </div>
-                )}
+                    )}
+                </div>
             </div>
         </div>
     );
