@@ -1,19 +1,19 @@
 import express from 'express';
 import cors from 'cors';
 import { EdgeTTS } from '@andresaya/edge-tts';
-import Groq from 'groq-sdk';
+import { Groq } from 'groq-sdk';
 import dotenv from 'dotenv';
-import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import fs from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 dotenv.config();
 
-const app = express();
-const port = 3000;
+export const app = express();
+const port = process.env.PORT || 3000;
 
 // Simple in-memory cache for images
 const imageCache = new Map<string, any>();
@@ -243,6 +243,8 @@ app.get('/api/music', (req, res) => {
     }
 });
 
-app.listen(port, () => {
-    console.log(`Server running at http://localhost:${port}`);
-});
+if (process.env.NODE_ENV !== 'production') {
+    app.listen(port, () => {
+        console.log(`Server running at http://localhost:${port}`);
+    });
+}
