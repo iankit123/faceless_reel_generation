@@ -14,6 +14,18 @@ export const handler = async (event: any) => {
                 name: 'Disco',
                 url: '/background_music/disco.mp3',
                 duration: 0
+            },
+            {
+                id: 'disney',
+                name: 'Disney',
+                url: '/background_music/Disney.mp3',
+                duration: 0
+            },
+            {
+                id: 'teddy',
+                name: 'Teddy',
+                url: '/background_music/Teddy.mp3',
+                duration: 0
             }
         ];
 
