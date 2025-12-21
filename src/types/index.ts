@@ -37,10 +37,10 @@ export interface StoryResponse {
     language: string;
     theme: string;
     scenes: {
-        id: number;
         text: string;
-        duration: number;
         imagePrompt: string;
+        motionType?: MotionType;
+        duration?: number;
     }[];
 }
 

@@ -24,14 +24,14 @@ export function CreateVideoPage() {
 
             initProject(story.theme);
 
-            story.scenes.forEach(s => {
+            story.scenes.forEach((s) => {
                 addScene({
-                    id: s.id,
+                    id: crypto.randomUUID(),
                     text: s.text,
-                    duration: s.duration,
+                    duration: s.duration || 5,
                     imagePrompt: s.imagePrompt,
                     imageSettings: { width: 576, height: 1024, steps: 20, guidance: 7 },
-                    motionType: 'zoom_in',
+                    motionType: s.motionType || 'zoom_in',
                     captionsEnabled: true,
                     status: 'pending'
                 });

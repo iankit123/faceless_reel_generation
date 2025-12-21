@@ -4,7 +4,7 @@ import { SceneEditor } from '../components/editor/SceneEditor';
 import { VideoPreview } from '../components/editor/VideoPreview';
 import { CaptionsTab } from '../components/editor/CaptionsTab';
 import { AudioTab } from '../components/editor/AudioTab';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Layers, Type, Music } from 'lucide-react';
 import { cn } from '../lib/utils';
 
@@ -17,6 +17,7 @@ export function VideoEditorPage() {
     const updateScene = useVideoStore((state) => state.updateScene);
     const [activeTab, setActiveTab] = useState<EditorTab>('frames');
     const [isProcessing, setIsProcessing] = useState(false);
+    const processingRef = useRef(false);
 
     useEffect(() => {
         if (project?.scenes.length && !currentSceneId) {
@@ -26,7 +27,7 @@ export function VideoEditorPage() {
 
     // Auto-generate assets for pending scenes (Strictly Sequential)
     useEffect(() => {
-        if (!project || isProcessing) return;
+        if (!project || isProcessing || processingRef.current) return;
 
         // Find the first pending scene
         const pendingScene = project.scenes.find(s => s.status === 'pending');
@@ -40,9 +41,12 @@ export function VideoEditorPage() {
         if (isAnyGenerating) return;
 
         const processScene = async () => {
-            if (isProcessing) return;
+            if (processingRef.current) return;
+            processingRef.current = true;
             setIsProcessing(true);
+
             const scene = pendingScene;
+            console.log('--- STARTING AUTO-GENERATION FOR SCENE:', scene.id, '---');
 
             // Update status to prevent double trigger
             updateScene(scene.id, { status: 'generating_audio' });
@@ -83,7 +87,7 @@ export function VideoEditorPage() {
                 updateScene(scene.id, { imageUrl, status: 'ready' });
 
                 // Cooldown before next scene starts
-                console.log('Scene processed. Cooling down...');
+                console.log('Scene processed:', scene.id, '. Cooling down...');
                 await new Promise(r => setTimeout(r, 2000));
 
             } catch (error) {
@@ -97,6 +101,7 @@ export function VideoEditorPage() {
                 });
             } finally {
                 setIsProcessing(false);
+                processingRef.current = false;
             }
         };
 
