@@ -36,17 +36,15 @@ app.get('/api/health', (req, res) => {
 
 // TTS Endpoint
 app.post('/api/tts', async (req, res) => {
-    let retryCount = 0;
-    const maxRetries = 2;
+    const { text, voice } = req.body;
+    if (!text) {
+        return res.status(400).json({ error: 'Missing text' });
+    }
 
-    const attemptTTS = async () => {
+    let lastError = null;
+    for (let i = 0; i <= 2; i++) {
         try {
-            const { text, voice } = req.body;
-
-            if (!text) {
-                return res.status(400).json({ error: 'Missing text' });
-            }
-
+            console.log(`TTS Attempt ${i + 1} for text: ${text.substring(0, 30)}...`);
             const tts = new EdgeTTS();
             await tts.synthesize(text, voice || 'hi-IN-SwaraNeural');
             const audioBuffer = tts.toBuffer();
@@ -57,24 +55,19 @@ app.post('/api/tts', async (req, res) => {
 
             res.set({
                 'Content-Type': 'audio/mpeg',
-                'Content-Length': audioBuffer.length,
+                'Content-Length': audioBuffer.length.toString(),
             });
-
-            res.send(audioBuffer);
-
+            return res.send(audioBuffer);
         } catch (error) {
-            console.error(`TTS Attempt ${retryCount + 1} failed:`, error);
-            if (retryCount < maxRetries) {
-                retryCount++;
-                console.log(`Retrying TTS (${retryCount}/${maxRetries})...`);
-                await attemptTTS();
-            } else {
-                res.status(500).json({ error: 'TTS generation failed after retries', details: error instanceof Error ? error.message : String(error) });
-            }
+            console.error(`TTS Attempt ${i + 1} failed:`, error);
+            lastError = error;
         }
-    };
+    }
 
-    await attemptTTS();
+    return res.status(500).json({
+        error: 'TTS generation failed after retries',
+        details: lastError instanceof Error ? lastError.message : String(lastError)
+    });
 });
 
 // Story Generation Endpoint
@@ -259,7 +252,7 @@ app.get('/api/music', (req, res) => {
     }
 });
 
-if (process.env.NODE_ENV !== 'production') {
+if (process.env.NODE_ENV !== 'production' && !process.env.NETLIFY) {
     app.listen(port, () => {
         console.log(`Server running at http://localhost:${port}`);
     });
