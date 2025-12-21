@@ -1,21 +1,20 @@
-import serverless from 'serverless-http';
-import { app } from '../../server';
+import Groq from 'groq-sdk';
 
-const serverlessHandler = serverless(app);
-
-export const handler = async (event: any, context: any) => {
+export const handler = async (event: any) => {
     console.log('--- STORY FUNCTION INVOKED ---');
-    console.log('Method:', event.httpMethod);
-    console.log('Path:', event.path);
-    console.log('Query:', JSON.stringify(event.queryStringParameters));
 
-    // Validate Environment Variables
-    const hasGroq = !!process.env.GROQ_API_KEY;
-    const hasImageRouter = !!process.env.IMAGEROUTER_TOKEN;
-    console.log('Env GROQ_API_KEY present:', hasGroq);
-    console.log('Env IMAGEROUTER_TOKEN present:', hasImageRouter);
+    if (event.httpMethod === 'OPTIONS') {
+        return {
+            statusCode: 200,
+            headers: {
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Headers': 'Content-Type',
+                'Access-Control-Allow-Methods': 'POST, OPTIONS'
+            },
+            body: ''
+        };
+    }
 
-    // Hard GET sanity check
     if (event.httpMethod === 'GET') {
         return {
             statusCode: 200,
@@ -24,36 +23,82 @@ export const handler = async (event: any, context: any) => {
         };
     }
 
-    if (!hasGroq) {
-        return {
-            statusCode: 500,
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ error: 'Missing GROQ_API_KEY environment variable' })
-        };
+    if (event.httpMethod !== 'POST') {
+        return { statusCode: 405, body: 'Method Not Allowed' };
     }
 
     try {
-        console.log('Parsing body...');
-        if (event.body) {
-            console.log('Body length:', event.body.length);
-            console.log('Body preview:', event.body.substring(0, 100));
+        const { prompt, language } = JSON.parse(event.body);
+        console.log('Story Prompt:', prompt);
+
+        const apiKey = process.env.GROQ_API_KEY;
+        if (!apiKey) {
+            console.error('Missing GROQ_API_KEY');
+            return {
+                statusCode: 500,
+                body: JSON.stringify({ error: 'Server configuration error: Missing Groq API Key' })
+            };
         }
 
-        const result = await serverlessHandler(event, context);
-        console.log('Function execution successful');
-        return result;
+        const groq = new Groq({ apiKey });
+
+        let languageInstruction = "User input may be in Hindi or Hinglish. ALWAYS generate the 'text' field in Hindi (Devanagari script).";
+        if (language === 'english') {
+            languageInstruction = "Generate the 'text' field in English.";
+        }
+
+        const completion = await groq.chat.completions.create({
+            messages: [
+                {
+                    role: "system",
+                    content: `You are a viral short-form video script writer. 
+                    Create a compelling story based on the user's prompt.
+                    Output ONLY a JSON object with this structure:
+                    {
+                        "title": "...",
+                        "theme": "...",
+                        "scenes": [
+                            {
+                                "text": "...",
+                                "imagePrompt": "...",
+                                "motionType": "zoom_in" | "pan_left" | "pan_right" | "pan_up" | "pan_down" | "none"
+                            }
+                        ]
+                    }
+                    Keep it to 4-6 scenes. ${languageInstruction}`
+                },
+                {
+                    role: "user",
+                    content: `Create a story about: ${prompt}`
+                }
+            ],
+            model: "llama-3.1-8b-instant",
+            temperature: 0.7,
+            max_tokens: 1000,
+            response_format: { type: "json_object" }
+        });
+
+        const story = JSON.parse(completion.choices[0]?.message?.content || '{}');
+        console.log('Story generated successfully');
+
+        return {
+            statusCode: 200,
+            headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            },
+            body: JSON.stringify(story)
+        };
+
     } catch (error: any) {
-        console.error('--- STORY FUNCTION CRITICAL ERROR ---');
-        console.error('Message:', error.message);
-        console.error('Stack:', error.stack);
+        console.error('Story Generation Error:', error);
         return {
             statusCode: 500,
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                error: 'Internal Server Error',
-                message: error.message,
-                stack: error.stack
-            })
+            headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            },
+            body: JSON.stringify({ error: 'Story generation failed', details: error.message })
         };
     }
 };

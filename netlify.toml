@@ -7,8 +7,23 @@
   node_bundler = "esbuild"
 
 [[redirects]]
-  from = "/api/*"
+  from = "/api/story"
   to = "/.netlify/functions/story"
+  status = 200
+
+[[redirects]]
+  from = "/api/tts"
+  to = "/.netlify/functions/tts"
+  status = 200
+
+[[redirects]]
+  from = "/api/image/generate"
+  to = "/.netlify/functions/image"
+  status = 200
+
+[[redirects]]
+  from = "/api/music"
+  to = "/.netlify/functions/music"
   status = 200
 
 [[redirects]]
