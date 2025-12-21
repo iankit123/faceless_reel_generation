@@ -68,7 +68,7 @@ export function CreateVideoPage() {
                 {/* Left Column */}
                 <div className="flex flex-col justify-center">
                     <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
-                        Create New Video
+                        Create viral faceless videos
                     </h1>
                     <p className="text-zinc-400 mb-8">
                         Turn your ideas into viral videos in seconds.
