@@ -99,26 +99,32 @@ app.post('/api/story', async (req, res) => {
             messages: [
                 {
                     role: "system",
-                    content: `You are a short vertical video story engine optimized for Instagram Reels and YouTube Shorts. Output JSON ONLY. No markdown. No explanations.Structure:
+                    content: `You are a viral short-form video script writer. 
+                    Create a compelling story based on the user's prompt.
+                    Output ONLY a JSON object with this structure:
                     {
-                        "language": "${language || 'hinglish'}",
-                        "theme": "A concise visual theme description (e.g., 'Dark cinematic horror', 'Bright vibrant cartoon', 'Epic historical drama')",
+                        "title": "...",
+                        "theme": "...",
                         "scenes": [
                             {
-                                "id": 1,
-                                "text": "Scene text based on language instruction",
-                                "duration": 5,
-                                "imagePrompt": "English image prompt for scene 1"
+                                "text": "...",
+                                "imagePrompt": "...",
+                                "motionType": "zoom_in" | "pan_left" | "pan_right" | "pan_up" | "pan_down" | "none"
                             }
                         ]
                     }
-                    ${languageInstruction}
-                    Create 3-5 scenes. Keep text concise (1-2 sentences).
-                    Include 'imagePrompt' in English for AI image generation.
-                    - Scene 1 MUST be a strong hook within first 2 seconds.
-                    - Each next scene must progress the story logically.
-                    - Final scene MUST deliver emotional payoff or resolution.
-                    - No filler scenes.
+                    Keep it to 5-7 scenes. ${languageInstruction}
+
+                    For each imagePrompt:
+                    Write a single, vivid, cinematic description suitable for image generation.
+                    Always specify camera framing (close-up, medium shot, wide shot, aerial, low angle, over-the-shoulder).
+                    Always specify lighting (soft daylight, warm indoor light, dramatic contrast, sunset glow, moonlight, etc.).
+                    Always specify mood or emotion (playful, tense, joyful, mysterious, calm, emotional).
+                    Describe key visual details (setting, subject appearance, environment, colors, textures).
+                    Keep the style consistent with the story context (realistic, animated, fantasy, kids-friendly, cinematic).
+                    The prompt must read like a movie frame description, not a list of keywords.
+                    Internal guiding pattern:
+                    “cinematic [camera framing] of [subject] in [setting], [lighting], [mood], highly detailed, visually coherent”
                     `
                 },
                 {

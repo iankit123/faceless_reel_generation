@@ -65,7 +65,19 @@ export const handler = async (event: any) => {
                             }
                         ]
                     }
-                    Keep it to 4-6 scenes. ${languageInstruction}`
+                    Keep it to 5-7 scenes. ${languageInstruction}
+
+                    For each imagePrompt:
+                    Write a single, vivid, cinematic description suitable for image generation.
+                    Always specify camera framing (close-up, medium shot, wide shot, aerial, low angle, over-the-shoulder).
+                    Always specify lighting (soft daylight, warm indoor light, dramatic contrast, sunset glow, moonlight, etc.).
+                    Always specify mood or emotion (playful, tense, joyful, mysterious, calm, emotional).
+                    Describe key visual details (setting, subject appearance, environment, colors, textures).
+                    Keep the style consistent with the story context (realistic, animated, fantasy, kids-friendly, cinematic).
+                    The prompt must read like a movie frame description, not a list of keywords.
+                    Internal guiding pattern:
+                    “cinematic [camera framing] of [subject] in [setting], [lighting], [mood], highly detailed, visually coherent”
+                    `
                 },
                 {
                     role: "user",
