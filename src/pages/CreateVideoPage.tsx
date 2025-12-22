@@ -112,6 +112,13 @@ export function CreateVideoPage() {
                                 value={script}
                                 onChange={setScript}
                                 disabled={isGenerating}
+                                label={`Video Idea (${language.charAt(0).toUpperCase() + language.slice(1)})`}
+                                placeholder={
+                                    language === 'english' ? "Story of a horror house..." :
+                                        language === 'hinglish' ? "Raja Harishchand ki kahani..." :
+                                            "भूतिया महल की कहानी..."
+                                }
+                                language={language}
                             />
 
                             {/* Example Prompts */}
