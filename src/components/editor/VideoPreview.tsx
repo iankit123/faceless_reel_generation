@@ -23,6 +23,7 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
     const [isExporting, setIsExporting] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
     const [activeSubTab, setActiveSubTab] = useState<'preview' | 'captions' | 'audio'>('preview');
+    const [exportTimer, setExportTimer] = useState(150);
 
     // Dynamic Captions
     const captionSegments = useMemo(() => {
@@ -281,22 +282,41 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
                 bgGain.connect(dest);
             }
 
+            const mimeTypes = [
+                'video/mp4;codecs=h264,aac',
+                'video/mp4;codecs=h264,opus',
+                'video/mp4',
+                'video/webm;codecs=vp9,opus',
+                'video/webm'
+            ];
+
+            const supportedMineType = mimeTypes.find(type => MediaRecorder.isTypeSupported(type)) || 'video/webm';
+            console.log('Using mime type for export:', supportedMineType);
+
             const recorder = new MediaRecorder(new MediaStream([
                 ...stream.getVideoTracks(),
                 ...dest.stream.getAudioTracks()
-            ]), { mimeType: 'video/webm;codecs=vp9,opus' });
+            ]), { mimeType: supportedMineType });
 
             const chunks: Blob[] = [];
             recorder.ondataavailable = (e) => chunks.push(e.data);
             recorder.onstop = () => {
-                const blob = new Blob(chunks, { type: 'video/webm' });
+                const extension = supportedMineType.includes('mp4') ? 'mp4' : 'webm';
+                const blob = new Blob(chunks, { type: supportedMineType });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `${project?.title || 'video'}.webm`;
+                const fileName = project?.title && !project.title.includes('-') ? project.title : 'my-reel';
+                a.download = `${fileName}.${extension}`;
                 a.click();
                 URL.revokeObjectURL(url);
             };
+
+            // Start timer
+            setExportTimer(150);
+            const timerInterval = setInterval(() => {
+                setExportTimer((prev) => Math.max(0, prev - 1));
+            }, 1000);
 
             recorder.start();
             if (bgMusicRef.current) bgMusicRef.current.play();
@@ -411,6 +431,7 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
 
             if (bgMusicRef.current) bgMusicRef.current.pause();
             recorder.stop();
+            clearInterval(timerInterval);
             await audioCtx.close();
 
         } catch (error) {
@@ -687,6 +708,16 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
                                 </div>
                             </div>
                             <h2 className="text-2xl font-bold text-white mb-2">Exporting Your Reel</h2>
+                            <div className="flex flex-col items-center gap-2 mb-6">
+                                <span className={`text-4xl font-mono font-bold ${exportTimer > 0 ? 'text-red-500' : 'text-amber-400'}`}>
+                                    {exportTimer}s
+                                </span>
+                                {exportTimer === 0 && (
+                                    <p className="text-amber-400 text-sm font-medium animate-pulse">
+                                        It is taking more time than expected, please wait...
+                                    </p>
+                                )}
+                            </div>
                             <p className="text-zinc-400 max-w-md">
                                 We're rendering your scenes, captions, and music into a high-quality video.
                                 Please keep this tab open.

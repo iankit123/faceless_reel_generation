@@ -20,7 +20,7 @@ export function SceneList({ scenes, currentSceneId, onSelectScene, onPlayScene, 
     const removeScene = useVideoStore(state => state.removeScene);
     const [sceneToDelete, setSceneToDelete] = useState<number | string | null>(null);
     const [loadedImages, setLoadedImages] = useState<Record<string | number, boolean>>({});
-    const [timer, setTimer] = useState(60);
+    const [timer, setTimer] = useState(150);
 
     const isGenerating = useMemo(() => scenes.some(s => s.status !== 'ready'), [scenes]);
 
@@ -77,7 +77,7 @@ export function SceneList({ scenes, currentSceneId, onSelectScene, onPlayScene, 
             <div className="px-4 py-3 bg-indigo-500/5 border-b border-zinc-800/50">
                 <p className={cn(
                     "text-xs font-bold text-center transition-colors",
-                    isGenerating ? "text-indigo-400" : "text-green-400"
+                    isGenerating ? "text-red-500" : "text-green-400"
                 )}>
                     {!isGenerating ? (
                         "video generation complete"

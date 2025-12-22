@@ -22,6 +22,22 @@ export function SceneEditor({ scene, index, onUpdate }: SceneEditorProps) {
     const [localImagePrompt, setLocalImagePrompt] = useState(scene.imagePrompt ?? scene.text);
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const project = useVideoStore(state => state.project);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const imagePromptRef = useRef<HTMLTextAreaElement>(null);
+
+    useEffect(() => {
+        if (textareaRef.current) {
+            textareaRef.current.style.height = 'auto';
+            textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+        }
+    }, [scene.text]);
+
+    useEffect(() => {
+        if (imagePromptRef.current) {
+            imagePromptRef.current.style.height = 'auto';
+            imagePromptRef.current.style.height = `${imagePromptRef.current.scrollHeight}px`;
+        }
+    }, [localImagePrompt]);
 
     const { isListening: isListeningScript, toggleListening: toggleListeningScript } = useSpeechRecognition({
         onTranscript: (transcript) => {
@@ -134,9 +150,10 @@ export function SceneEditor({ scene, index, onUpdate }: SceneEditorProps) {
                     </div>
                     <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-indigo-500/50 transition-all">
                         <textarea
+                            ref={textareaRef}
                             value={scene.text}
                             onChange={(e) => onUpdate({ text: e.target.value })}
-                            className="w-full h-32 bg-transparent p-4 text-zinc-100 focus:outline-none resize-none"
+                            className="w-full min-h-[128px] bg-transparent p-4 text-zinc-100 focus:outline-none resize-none overflow-hidden"
                             placeholder="Enter scene script here..."
                         />
                         <div className="border-t border-zinc-800/50 p-3 bg-zinc-900/50 flex items-center justify-between">
@@ -329,12 +346,13 @@ export function SceneEditor({ scene, index, onUpdate }: SceneEditorProps) {
                                 <label className="block text-sm font-medium text-zinc-400">Image Prompt</label>
                                 <div className="bg-zinc-950 border border-zinc-800 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-pink-500/50 transition-all">
                                     <textarea
+                                        ref={imagePromptRef}
                                         value={localImagePrompt}
                                         onChange={(e) => {
                                             setLocalImagePrompt(e.target.value);
                                             onUpdate({ imagePrompt: e.target.value });
                                         }}
-                                        className="w-full h-32 bg-transparent p-4 text-sm text-zinc-100 focus:outline-none resize-none"
+                                        className="w-full min-h-[128px] bg-transparent p-4 text-sm text-zinc-100 focus:outline-none resize-none overflow-hidden"
                                         placeholder="Describe the image..."
                                     />
                                     <div className="border-t border-zinc-800/50 p-3 bg-zinc-900/50 flex items-center justify-between">
