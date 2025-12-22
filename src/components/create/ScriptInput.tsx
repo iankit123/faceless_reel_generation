@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from 'react';
 import { Mic, MicOff } from 'lucide-react';
+import { useSpeechRecognition } from '../../hooks/useSpeechRecognition';
 
 interface ScriptInputProps {
     value: string;
@@ -10,76 +10,17 @@ interface ScriptInputProps {
     language?: string;
 }
 
-declare global {
-    interface Window {
-        SpeechRecognition: any;
-        webkitSpeechRecognition: any;
-    }
-}
-
 export function ScriptInput({ value, onChange, disabled, label = "Video Idea", placeholder = "Describe your idea...", language = "english" }: ScriptInputProps) {
-    const [isListening, setIsListening] = useState(false);
-    const recognitionRef = useRef<any>(null);
+    const { isListening, toggleListening, isSupported } = useSpeechRecognition({
+        onTranscript: (transcript) => {
+            onChange(value + (value ? ' ' : '') + transcript);
+        },
+        language
+    });
 
-    useEffect(() => {
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (SpeechRecognition) {
-            const recognition = new SpeechRecognition();
-            recognition.continuous = true;
-            recognition.interimResults = true;
-
-            // Set language based on prop
-            if (language === 'hindi' || language === 'hinglish') {
-                recognition.lang = 'hi-IN';
-            } else {
-                recognition.lang = 'en-US';
-            }
-
-            recognition.onresult = (event: any) => {
-                let transcript = '';
-                for (let i = event.resultIndex; i < event.results.length; i++) {
-                    transcript += event.results[i][0].transcript;
-                }
-                if (event.results[event.results.length - 1].isFinal) {
-                    onChange(value + (value ? ' ' : '') + transcript);
-                }
-            };
-
-            recognition.onerror = (event: any) => {
-                console.error("Speech recognition error:", event.error);
-                setIsListening(false);
-            };
-
-            recognition.onend = () => {
-                setIsListening(false);
-            };
-
-            recognitionRef.current = recognition;
-        }
-
-        return () => {
-            if (recognitionRef.current) {
-                recognitionRef.current.stop();
-            }
-        };
-    }, [onChange, value, language]); // Added language to dependencies
-
-    const toggleListening = (e: React.MouseEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-
-        if (isListening) {
-            recognitionRef.current?.stop();
-            setIsListening(false);
-        } else {
-            if (!recognitionRef.current) {
-                alert("Your browser does not support the Web Speech API.");
-                return;
-            }
-            recognitionRef.current.start();
-            setIsListening(true);
-        }
-    };
+    if (!isSupported) {
+        // Fallback or just hide the mic icon if not supported
+    }
 
     return (
         <div className="space-y-4">
@@ -126,8 +67,6 @@ export function ScriptInput({ value, onChange, disabled, label = "Video Idea", p
                         </div>
                     )}
                 </div>
-
-                {/* Character Count or other info could go here */}
             </div>
 
             <p className="text-xs text-zinc-500">

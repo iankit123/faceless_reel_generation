@@ -119,17 +119,16 @@ app.post('/api/story', async (req, res) => {
                     Write a single, vivid, cinematic description suitable for image generation.
                     Always specify camera framing (close-up, medium shot, wide shot, aerial, low angle, over-the-shoulder).
                     Always specify lighting (soft daylight, warm indoor light, dramatic contrast, sunset glow, moonlight, etc.).
-                    Always specify mood or emotion (playful, tense, joyful, mysterious, calm, emotional).
-                    Describe key visual details (setting, subject appearance, environment, colors, textures).
-                    Keep the style consistent with the story context (realistic, animated, fantasy, kids-friendly, cinematic).
-                    The prompt must read like a movie frame description, not a list of keywords. Maintain a theme in all prompts basis story like "image is about old indian times, part of a story about fight"
+                    Describe key visual details (setting, subject appearance, environment, colors, textures)
+                    Keep the theme consistent with the story context (Comic, Sketch, realistic, animated, fantasy, kids-friendly, cinematic).
                     Internal guiding pattern:
-                    “cinematic [camera framing] of [subject] in [setting], [lighting], [mood], highly detailed, visually coherent”
+                    “Image Theme: [Comic], [Ancient times]
+                    Scene Description: [camera framing] of [subject] in [setting], [lighting], [mood], highly detailed, visually coherent”
                     `
                 },
                 {
                     role: "user",
-                    content: `Create a story about: ${prompt}`
+                    content: `Create a insta reel compatible story about: ${prompt}`
                 }
             ],
             model: "llama-3.3-70b-versatile",

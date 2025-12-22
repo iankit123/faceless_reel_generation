@@ -1,6 +1,7 @@
 import type { Scene, MotionType } from '../../types';
-import { RefreshCw, Image as ImageIcon, Type, Play, Pause, Edit2, Upload, X, Loader2 } from 'lucide-react';
+import { RefreshCw, Image as ImageIcon, Type, Play, Pause, Edit2, Upload, X, Loader2, Mic, MicOff } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
+import { useSpeechRecognition } from '../../hooks/useSpeechRecognition';
 import { ttsService } from '../../services/tts';
 import { imageService } from '../../services/imageService';
 import { useVideoStore } from '../../store/useVideoStore';
@@ -17,6 +18,22 @@ export function SceneEditor({ scene, index, onUpdate }: SceneEditorProps) {
     const [isRegeneratingImage, setIsRegeneratingImage] = useState(false);
     const [showImageModal, setShowImageModal] = useState(false);
     const audioRef = useRef<HTMLAudioElement | null>(null);
+    const project = useVideoStore(state => state.project);
+
+    const { isListening: isListeningScript, toggleListening: toggleListeningScript } = useSpeechRecognition({
+        onTranscript: (transcript) => {
+            onUpdate({ text: scene.text + (scene.text ? ' ' : '') + transcript });
+        },
+        language: project?.language || 'english'
+    });
+
+    const { isListening: isListeningImage, toggleListening: toggleListeningImage } = useSpeechRecognition({
+        onTranscript: (transcript) => {
+            const currentPrompt = scene.imagePrompt || scene.text;
+            onUpdate({ imagePrompt: currentPrompt + (currentPrompt ? ' ' : '') + transcript });
+        },
+        language: project?.language || 'english'
+    });
 
     useEffect(() => {
         if (scene.audioUrl) {
@@ -71,7 +88,6 @@ export function SceneEditor({ scene, index, onUpdate }: SceneEditorProps) {
         }
     };
 
-    const project = useVideoStore(state => state.project);
 
     const handleRegenerateImage = async () => {
         setIsRegeneratingImage(true);
@@ -110,12 +126,26 @@ export function SceneEditor({ scene, index, onUpdate }: SceneEditorProps) {
                         </div>
                     </div>
                     <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-indigo-500/50 transition-all">
-                        <textarea
-                            value={scene.text}
-                            onChange={(e) => onUpdate({ text: e.target.value })}
-                            className="w-full h-32 bg-transparent p-4 text-zinc-100 focus:outline-none resize-none"
-                            placeholder="Enter scene script here..."
-                        />
+                        <div className="relative">
+                            <textarea
+                                value={scene.text}
+                                onChange={(e) => onUpdate({ text: e.target.value })}
+                                className="w-full h-32 bg-transparent p-4 pb-12 text-zinc-100 focus:outline-none resize-none"
+                                placeholder="Enter scene script here..."
+                            />
+                            <div className="absolute bottom-3 left-3">
+                                <button
+                                    onClick={toggleListeningScript}
+                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all border text-[10px] font-bold uppercase tracking-wider ${isListeningScript
+                                            ? 'bg-red-500/20 border-red-500/50 text-red-500 animate-pulse'
+                                            : 'bg-zinc-800/50 border-zinc-700/50 text-zinc-400 hover:text-indigo-400 hover:border-indigo-500/30'
+                                        }`}
+                                >
+                                    {isListeningScript ? <MicOff className="w-3 h-3" /> : <Mic className="w-3 h-3" />}
+                                    {isListeningScript ? 'Stop' : 'Speak and write'}
+                                </button>
+                            </div>
+                        </div>
                         <div className="border-t border-zinc-800/50 p-3 flex items-center gap-4 bg-zinc-900/50">
                             {scene.audioUrl && (
                                 <button
@@ -268,12 +298,26 @@ export function SceneEditor({ scene, index, onUpdate }: SceneEditorProps) {
                             {/* Option 2: Generate */}
                             <div className="space-y-2">
                                 <label className="block text-sm font-medium text-zinc-400">Image Prompt</label>
-                                <textarea
-                                    value={scene.imagePrompt || scene.text}
-                                    onChange={(e) => onUpdate({ imagePrompt: e.target.value })}
-                                    className="w-full h-24 bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-sm text-zinc-100 focus:ring-2 focus:ring-pink-500/50 focus:outline-none resize-none"
-                                    placeholder="Describe the image..."
-                                />
+                                <div className="relative">
+                                    <textarea
+                                        value={scene.imagePrompt || scene.text}
+                                        onChange={(e) => onUpdate({ imagePrompt: e.target.value })}
+                                        className="w-full h-32 bg-zinc-950 border border-zinc-800 rounded-xl p-4 pb-12 text-sm text-zinc-100 focus:ring-2 focus:ring-pink-500/50 focus:outline-none resize-none"
+                                        placeholder="Describe the image..."
+                                    />
+                                    <div className="absolute bottom-3 left-3">
+                                        <button
+                                            onClick={toggleListeningImage}
+                                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all border text-[10px] font-bold uppercase tracking-wider ${isListeningImage
+                                                    ? 'bg-red-500/20 border-red-500/50 text-red-500 animate-pulse'
+                                                    : 'bg-zinc-800/50 border-zinc-700/50 text-zinc-400 hover:text-pink-400 hover:border-pink-500/30'
+                                                }`}
+                                        >
+                                            {isListeningImage ? <MicOff className="w-3 h-3" /> : <Mic className="w-3 h-3" />}
+                                            {isListeningImage ? 'Stop' : 'Speak and write'}
+                                        </button>
+                                    </div>
+                                </div>
                                 <button
                                     onClick={() => {
                                         handleRegenerateImage();
