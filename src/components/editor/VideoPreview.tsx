@@ -6,6 +6,7 @@ import { CaptionsTab } from './CaptionsTab';
 import { AudioTab } from './AudioTab';
 import { cn } from '../../lib/utils';
 import { X } from 'lucide-react';
+import { getTimedCaptions } from '../../lib/captions';
 
 interface VideoPreviewProps {
     scenes: Scene[];
@@ -21,6 +22,13 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
     const [isExporting, setIsExporting] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
     const [activeSubTab, setActiveSubTab] = useState<'preview' | 'captions' | 'audio'>('preview');
+
+    // Dynamic Captions
+    const captionSegments = useMemo(() => {
+        if (!scene?.text || !scene?.duration) return [];
+        return getTimedCaptions(scene.text, scene.duration);
+    }, [scene?.text, scene?.duration]);
+
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const autoPlayRef = useRef(false);
     // Ref for silence start
@@ -46,6 +54,17 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
         if (index === -1) return 0;
         return scenes.slice(0, index).reduce((acc, s) => acc + s.duration, 0);
     }, [scenes, currentSceneId]);
+
+    const activeCaption = useMemo(() => {
+        if (!scene) return '';
+        const localTime = Math.max(0, currentTime - currentSceneStartTime);
+        const segment = captionSegments.find(s => localTime >= s.start && localTime < s.end);
+        if (segment) return segment.text;
+        // Fallback to first segment if at start, or last if at end, or full text if no segments
+        if (localTime <= 0 && captionSegments.length > 0) return captionSegments[0].text;
+        if (localTime >= scene.duration && captionSegments.length > 0) return captionSegments[captionSegments.length - 1].text;
+        return scene.text;
+    }, [currentTime, currentSceneStartTime, captionSegments, scene]);
 
     const triggerNextScene = useCallback(() => {
         const currentIndex = scenes.findIndex(s => s.id === scene.id);
@@ -348,38 +367,38 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
 
                         // Draw Captions
                         if (s.captionsEnabled) {
-                            ctx.fillStyle = 'rgba(0,0,0,0.5)';
-                            // const padding = 20;
-                            ctx.font = 'bold 32px sans-serif';
-                            const text = s.text;
-                            // const metrics = ctx.measureText(text);
-                            // const textWidth = Math.min(metrics.width, canvas.width - 80);
+                            const sceneCaptions = getTimedCaptions(s.text, s.duration);
+                            const activeSeg = sceneCaptions.find(seg => elapsed >= seg.start && elapsed < seg.end);
+                            const text = activeSeg ? activeSeg.text : '';
 
-                            // Simple text wrapping
-                            const words = text.split(' ');
-                            let line = '';
-                            const lines = [];
-                            for (const word of words) {
-                                if (ctx.measureText(line + word).width < canvas.width - 80) {
-                                    line += word + ' ';
-                                } else {
-                                    lines.push(line);
-                                    line = word + ' ';
+                            if (text) {
+                                ctx.font = 'bold 32px sans-serif';
+                                // Simple text wrapping
+                                const words = text.split(' ');
+                                let line = '';
+                                const lines = [];
+                                for (const word of words) {
+                                    if (ctx.measureText(line + word).width < canvas.width - 80) {
+                                        line += word + ' ';
+                                    } else {
+                                        lines.push(line);
+                                        line = word + ' ';
+                                    }
                                 }
+                                lines.push(line);
+
+                                const lineHeight = 40;
+                                const totalHeight = lines.length * lineHeight;
+
+                                ctx.fillStyle = 'rgba(0,0,0,0.6)';
+                                ctx.fillRect(20, canvas.height - 150 - totalHeight, canvas.width - 40, totalHeight + 20);
+
+                                ctx.fillStyle = '#facc15'; // Yellow-400
+                                ctx.textAlign = 'center';
+                                lines.forEach((l, idx) => {
+                                    ctx.fillText(l.trim(), canvas.width / 2, canvas.height - 130 - totalHeight + (idx * lineHeight) + 30);
+                                });
                             }
-                            lines.push(line);
-
-                            const lineHeight = 40;
-                            const totalHeight = lines.length * lineHeight;
-
-                            ctx.fillStyle = 'rgba(0,0,0,0.6)';
-                            ctx.fillRect(20, canvas.height - 150 - totalHeight, canvas.width - 40, totalHeight + 20);
-
-                            ctx.fillStyle = '#facc15'; // Yellow-400
-                            ctx.textAlign = 'center';
-                            lines.forEach((l, idx) => {
-                                ctx.fillText(l.trim(), canvas.width / 2, canvas.height - 130 - totalHeight + (idx * lineHeight) + 30);
-                            });
                         }
 
                         requestAnimationFrame(renderFrame);
@@ -563,7 +582,7 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
                     {scene.captionsEnabled && (
                         <div className={captionStyle.container}>
                             <p className={captionStyle.text}>
-                                {scene.text}
+                                {activeCaption}
                             </p>
                         </div>
                     )}

@@ -159,6 +159,7 @@ app.post('/api/story', async (req, res) => {
 // Image Generation Endpoint (ImageRouter.io)
 app.post('/api/image/generate', async (req, res) => {
     const models = [
+        "openai/gpt-image-1.5:free",
         "bria/bria-3.2",
         "openai/gpt-image-1.5:free"
     ];

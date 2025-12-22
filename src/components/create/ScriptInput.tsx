@@ -15,7 +15,7 @@ export function ScriptInput({ value, onChange, disabled }: ScriptInputProps) {
                 onChange={(e) => onChange(e.target.value)}
                 disabled={disabled}
                 placeholder="भूतिया महल की कहानी..."
-                className="w-full h-40 bg-zinc-900 border border-zinc-800 rounded-xl p-4 text-lg text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 resize-none transition-all"
+                className="w-full h-40 bg-zinc-900 border border-zinc-800 rounded-xl p-4 text-lg text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 resize-none transition-all"
             />
             <p className="text-xs text-zinc-500">
                 Describe your video idea in Hindi. The AI will generate a script, scenes, and narration.
