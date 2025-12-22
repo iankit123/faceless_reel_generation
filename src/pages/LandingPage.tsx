@@ -77,17 +77,10 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
                 </div>
 
                 {/* Right Content - Tilted Cards */}
-                <div className="flex-1 relative w-full h-[400px] lg:h-[600px] mt-12 lg:mt-0 flex items-center justify-center">
-                    <div className="relative w-full max-w-[320px] lg:max-w-[480px] h-full">
+                <div className="flex-1 relative w-full max-w-md lg:max-w-none h-[400px] lg:h-[600px] mt-12 lg:mt-0">
+                    <div className="absolute inset-0 flex items-center justify-center">
                         {/* Card 1 */}
-                        <div
-                            className="absolute w-48 lg:w-64 aspect-[9/16] bg-zinc-900 rounded-2xl border border-zinc-800 shadow-2xl overflow-hidden z-10 transition-transform hover:scale-105 hover:z-30 duration-500"
-                            style={{
-                                top: '50%',
-                                left: '50%',
-                                transform: 'translate(-110%, -50%) rotate(-12deg)'
-                            }}
-                        >
+                        <div className="absolute w-48 lg:w-64 aspect-[9/16] bg-zinc-900 rounded-2xl border border-zinc-800 shadow-2xl overflow-hidden transform -rotate-12 -translate-x-32 lg:-translate-x-48 z-10 transition-transform hover:scale-105 hover:z-30 duration-500">
                             <img
                                 src="https://images.unsplash.com/photo-1582125169590-59f4985fb32a?auto=format&fit=crop&q=80&w=800"
                                 className="w-full h-full object-cover opacity-60"
@@ -101,14 +94,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
                         </div>
 
                         {/* Card 2 (Center) */}
-                        <div
-                            className="absolute w-56 lg:w-72 aspect-[9/16] bg-zinc-900 rounded-2xl border border-zinc-700 shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-hidden z-20 transition-transform hover:scale-105 duration-500"
-                            style={{
-                                top: '50%',
-                                left: '50%',
-                                transform: 'translate(-50%, -50%)'
-                            }}
-                        >
+                        <div className="absolute w-56 lg:w-72 aspect-[9/16] bg-zinc-900 rounded-2xl border border-zinc-700 shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-hidden z-20 transition-transform hover:scale-105 duration-500">
                             <img
                                 src="https://images.unsplash.com/photo-1541873676-a18131494184?auto=format&fit=crop&q=80&w=800"
                                 className="w-full h-full object-cover"
@@ -122,14 +108,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
                         </div>
 
                         {/* Card 3 */}
-                        <div
-                            className="absolute w-48 lg:w-64 aspect-[9/16] bg-zinc-900 rounded-2xl border border-zinc-800 shadow-2xl overflow-hidden z-10 transition-transform hover:scale-105 hover:z-30 duration-500"
-                            style={{
-                                top: '50%',
-                                left: '50%',
-                                transform: 'translate(10%, -50%) rotate(12deg)'
-                            }}
-                        >
+                        <div className="absolute w-48 lg:w-64 aspect-[9/16] bg-zinc-900 rounded-2xl border border-zinc-800 shadow-2xl overflow-hidden transform rotate-12 translate-x-32 lg:translate-x-48 z-10 transition-transform hover:scale-105 hover:z-30 duration-500">
                             <img
                                 src="https://plus.unsplash.com/premium_vector-1721077382049-f4deff3c4cf7?auto=format&fit=crop&q=80&w=800"
                                 className="w-full h-full object-cover opacity-60"
