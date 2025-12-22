@@ -619,11 +619,11 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
                 </div>
 
                 {isMobile && (
-                    <div className="w-full flex gap-2 mt-6 shrink-0">
+                    <div className="w-full flex gap-2 mt-8 shrink-0">
                         <button
                             onClick={() => setActiveSubTab(activeSubTab === 'captions' ? 'preview' : 'captions')}
                             className={cn(
-                                "flex-1 py-2 rounded-lg text-xs font-bold uppercase tracking-wider border transition-all flex items-center justify-center gap-2",
+                                "flex-1 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider border transition-all flex items-center justify-center gap-2",
                                 activeSubTab === 'captions'
                                     ? "bg-indigo-600 border-indigo-500 text-white"
                                     : "bg-zinc-900 border-zinc-800 text-zinc-400"
@@ -635,7 +635,7 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
                         <button
                             onClick={() => setActiveSubTab(activeSubTab === 'audio' ? 'preview' : 'audio')}
                             className={cn(
-                                "flex-1 py-2 rounded-lg text-xs font-bold uppercase tracking-wider border transition-all flex items-center justify-center gap-2",
+                                "flex-1 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider border transition-all flex items-center justify-center gap-2",
                                 activeSubTab === 'audio'
                                     ? "bg-indigo-600 border-indigo-500 text-white"
                                     : "bg-zinc-900 border-zinc-800 text-zinc-400"
@@ -650,15 +650,15 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
                 {isMobile && onBackToScenes && (
                     <button
                         onClick={onBackToScenes}
-                        className="w-full mt-4 py-3 bg-zinc-900 border border-zinc-800 rounded-xl text-xs font-bold text-zinc-400 hover:text-white hover:border-zinc-700 transition-all flex items-center justify-center gap-2 uppercase tracking-widest shadow-lg"
+                        className="w-full mt-1.5 py-2 bg-zinc-900 border border-zinc-800 rounded-xl text-[10px] font-bold text-zinc-400 hover:text-white hover:border-zinc-700 transition-all flex items-center justify-center gap-2 uppercase tracking-widest shadow-lg"
                     >
                         <Layers className="w-4 h-4" />
-                        Edit Video (Go to Scenes)
+                        Edit Video
                     </button>
                 )}
 
                 {/* Controls & Timeline */}
-                <div className="w-full mt-6 space-y-4">
+                <div className="w-full mt-2 space-y-4">
                     {/* Timeline */}
                     <div className="space-y-2">
                         <div className="flex justify-between text-[10px] lg:text-xs text-zinc-400 font-medium">
