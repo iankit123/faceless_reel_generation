@@ -81,8 +81,8 @@ export function CreateVideoPage() {
 
         // Use a timeout or small delay if needed or check context credits
         // But context credits might be 0 initially. Let's fetch directly to be safe.
-        const profile = await supabaseService.getProfile(user.id);
-        if (profile.credits <= 0) {
+        const { data: profile } = await supabaseService.getProfile(user.id);
+        if (!profile || (profile.credits ?? 0) <= 0) {
             setIsPurchaseModalOpen(true);
             return;
         }

@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { LogOut, Coins, User as UserIcon, CreditCard } from 'lucide-react';
-import { cn } from '../../lib/utils';
 
 export function Header() {
     const { user, credits, signOut } = useAuth();
