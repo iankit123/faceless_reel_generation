@@ -62,9 +62,11 @@ export interface VideoProject {
     id: string;
     title: string;
     theme?: string;
+    prompt?: string;
     scenes: Scene[];
     captionSettings: CaptionSettings;
     backgroundMusic?: BackgroundMusic;
+    narrationVolume: number; // 0 to 1
     language: string;
     createdAt: Date;
 }

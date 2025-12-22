@@ -18,6 +18,7 @@ interface VideoPreviewProps {
 }
 
 export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, forceAutoPlay, onBackToScenes }: VideoPreviewProps) {
+    const project = useVideoStore(state => state.project);
     const scene = scenes.find(s => s.id === currentSceneId) || scenes[0];
     const [isPlaying, setIsPlaying] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
@@ -96,6 +97,7 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
 
         if (scene?.audioUrl) {
             audioRef.current = new Audio(scene.audioUrl);
+            audioRef.current.volume = project?.narrationVolume ?? 1.0;
 
             // Handle audio ending
             audioRef.current.onended = () => {
@@ -126,7 +128,14 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
                 audioRef.current = null;
             }
         };
-    }, [scene?.audioUrl, scene?.id, currentSceneStartTime, scene?.duration]);
+    }, [scene?.audioUrl, scene?.id, currentSceneStartTime, scene?.duration, project?.narrationVolume]);
+
+    // Live Narration Volume Update
+    useEffect(() => {
+        if (audioRef.current) {
+            audioRef.current.volume = project?.narrationVolume ?? 1.0;
+        }
+    }, [project?.narrationVolume]);
 
     // Pending seek logic
     const pendingSeekRef = useRef<number | null>(null);
@@ -346,6 +355,7 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
                 const sceneAudio = new Audio(s.audioUrl);
                 sceneAudio.crossOrigin = "anonymous";
                 sceneAudio.preload = "auto";
+                sceneAudio.volume = project?.narrationVolume ?? 1.0;
 
                 await new Promise((resolve) => {
                     sceneAudio.oncanplaythrough = resolve;
@@ -479,7 +489,6 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
 
     // Background Music Ref
     const bgMusicRef = useRef<HTMLAudioElement | null>(null);
-    const project = useVideoStore(state => state.project);
 
     // Background Music Effect
     useEffect(() => {

@@ -26,6 +26,12 @@ export const handler = async (event: any) => {
                 name: 'Teddy',
                 url: '/background_music/Teddy.mp3',
                 duration: 0
+            },
+            {
+                id: 'doodoo',
+                name: 'Doodoo',
+                url: '/background_music/Doodoo.mp3',
+                duration: 0
             }
         ];
 

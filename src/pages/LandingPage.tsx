@@ -1,5 +1,5 @@
-import { ArrowRight, Star, Zap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { ArrowRight, Star, Zap } from 'lucide-react';
 
 export function LandingPage() {
     const navigate = useNavigate();

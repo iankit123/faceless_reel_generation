@@ -1,28 +1,38 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ScriptInput } from '../components/create/ScriptInput';
 import { Wand2 } from 'lucide-react';
 import { useVideoStore } from '../store/useVideoStore';
+import { useAuth } from '../contexts/AuthContext';
 import { storyService } from '../services/story';
 // import type { Scene } from '../types';
 
 export function CreateVideoPage() {
     const navigate = useNavigate();
+    const { user, signInWithGoogle } = useAuth();
     const [language, setLanguage] = useState('hinglish');
     const [script, setScript] = useState('');
     const isGenerating = useVideoStore((state) => state.isGenerating);
     const setGenerating = useVideoStore((state) => state.setGenerating);
     const initProject = useVideoStore((state) => state.initProject);
     const addScene = useVideoStore((state) => state.addScene);
+    const saveProject = useVideoStore((state) => state.saveProject);
 
     const handleGenerate = async () => {
         if (!script.trim()) return;
-        setGenerating(true);
 
+        if (!user) {
+            localStorage.setItem('pending_video_script', script);
+            localStorage.setItem('pending_video_language', language);
+            localStorage.setItem('is_generating_post_login', 'true');
+            await signInWithGoogle();
+            return;
+        }
+
+        setGenerating(true);
         try {
             const story = await storyService.generateStory({ prompt: script, language });
-
-            initProject(story.theme, language);
+            initProject(story.theme, language, script);
 
             story.scenes.forEach((s) => {
                 addScene({
@@ -37,14 +47,67 @@ export function CreateVideoPage() {
                 });
             });
 
+            try {
+                await saveProject(user.id);
+            } catch (saveError) {
+                console.warn('Failed to save project to Supabase, but continuing to editor:', saveError);
+            }
             navigate('/scenes');
-
         } catch (error) {
             console.error(error);
         } finally {
             setGenerating(false);
         }
     };
+
+    const triggerGenerate = async (finalScript: string, finalLanguage: string) => {
+        setGenerating(true);
+        try {
+            const story = await storyService.generateStory({ prompt: finalScript, language: finalLanguage });
+            initProject(story.theme, finalLanguage, finalScript);
+            story.scenes.forEach((s) => {
+                addScene({
+                    id: crypto.randomUUID(),
+                    text: s.text,
+                    duration: s.duration || 5,
+                    imagePrompt: s.imagePrompt,
+                    imageSettings: { width: 576, height: 1024, steps: 20, guidance: 7 },
+                    motionType: s.motionType || 'zoom_in',
+                    captionsEnabled: true,
+                    status: 'pending'
+                });
+            });
+            try {
+                if (user) await saveProject(user.id);
+            } catch (saveError) {
+                console.warn('Failed to auto-save project after login:', saveError);
+            }
+            navigate('/scenes');
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setGenerating(false);
+        }
+    };
+
+    useEffect(() => {
+        const isPostLogin = localStorage.getItem('is_generating_post_login') === 'true';
+        if (user && isPostLogin) {
+            const savedScript = localStorage.getItem('pending_video_script');
+            const savedLanguage = localStorage.getItem('pending_video_language');
+
+            if (savedScript && savedLanguage) {
+                setScript(savedScript);
+                setLanguage(savedLanguage);
+
+                localStorage.removeItem('is_generating_post_login');
+                localStorage.removeItem('pending_video_script');
+                localStorage.removeItem('pending_video_language');
+
+                triggerGenerate(savedScript, savedLanguage);
+            }
+        }
+    }, [user]);
 
     const prompts = {
         english: [

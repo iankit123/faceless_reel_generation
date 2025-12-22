@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { Scene, VideoProject } from '../types';
+import { supabaseService } from '../services/supabase';
 
 interface VideoState {
     project: VideoProject | null;
@@ -7,7 +8,7 @@ interface VideoState {
     currentSceneId: number | string | null;
 
     // Actions
-    initProject: (theme?: string, language?: string) => void;
+    initProject: (theme?: string, language?: string, prompt?: string) => void;
     setProject: (project: VideoProject) => void;
     updateScene: (sceneId: number | string, updates: Partial<Scene>) => void;
     addScene: (scene: Scene) => void;
@@ -17,20 +18,23 @@ interface VideoState {
     setCurrentSceneId: (id: number | string | null) => void;
     updateCaptionSettings: (settings: Partial<import('../types').CaptionSettings>) => void;
     setBackgroundMusic: (music: import('../types').BackgroundMusic | undefined) => void;
+    setNarrationVolume: (volume: number) => void;
+    saveProject: (userId: string) => Promise<void>;
     setTheme: (theme: string) => void;
     resetProject: () => void;
 }
 
-export const useVideoStore = create<VideoState>((set) => ({
+export const useVideoStore = create<VideoState>((set, get) => ({
     project: null,
     isGenerating: false,
     currentSceneId: null,
 
-    initProject: (theme, language) => set({
+    initProject: (theme, language, prompt) => set({
         project: {
             id: crypto.randomUUID(),
             title: 'New Video',
             theme,
+            prompt,
             scenes: [],
             captionSettings: { style: 'default' },
             backgroundMusic: {
@@ -38,6 +42,7 @@ export const useVideoStore = create<VideoState>((set) => ({
                 url: '/background_music/Else.mp3',
                 volume: 0.3
             },
+            narrationVolume: 1.0,
             language: language || 'hinglish',
             createdAt: new Date()
         }
@@ -92,6 +97,32 @@ export const useVideoStore = create<VideoState>((set) => ({
             }
         };
     }),
+    setNarrationVolume: (volume) => set((state) => {
+        if (!state.project) return state;
+        return {
+            project: {
+                ...state.project,
+                narrationVolume: volume
+            }
+        };
+    }),
+    saveProject: async (userId) => {
+        const { project } = get();
+        if (!project) return;
+
+        try {
+            await supabaseService.saveProject(project, userId);
+            // Save all scenes
+            await Promise.all(
+                project.scenes.map((scene, index) =>
+                    supabaseService.saveScene(scene, project.id, index)
+                )
+            );
+        } catch (error) {
+            console.error('Failed to save project to Supabase:', error);
+            throw error;
+        }
+    },
     setTheme: (theme) => set((state) => {
         if (!state.project) return state;
         return {

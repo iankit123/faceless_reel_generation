@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@andresaya/edge-tts": "^1.8.0",
+    "@supabase/supabase-js": "^2.89.0",
     "@tailwindcss/vite": "^4.1.18",
     "@types/uuid": "^10.0.0",
     "autoprefixer": "^10.4.23",
