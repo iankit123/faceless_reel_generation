@@ -71,6 +71,7 @@ export const handler = async (event: any) => {
                     Write a prompt for text to image generation
                     Describe key visual details (setting, subject appearance, environment, colors, textures)
                     Keep the theme same in all scenes consistent with the story context (Comic, Sketch, animated, fantasy, kids-friendly, etc). If mentioned specifically by user, use that theme.
+                    If a person is mentioned in image prompt, try to describe the person in detail speacially gender and age in all scenes, so that character remains similar in all scenes.
                     Internal guiding pattern:
                     “Image Theme: [Comic], [Ancient times] (same for all scenes)
                     Scene Description: [camera framing] of [subject] in [setting], [lighting], [mood], highly detailed, visually coherent”

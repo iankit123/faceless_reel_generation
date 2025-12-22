@@ -197,29 +197,31 @@ export function SceneEditor({ scene, index, onUpdate }: SceneEditorProps) {
                         </div>
 
                         <div className="space-y-4">
-                            <div>
-                                <label className="block text-xs font-medium text-zinc-500 mb-2">Motion Type</label>
-                                <select
-                                    value={scene.motionType}
-                                    onChange={(e) => onUpdate({ motionType: e.target.value as MotionType })}
-                                    className="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-3 text-sm text-zinc-200 focus:ring-2 focus:ring-pink-500/50 focus:outline-none"
-                                >
-                                    <option value="none">No Motion</option>
-                                    <option value="zoom_in">Zoom In</option>
-                                    <option value="pan_left">Pan Left</option>
-                                    <option value="pan_right">Pan Right</option>
-                                    <option value="pan_up">Pan Up</option>
-                                    <option value="pan_down">Pan Down</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label className="block text-xs font-medium text-zinc-500 mb-2">Duration (sec)</label>
-                                <input
-                                    type="number"
-                                    value={scene.duration}
-                                    onChange={(e) => onUpdate({ duration: Number(e.target.value) })}
-                                    className="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-3 text-sm text-zinc-200 focus:ring-2 focus:ring-pink-500/50 focus:outline-none"
-                                />
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-medium text-zinc-500 mb-2">Motion Type</label>
+                                    <select
+                                        value={scene.motionType}
+                                        onChange={(e) => onUpdate({ motionType: e.target.value as MotionType })}
+                                        className="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-3 text-sm text-zinc-200 focus:ring-2 focus:ring-pink-500/50 focus:outline-none"
+                                    >
+                                        <option value="none">No Motion</option>
+                                        <option value="zoom_in">Zoom In</option>
+                                        <option value="pan_left">Pan Left</option>
+                                        <option value="pan_right">Pan Right</option>
+                                        <option value="pan_up">Pan Up</option>
+                                        <option value="pan_down">Pan Down</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-medium text-zinc-500 mb-2">Duration (sec)</label>
+                                    <input
+                                        type="number"
+                                        value={scene.duration}
+                                        onChange={(e) => onUpdate({ duration: Number(e.target.value) })}
+                                        className="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-3 text-sm text-zinc-200 focus:ring-2 focus:ring-pink-500/50 focus:outline-none"
+                                    />
+                                </div>
                             </div>
 
                             <div className="pt-4 border-t border-zinc-800">

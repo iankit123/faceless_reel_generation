@@ -1,5 +1,6 @@
 import { Mic, MicOff, Trash2 } from 'lucide-react';
 import { useSpeechRecognition } from '../../hooks/useSpeechRecognition';
+import { useRef, useEffect } from 'react';
 
 interface ScriptInputProps {
     value: string;
@@ -11,12 +12,20 @@ interface ScriptInputProps {
 }
 
 export function ScriptInput({ value, onChange, disabled, label = "Video Idea", placeholder = "Describe your idea...", language = "english" }: ScriptInputProps) {
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
     const { isListening, toggleListening, isSupported } = useSpeechRecognition({
         onTranscript: (transcript) => {
             onChange(value + (value ? ' ' : '') + transcript);
         },
         language
     });
+
+    useEffect(() => {
+        if (textareaRef.current) {
+            textareaRef.current.style.height = 'auto';
+            textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+        }
+    }, [value]);
 
     if (!isSupported) {
         // Fallback or just hide the mic icon if not supported
@@ -30,11 +39,12 @@ export function ScriptInput({ value, onChange, disabled, label = "Video Idea", p
 
             <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl overflow-hidden focus-within:ring-2 focus-within:ring-cyan-500/50 transition-all backdrop-blur-sm">
                 <textarea
+                    ref={textareaRef}
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
                     disabled={disabled}
                     placeholder={placeholder}
-                    className="w-full h-40 bg-transparent p-6 text-lg text-zinc-100 placeholder:text-zinc-600 focus:outline-none resize-none"
+                    className="w-full min-h-[160px] bg-transparent p-6 text-lg text-zinc-100 placeholder:text-zinc-600 focus:outline-none resize-none overflow-hidden"
                 />
 
                 <div className="border-t border-zinc-800/50 p-4 bg-zinc-900/20 flex items-center justify-between">

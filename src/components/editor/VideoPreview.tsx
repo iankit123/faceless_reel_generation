@@ -1,5 +1,5 @@
 import type { Scene } from '../../types';
-import { Play, Pause, Download, Loader2, Type, Music, ArrowLeft } from 'lucide-react';
+import { Play, Pause, Download, Loader2, Type, Music, ArrowLeft, Layers } from 'lucide-react';
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useVideoStore } from '../../store/useVideoStore';
 import { CaptionsTab } from './CaptionsTab';
@@ -14,9 +14,10 @@ interface VideoPreviewProps {
     onSelectScene: (id: number | string) => void;
     isMobile?: boolean;
     forceAutoPlay?: boolean;
+    onBackToScenes?: () => void;
 }
 
-export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, forceAutoPlay }: VideoPreviewProps) {
+export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, forceAutoPlay, onBackToScenes }: VideoPreviewProps) {
     const scene = scenes.find(s => s.id === currentSceneId) || scenes[0];
     const [isPlaying, setIsPlaying] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
@@ -510,38 +511,11 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
             "border-zinc-800 bg-zinc-900/50 flex flex-col items-center h-full",
             isMobile ? "w-full p-4" : "w-96 border-l p-6 justify-center"
         )}>
-            {isMobile && (
-                <div className="w-full flex gap-2 mb-4 shrink-0">
-                    <button
-                        onClick={() => setActiveSubTab(activeSubTab === 'captions' ? 'preview' : 'captions')}
-                        className={cn(
-                            "flex-1 py-2 rounded-lg text-xs font-bold uppercase tracking-wider border transition-all flex items-center justify-center gap-2",
-                            activeSubTab === 'captions'
-                                ? "bg-indigo-600 border-indigo-500 text-white"
-                                : "bg-zinc-900 border-zinc-800 text-zinc-400"
-                        )}
-                    >
-                        <Type className="w-4 h-4" />
-                        Captions
-                    </button>
-                    <button
-                        onClick={() => setActiveSubTab(activeSubTab === 'audio' ? 'preview' : 'audio')}
-                        className={cn(
-                            "flex-1 py-2 rounded-lg text-xs font-bold uppercase tracking-wider border transition-all flex items-center justify-center gap-2",
-                            activeSubTab === 'audio'
-                                ? "bg-indigo-600 border-indigo-500 text-white"
-                                : "bg-zinc-900 border-zinc-800 text-zinc-400"
-                        )}
-                    >
-                        <Music className="w-4 h-4" />
-                        Background Music
-                    </button>
-                </div>
-            )}
+
 
             <div className="flex-1 w-full flex flex-col items-center justify-center overflow-hidden relative">
                 <button
-                    onClick={() => onSelectScene(scene.id)} // Trigger back to scenes or similar
+                    onClick={() => onBackToScenes ? onBackToScenes() : onSelectScene(scene.id)}
                     className="flex items-center gap-2 text-zinc-400 hover:text-white mb-4 self-start transition-colors"
                 >
                     <ArrowLeft className="w-5 h-5" />
@@ -595,6 +569,45 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
                         </div>
                     )}
                 </div>
+
+                {isMobile && (
+                    <div className="w-full flex gap-2 mt-6 shrink-0">
+                        <button
+                            onClick={() => setActiveSubTab(activeSubTab === 'captions' ? 'preview' : 'captions')}
+                            className={cn(
+                                "flex-1 py-2 rounded-lg text-xs font-bold uppercase tracking-wider border transition-all flex items-center justify-center gap-2",
+                                activeSubTab === 'captions'
+                                    ? "bg-indigo-600 border-indigo-500 text-white"
+                                    : "bg-zinc-900 border-zinc-800 text-zinc-400"
+                            )}
+                        >
+                            <Type className="w-4 h-4" />
+                            Captions
+                        </button>
+                        <button
+                            onClick={() => setActiveSubTab(activeSubTab === 'audio' ? 'preview' : 'audio')}
+                            className={cn(
+                                "flex-1 py-2 rounded-lg text-xs font-bold uppercase tracking-wider border transition-all flex items-center justify-center gap-2",
+                                activeSubTab === 'audio'
+                                    ? "bg-indigo-600 border-indigo-500 text-white"
+                                    : "bg-zinc-900 border-zinc-800 text-zinc-400"
+                            )}
+                        >
+                            <Music className="w-4 h-4" />
+                            Background Music
+                        </button>
+                    </div>
+                )}
+
+                {isMobile && onBackToScenes && (
+                    <button
+                        onClick={onBackToScenes}
+                        className="w-full mt-4 py-3 bg-zinc-900 border border-zinc-800 rounded-xl text-xs font-bold text-zinc-400 hover:text-white hover:border-zinc-700 transition-all flex items-center justify-center gap-2 uppercase tracking-widest shadow-lg"
+                    >
+                        <Layers className="w-4 h-4" />
+                        Edit Video (Go to Scenes)
+                    </button>
+                )}
 
                 {/* Controls & Timeline */}
                 <div className="w-full mt-6 space-y-4">

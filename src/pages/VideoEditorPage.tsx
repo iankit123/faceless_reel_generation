@@ -283,6 +283,7 @@ export function VideoEditorPage() {
                                 onSelectScene={setCurrentSceneId}
                                 isMobile={true}
                                 forceAutoPlay={forceAutoPlay}
+                                onBackToScenes={() => setMobileTab('scenes')}
                             />
                         </div>
                     )}
