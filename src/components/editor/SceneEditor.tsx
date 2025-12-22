@@ -1,5 +1,5 @@
 import type { Scene, MotionType } from '../../types';
-import { RefreshCw, Image as ImageIcon, Type, Play, Pause, Edit2, Upload, X, Loader2, Mic, MicOff } from 'lucide-react';
+import { RefreshCw, Image as ImageIcon, Type, Play, Pause, Edit2, Upload, X, Loader2, Mic, MicOff, Trash2 } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { useSpeechRecognition } from '../../hooks/useSpeechRecognition';
 import { ttsService } from '../../services/tts';
@@ -126,43 +126,53 @@ export function SceneEditor({ scene, index, onUpdate }: SceneEditorProps) {
                         </div>
                     </div>
                     <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-indigo-500/50 transition-all">
-                        <div className="relative">
-                            <textarea
-                                value={scene.text}
-                                onChange={(e) => onUpdate({ text: e.target.value })}
-                                className="w-full h-32 bg-transparent p-4 pb-12 text-zinc-100 focus:outline-none resize-none"
-                                placeholder="Enter scene script here..."
-                            />
-                            <div className="absolute bottom-3 left-3">
+                        <textarea
+                            value={scene.text}
+                            onChange={(e) => onUpdate({ text: e.target.value })}
+                            className="w-full h-32 bg-transparent p-4 text-zinc-100 focus:outline-none resize-none"
+                            placeholder="Enter scene script here..."
+                        />
+                        <div className="border-t border-zinc-800/50 p-3 bg-zinc-900/50 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
                                 <button
                                     onClick={toggleListeningScript}
                                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all border text-[10px] font-bold uppercase tracking-wider ${isListeningScript
-                                            ? 'bg-red-500/20 border-red-500/50 text-red-500 animate-pulse'
-                                            : 'bg-zinc-800/50 border-zinc-700/50 text-zinc-400 hover:text-indigo-400 hover:border-indigo-500/30'
+                                        ? 'bg-red-500/20 border-red-500/50 text-red-500 animate-pulse'
+                                        : 'bg-zinc-800/50 border-zinc-700/50 text-zinc-400 hover:text-indigo-400 hover:border-indigo-500/30'
                                         }`}
                                 >
                                     {isListeningScript ? <MicOff className="w-3 h-3" /> : <Mic className="w-3 h-3" />}
                                     {isListeningScript ? 'Stop' : 'Speak and write'}
                                 </button>
-                            </div>
-                        </div>
-                        <div className="border-t border-zinc-800/50 p-3 flex items-center gap-4 bg-zinc-900/50">
-                            {scene.audioUrl && (
+
+                                {scene.audioUrl && (
+                                    <button
+                                        onClick={toggleAudio}
+                                        className="p-2 rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-100 transition-colors"
+                                        title={isPlaying ? "Pause" : "Play"}
+                                    >
+                                        {isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+                                    </button>
+                                )}
+
                                 <button
-                                    onClick={toggleAudio}
-                                    className="p-2.5 rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-100 transition-colors shadow-lg"
-                                    title={isPlaying ? "Pause" : "Play"}
+                                    onClick={() => onUpdate({ text: '' })}
+                                    disabled={!scene.text}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all border border-zinc-700/50 text-zinc-400 hover:text-red-400 hover:border-red-500/30 hover:bg-zinc-800 disabled:opacity-30"
+                                    title="Clear script"
                                 >
-                                    {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                                    <Trash2 className="w-3 h-3" />
+                                    <span className="text-[10px] font-bold uppercase tracking-wider">Clear</span>
                                 </button>
-                            )}
+                            </div>
+
                             <button
                                 onClick={handleRegenerateAudio}
                                 disabled={isRegeneratingAudio}
-                                className="text-sm text-indigo-400 hover:text-indigo-300 flex items-center gap-2 transition-colors disabled:opacity-50 font-medium"
+                                className="text-[10px] font-bold uppercase tracking-wider text-indigo-400 hover:text-indigo-300 flex items-center gap-2 transition-colors disabled:opacity-50"
                             >
-                                <RefreshCw className={`w-4 h-4 ${isRegeneratingAudio ? 'animate-spin' : ''}`} />
-                                {isRegeneratingAudio ? 'Generating...' : 'Regenerate Audio'}
+                                <RefreshCw className={`w-3 h-3 ${isRegeneratingAudio ? 'animate-spin' : ''}`} />
+                                {isRegeneratingAudio ? 'Generating...' : 'Audio'}
                             </button>
                         </div>
                     </div>
@@ -298,23 +308,33 @@ export function SceneEditor({ scene, index, onUpdate }: SceneEditorProps) {
                             {/* Option 2: Generate */}
                             <div className="space-y-2">
                                 <label className="block text-sm font-medium text-zinc-400">Image Prompt</label>
-                                <div className="relative">
+                                <div className="bg-zinc-950 border border-zinc-800 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-pink-500/50 transition-all">
                                     <textarea
-                                        value={scene.imagePrompt || scene.text}
+                                        value={scene.imagePrompt ?? scene.text}
                                         onChange={(e) => onUpdate({ imagePrompt: e.target.value })}
-                                        className="w-full h-32 bg-zinc-950 border border-zinc-800 rounded-xl p-4 pb-12 text-sm text-zinc-100 focus:ring-2 focus:ring-pink-500/50 focus:outline-none resize-none"
+                                        className="w-full h-32 bg-transparent p-4 text-sm text-zinc-100 focus:outline-none resize-none"
                                         placeholder="Describe the image..."
                                     />
-                                    <div className="absolute bottom-3 left-3">
+                                    <div className="border-t border-zinc-800/50 p-3 bg-zinc-900/50 flex items-center justify-between">
                                         <button
                                             onClick={toggleListeningImage}
                                             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all border text-[10px] font-bold uppercase tracking-wider ${isListeningImage
-                                                    ? 'bg-red-500/20 border-red-500/50 text-red-500 animate-pulse'
-                                                    : 'bg-zinc-800/50 border-zinc-700/50 text-zinc-400 hover:text-pink-400 hover:border-pink-500/30'
+                                                ? 'bg-red-500/20 border-red-500/50 text-red-500 animate-pulse'
+                                                : 'bg-zinc-800/50 border-zinc-700/50 text-zinc-400 hover:text-pink-400 hover:border-pink-500/30'
                                                 }`}
                                         >
                                             {isListeningImage ? <MicOff className="w-3 h-3" /> : <Mic className="w-3 h-3" />}
                                             {isListeningImage ? 'Stop' : 'Speak and write'}
+                                        </button>
+
+                                        <button
+                                            onClick={() => onUpdate({ imagePrompt: '' })}
+                                            disabled={!scene.imagePrompt && !scene.text}
+                                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all border border-zinc-700/50 text-zinc-400 hover:text-red-400 hover:border-red-500/30 hover:bg-zinc-800 disabled:opacity-30"
+                                            title="Clear prompt"
+                                        >
+                                            <Trash2 className="w-3 h-3" />
+                                            <span className="text-[10px] font-bold uppercase tracking-wider">Clear</span>
                                         </button>
                                     </div>
                                 </div>
