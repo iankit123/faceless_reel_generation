@@ -534,7 +534,7 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
                         )}
                     >
                         <Music className="w-4 h-4" />
-                        Audio
+                        Background Music
                     </button>
                 </div>
             )}
