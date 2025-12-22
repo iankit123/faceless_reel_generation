@@ -211,7 +211,7 @@ export function VideoEditorPage() {
             {/* Mobile Layout */}
             <div className="flex lg:hidden flex-col h-full w-full overflow-hidden">
                 {/* Mobile Top Navigation */}
-                <div className="h-14 border-b border-zinc-800 bg-zinc-950 flex items-center shrink-0">
+                <div className="h-14 border-b border-zinc-800 bg-zinc-950 flex items-center shrink-0 sticky top-0 z-50">
                     <button
                         onClick={() => setMobileTab('scenes')}
                         className={cn(

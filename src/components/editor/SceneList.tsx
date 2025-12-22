@@ -1,6 +1,6 @@
 import type { Scene } from '../../types';
 import { cn } from '../../lib/utils';
-import { Clock, Image as ImageIcon, Loader2, Mic, Plus, Trash2, Play } from 'lucide-react';
+import { Clock, Image as ImageIcon, Loader2, Mic, Plus, Trash2, Play, Pencil } from 'lucide-react';
 import { useVideoStore } from '../../store/useVideoStore';
 
 interface SceneListProps {
@@ -12,7 +12,7 @@ interface SceneListProps {
     isMobile?: boolean;
 }
 
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { ConfirmModal } from '../ui/ConfirmModal';
 
 export function SceneList({ scenes, currentSceneId, onSelectScene, onPlayScene, onPlayAll, isMobile }: SceneListProps) {
@@ -20,6 +20,19 @@ export function SceneList({ scenes, currentSceneId, onSelectScene, onPlayScene, 
     const removeScene = useVideoStore(state => state.removeScene);
     const [sceneToDelete, setSceneToDelete] = useState<number | string | null>(null);
     const [loadedImages, setLoadedImages] = useState<Record<string | number, boolean>>({});
+    const [timer, setTimer] = useState(60);
+
+    const isGenerating = useMemo(() => scenes.some(s => s.status !== 'ready'), [scenes]);
+
+    useEffect(() => {
+        let interval: any;
+        if (isGenerating && timer > 0) {
+            interval = setInterval(() => {
+                setTimer(prev => prev - 1);
+            }, 1000);
+        }
+        return () => clearInterval(interval);
+    }, [isGenerating, timer]);
 
     const handleImageLoad = (sceneId: string | number) => {
         setLoadedImages(prev => ({ ...prev, [sceneId]: true }));
@@ -41,7 +54,7 @@ export function SceneList({ scenes, currentSceneId, onSelectScene, onPlayScene, 
 
     return (
         <div className="flex flex-col h-full">
-            <div className="p-4 border-b border-zinc-800 flex items-center justify-between">
+            <div className="p-4 border-b border-zinc-800 flex items-center justify-between bg-zinc-950/50 backdrop-blur-sm sticky top-0 z-30">
                 <div>
                     <h2 className="font-semibold text-zinc-100">Scenes</h2>
                     <p className="text-xs text-zinc-500">{scenes.length} scenes • {scenes.reduce((acc, s) => acc + s.duration, 0).toFixed(1)}s total</p>
@@ -59,6 +72,23 @@ export function SceneList({ scenes, currentSceneId, onSelectScene, onPlayScene, 
                     </button>
                 )}
             </div>
+
+            {/* Progress Indicator */}
+            <div className="px-4 py-3 bg-indigo-500/5 border-b border-zinc-800/50">
+                <p className={cn(
+                    "text-xs font-bold text-center transition-colors",
+                    isGenerating ? "text-indigo-400" : "text-green-400"
+                )}>
+                    {!isGenerating ? (
+                        "video generation complete"
+                    ) : timer > 0 ? (
+                        `Video generation in progress. It will take ${timer} sec`
+                    ) : (
+                        "it is taking more time, please wait"
+                    )}
+                </p>
+            </div>
+
             <div className="flex-1 overflow-y-auto p-2 space-y-2">
                 {scenes.map((scene, index) => (
                     <div key={scene.id} className="relative group/item">
@@ -78,11 +108,21 @@ export function SceneList({ scenes, currentSceneId, onSelectScene, onPlayScene, 
                             <div
                                 role="button"
                                 tabIndex={0}
-                                onClick={() => onSelectScene(scene.id)}
+                                onClick={() => {
+                                    if (isMobile && onPlayScene) {
+                                        onPlayScene(scene.id);
+                                    } else {
+                                        onSelectScene(scene.id);
+                                    }
+                                }}
                                 onKeyDown={(e) => {
                                     if (e.key === 'Enter' || e.key === ' ') {
                                         e.preventDefault();
-                                        onSelectScene(scene.id);
+                                        if (isMobile && onPlayScene) {
+                                            onPlayScene(scene.id);
+                                        } else {
+                                            onSelectScene(scene.id);
+                                        }
                                     }
                                 }}
                                 className={cn(
@@ -97,22 +137,29 @@ export function SceneList({ scenes, currentSceneId, onSelectScene, onPlayScene, 
                                         <span className="text-[10px] font-bold text-zinc-600 font-mono">#{index + 1}</span>
                                     </div>
                                     <div className="w-16 h-16 bg-zinc-950 rounded-md flex items-center justify-center text-zinc-700 border border-zinc-800 shrink-0 overflow-hidden relative">
-                                        {(scene.status === 'generating_image' || (scene.imageUrl && !loadedImages[scene.id])) ? (
+                                        {(scene.status !== 'ready' || (scene.imageUrl && !loadedImages[scene.id])) ? (
                                             <div className="absolute inset-0 flex items-center justify-center bg-zinc-900/80 z-10">
                                                 <Loader2 className="w-5 h-5 text-indigo-500 animate-spin" />
                                             </div>
                                         ) : null}
 
                                         {scene.imageUrl ? (
-                                            <img
-                                                src={scene.imageUrl}
-                                                alt=""
-                                                className={cn(
-                                                    "w-full h-full object-cover transition-opacity duration-300",
-                                                    loadedImages[scene.id] ? "opacity-100" : "opacity-0"
+                                            <div className="relative w-full h-full">
+                                                <img
+                                                    src={scene.imageUrl}
+                                                    alt=""
+                                                    className={cn(
+                                                        "w-full h-full object-cover transition-opacity duration-300",
+                                                        loadedImages[scene.id] ? "opacity-100" : "opacity-0"
+                                                    )}
+                                                    onLoad={() => handleImageLoad(scene.id)}
+                                                />
+                                                {loadedImages[scene.id] && (
+                                                    <div className="absolute inset-0 flex items-center justify-center bg-white/10 group-hover:bg-white/20 transition-colors pointer-events-none">
+                                                        <Play className="w-6 h-6 text-white/70 drop-shadow-sm fill-current" />
+                                                    </div>
                                                 )}
-                                                onLoad={() => handleImageLoad(scene.id)}
-                                            />
+                                            </div>
                                         ) : (
                                             <ImageIcon className="w-5 h-5 opacity-20" />
                                         )}
@@ -121,12 +168,26 @@ export function SceneList({ scenes, currentSceneId, onSelectScene, onPlayScene, 
                                         <p className="text-sm text-zinc-300 line-clamp-2 mb-2 leading-snug">
                                             {scene.text || <span className="italic text-zinc-600">Empty scene</span>}
                                         </p>
-                                        <div className="flex items-center gap-2 text-[10px] text-zinc-500">
-                                            <span className="flex items-center gap-1 bg-zinc-950 px-1.5 py-0.5 rounded border border-zinc-800">
-                                                <Clock className="w-3 h-3" /> {scene.duration}s
-                                            </span>
-                                            {scene.audioUrl && <Mic className="w-3 h-3 text-green-500" />}
-                                            {scene.imageUrl && <ImageIcon className="w-3 h-3 text-blue-500" />}
+                                        <div className="flex items-center justify-between gap-2">
+                                            <div className="flex items-center gap-2 text-[10px] text-zinc-500">
+                                                <span className="flex items-center gap-1 bg-zinc-950 px-1.5 py-0.5 rounded border border-zinc-800">
+                                                    <Clock className="w-3 h-3" /> {scene.duration}s
+                                                </span>
+                                                {scene.audioUrl && <Mic className="w-3 h-3 text-green-500" />}
+                                                {scene.imageUrl && <ImageIcon className="w-3 h-3 text-blue-500" />}
+                                            </div>
+
+                                            {/* Edit Button */}
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    onSelectScene(scene.id);
+                                                }}
+                                                className="flex items-center gap-1.5 px-3 py-1 bg-black border border-zinc-800 rounded-full text-[10px] font-bold text-zinc-400 hover:text-indigo-400 hover:border-indigo-500/50 transition-all uppercase tracking-wider shadow-sm"
+                                            >
+                                                <Pencil className="w-3 h-3" />
+                                                <span>Edit Scene</span>
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
@@ -148,20 +209,6 @@ export function SceneList({ scenes, currentSceneId, onSelectScene, onPlayScene, 
                             >
                                 <Trash2 className={cn("w-4 h-4", isMobile && "w-3.5 h-3.5")} />
                             </button>
-
-                            {/* Play Button - Mobile Only */}
-                            {isMobile && onPlayScene && (
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        onPlayScene(scene.id);
-                                    }}
-                                    className="absolute bottom-2 right-2 p-2 rounded-full bg-indigo-600 text-white shadow-lg active:scale-95 transition-transform z-20"
-                                    title="Play from here"
-                                >
-                                    <Play className="w-3.5 h-3.5 fill-current" />
-                                </button>
-                            )}
                         </div>
 
                         {/* Insert Button After */}

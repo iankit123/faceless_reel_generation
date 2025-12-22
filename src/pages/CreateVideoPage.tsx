@@ -125,40 +125,40 @@ export function CreateVideoPage() {
                                 language={language}
                             />
 
+                            <button
+                                onClick={handleGenerate}
+                                disabled={isGenerating || !script.trim()}
+                                className="group relative w-full bg-cyan-500 hover:bg-cyan-400 disabled:opacity-50 disabled:cursor-not-allowed text-zinc-950 font-black py-5 rounded-2xl flex items-center justify-center gap-3 transition-all shadow-[0_0_30px_rgba(34,211,238,0.2)] active:scale-[0.98]"
+                            >
+                                {isGenerating ? (
+                                    <>
+                                        <div className="w-6 h-6 border-3 border-zinc-950/30 border-t-zinc-950 rounded-full animate-spin" />
+                                        <span className="text-lg">Generating Magic...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Wand2 className="w-6 h-6 group-hover:rotate-12 transition-transform" />
+                                        <span className="text-lg uppercase tracking-tight">Generate Video</span>
+                                    </>
+                                )}
+                            </button>
+
                             {/* Example Prompts */}
                             <div className="space-y-3">
                                 <label className="block text-sm font-bold text-zinc-500 uppercase tracking-wider">Try these ideas</label>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                <div className="flex flex-wrap gap-2">
                                     {currentPrompts.map((p, i) => (
                                         <button
                                             key={i}
                                             onClick={() => setScript(p)}
-                                            className="text-[11px] bg-zinc-900/50 hover:bg-zinc-800/80 border border-zinc-800 hover:border-cyan-500/30 text-zinc-400 hover:text-zinc-100 px-4 py-3 rounded-xl transition-all text-left w-full backdrop-blur-sm group"
+                                            className="text-[11px] bg-zinc-900/50 hover:bg-zinc-800/80 border border-zinc-800 hover:border-cyan-500/30 text-zinc-400 hover:text-zinc-100 px-4 py-2 rounded-xl transition-all text-left backdrop-blur-sm group"
                                         >
-                                            <span className="line-clamp-1">{p}</span>
+                                            <span>{p}</span>
                                         </button>
                                     ))}
                                 </div>
                             </div>
                         </div>
-
-                        <button
-                            onClick={handleGenerate}
-                            disabled={isGenerating || !script.trim()}
-                            className="group relative w-full bg-cyan-500 hover:bg-cyan-400 disabled:opacity-50 disabled:cursor-not-allowed text-zinc-950 font-black py-5 rounded-2xl flex items-center justify-center gap-3 transition-all shadow-[0_0_30px_rgba(34,211,238,0.2)] active:scale-[0.98]"
-                        >
-                            {isGenerating ? (
-                                <>
-                                    <div className="w-6 h-6 border-3 border-zinc-950/30 border-t-zinc-950 rounded-full animate-spin" />
-                                    <span className="text-lg">Generating Magic...</span>
-                                </>
-                            ) : (
-                                <>
-                                    <Wand2 className="w-6 h-6 group-hover:rotate-12 transition-transform" />
-                                    <span className="text-lg uppercase tracking-tight">Generate Video</span>
-                                </>
-                            )}
-                        </button>
                     </div>
 
                     {/* Right Column - Preview Mock */}

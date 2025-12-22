@@ -1,5 +1,5 @@
 import type { Scene } from '../../types';
-import { Play, Pause, Download, Loader2, Type, Music } from 'lucide-react';
+import { Play, Pause, Download, Loader2, Type, Music, ArrowLeft } from 'lucide-react';
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useVideoStore } from '../../store/useVideoStore';
 import { CaptionsTab } from './CaptionsTab';
@@ -540,6 +540,14 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
             )}
 
             <div className="flex-1 w-full flex flex-col items-center justify-center overflow-hidden relative">
+                <button
+                    onClick={() => onSelectScene(scene.id)} // Trigger back to scenes or similar
+                    className="flex items-center gap-2 text-zinc-400 hover:text-white mb-4 self-start transition-colors"
+                >
+                    <ArrowLeft className="w-5 h-5" />
+                    <span className="text-sm font-bold uppercase tracking-wider">Go Back</span>
+                </button>
+
                 {isMobile && activeSubTab !== 'preview' && (
                     <div className="absolute inset-0 z-50 bg-zinc-950/95 backdrop-blur-sm overflow-y-auto p-4">
                         <div className="flex justify-between items-center mb-6">
