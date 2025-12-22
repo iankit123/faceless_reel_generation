@@ -1,17 +1,21 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ScriptInput } from '../components/create/ScriptInput';
-import { Wand2 } from 'lucide-react';
+import { Wand2, AlertCircle } from 'lucide-react';
 import { useVideoStore } from '../store/useVideoStore';
 import { useAuth } from '../contexts/AuthContext';
 import { storyService } from '../services/story';
+import { Header } from '../components/layout/Header';
+import { PurchaseCreditModal } from '../components/modals/PurchaseCreditModal';
+import { supabaseService } from '../services/supabase';
 // import type { Scene } from '../types';
 
 export function CreateVideoPage() {
     const navigate = useNavigate();
-    const { user, signInWithGoogle } = useAuth();
+    const { user, signInWithGoogle, credits, refreshCredits } = useAuth();
     const [language, setLanguage] = useState('hinglish');
     const [script, setScript] = useState('');
+    const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
     const isGenerating = useVideoStore((state) => state.isGenerating);
     const setGenerating = useVideoStore((state) => state.setGenerating);
     const initProject = useVideoStore((state) => state.initProject);
@@ -29,8 +33,17 @@ export function CreateVideoPage() {
             return;
         }
 
+        if (credits <= 0) {
+            setIsPurchaseModalOpen(true);
+            return;
+        }
+
         setGenerating(true);
         try {
+            // Decrement credit immediately to prevent double usage
+            await supabaseService.decrementCredits(user.id);
+            await refreshCredits();
+
             const story = await storyService.generateStory({ prompt: script, language });
             initProject(story.theme, language, script);
 
@@ -61,8 +74,24 @@ export function CreateVideoPage() {
     };
 
     const triggerGenerate = async (finalScript: string, finalLanguage: string) => {
+        if (!user) return;
+
+        // Wait for credits to be refreshed first as this runs right after login
+        await refreshCredits();
+
+        // Use a timeout or small delay if needed or check context credits
+        // But context credits might be 0 initially. Let's fetch directly to be safe.
+        const profile = await supabaseService.getProfile(user.id);
+        if (profile.credits <= 0) {
+            setIsPurchaseModalOpen(true);
+            return;
+        }
+
         setGenerating(true);
         try {
+            await supabaseService.decrementCredits(user.id);
+            await refreshCredits();
+
             const story = await storyService.generateStory({ prompt: finalScript, language: finalLanguage });
             initProject(story.theme, finalLanguage, finalScript);
             story.scenes.forEach((s) => {
@@ -133,6 +162,12 @@ export function CreateVideoPage() {
 
     return (
         <div className="min-h-screen bg-zinc-950 text-zinc-100 overflow-hidden relative selection:bg-cyan-500/30">
+            <Header />
+            <PurchaseCreditModal
+                isOpen={isPurchaseModalOpen}
+                onClose={() => setIsPurchaseModalOpen(false)}
+            />
+
             {/* Background Grid Pattern */}
             <div className="absolute inset-0 z-0 opacity-20"
                 style={{
@@ -145,7 +180,7 @@ export function CreateVideoPage() {
             <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-500/5 blur-[120px] rounded-full z-0" />
             <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-cyan-500/5 blur-[120px] rounded-full z-0" />
 
-            <div className="relative z-10 max-w-7xl mx-auto px-6 py-12 lg:py-20 min-h-screen flex items-center">
+            <div className="relative z-10 max-w-7xl mx-auto px-6 pt-28 pb-12 lg:pt-36 lg:pb-20 min-h-screen flex items-center">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 w-full items-center">
                     {/* Left Column */}
                     <div className="lg:col-span-7 flex flex-col justify-center space-y-8">
@@ -205,6 +240,13 @@ export function CreateVideoPage() {
                                     </>
                                 )}
                             </button>
+
+                            {credits === 0 && user && (
+                                <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center gap-3 animate-in fade-in slide-in-from-top-1">
+                                    <AlertCircle className="w-5 h-5 text-amber-500 shrink-0" />
+                                    <p className="text-xs text-amber-200 font-medium">You have 0 credits. <button onClick={() => setIsPurchaseModalOpen(true)} className="text-amber-400 underline hover:text-amber-300">Buy more credits</button> to generate.</p>
+                                </div>
+                            )}
 
                             {/* Example Prompts */}
                             <div className="space-y-3">

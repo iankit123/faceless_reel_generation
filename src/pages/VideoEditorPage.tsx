@@ -6,7 +6,7 @@ import { CaptionsTab } from '../components/editor/CaptionsTab';
 import { AudioTab } from '../components/editor/AudioTab';
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Layers, Type, Music, ArrowLeft, Play } from 'lucide-react';
+import { Layers, Type, Music, ArrowLeft, Play, PlusIcon } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 type EditorTab = 'frames' | 'captions' | 'audio';
@@ -212,6 +212,18 @@ export function VideoEditorPage() {
             <div className="flex lg:hidden flex-col h-full w-full overflow-hidden">
                 {/* Mobile Top Navigation */}
                 <div className="h-14 border-b border-zinc-800 bg-zinc-950 flex items-center shrink-0 sticky top-0 z-50">
+                    <button
+                        onClick={() => {
+                            if (window.confirm('Start a new video? This will clear your current project.')) {
+                                resetProject();
+                                navigate('/videoprompt');
+                            }
+                        }}
+                        className="flex-1 h-full flex flex-col items-center justify-center gap-1 transition-all relative text-zinc-500 hover:text-zinc-400"
+                    >
+                        <PlusIcon className="w-5 h-5 rotate-90" /> {/* Or a Plus icon */}
+                        <span className="text-[10px] font-bold uppercase tracking-wider">New Video</span>
+                    </button>
                     <button
                         onClick={() => setMobileTab('scenes')}
                         className={cn(
