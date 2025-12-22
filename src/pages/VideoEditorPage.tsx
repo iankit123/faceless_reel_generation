@@ -212,12 +212,17 @@ export function VideoEditorPage() {
                     <button
                         onClick={() => setMobileTab('scenes')}
                         className={cn(
-                            "flex-1 h-full flex flex-col items-center justify-center gap-1 transition-all",
-                            mobileTab === 'scenes' ? "text-indigo-400" : "text-zinc-500"
+                            "flex-1 h-full flex flex-col items-center justify-center gap-1 transition-all relative",
+                            mobileTab === 'scenes'
+                                ? "text-indigo-400 bg-indigo-500/5"
+                                : "text-zinc-500 hover:text-zinc-400"
                         )}
                     >
                         <Layers className="w-5 h-5" />
                         <span className="text-[10px] font-bold uppercase tracking-wider">Scenes</span>
+                        {mobileTab === 'scenes' && (
+                            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-500" />
+                        )}
                     </button>
                     <button
                         onClick={() => {
@@ -225,12 +230,17 @@ export function VideoEditorPage() {
                             setForceAutoPlay(false);
                         }}
                         className={cn(
-                            "flex-1 h-full flex flex-col items-center justify-center gap-1 transition-all",
-                            mobileTab === 'preview' ? "text-indigo-400" : "text-zinc-500"
+                            "flex-1 h-full flex flex-col items-center justify-center gap-1 transition-all relative",
+                            mobileTab === 'preview'
+                                ? "text-indigo-400 bg-indigo-500/5"
+                                : "text-zinc-500 hover:text-zinc-400"
                         )}
                     >
                         <Play className="w-5 h-5" />
                         <span className="text-[10px] font-bold uppercase tracking-wider">Preview</span>
+                        {mobileTab === 'preview' && (
+                            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-500" />
+                        )}
                     </button>
                 </div>
 
@@ -250,6 +260,13 @@ export function VideoEditorPage() {
                                         setCurrentSceneId(id);
                                         setMobileTab('preview');
                                         setForceAutoPlay(true);
+                                    }}
+                                    onPlayAll={() => {
+                                        if (project.scenes.length > 0) {
+                                            setCurrentSceneId(project.scenes[0].id);
+                                            setMobileTab('preview');
+                                            setForceAutoPlay(true);
+                                        }
                                     }}
                                     isMobile={true}
                                 />

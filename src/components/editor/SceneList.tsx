@@ -8,16 +8,22 @@ interface SceneListProps {
     currentSceneId: number | string | null;
     onSelectScene: (id: number | string) => void;
     onPlayScene?: (id: number | string) => void;
+    onPlayAll?: () => void;
     isMobile?: boolean;
 }
 
 import { useState } from 'react';
 import { ConfirmModal } from '../ui/ConfirmModal';
 
-export function SceneList({ scenes, currentSceneId, onSelectScene, onPlayScene, isMobile }: SceneListProps) {
+export function SceneList({ scenes, currentSceneId, onSelectScene, onPlayScene, onPlayAll, isMobile }: SceneListProps) {
     const addSceneAt = useVideoStore(state => state.addSceneAt);
     const removeScene = useVideoStore(state => state.removeScene);
     const [sceneToDelete, setSceneToDelete] = useState<number | string | null>(null);
+    const [loadedImages, setLoadedImages] = useState<Record<string | number, boolean>>({});
+
+    const handleImageLoad = (sceneId: string | number) => {
+        setLoadedImages(prev => ({ ...prev, [sceneId]: true }));
+    };
 
     const handleAddScene = (index: number) => {
         const newScene: Scene = {
@@ -35,9 +41,23 @@ export function SceneList({ scenes, currentSceneId, onSelectScene, onPlayScene, 
 
     return (
         <div className="flex flex-col h-full">
-            <div className="p-4 border-b border-zinc-800">
-                <h2 className="font-semibold text-zinc-100">Scenes</h2>
-                <p className="text-xs text-zinc-500">{scenes.length} scenes • {scenes.reduce((acc, s) => acc + s.duration, 0).toFixed(1)}s total</p>
+            <div className="p-4 border-b border-zinc-800 flex items-center justify-between">
+                <div>
+                    <h2 className="font-semibold text-zinc-100">Scenes</h2>
+                    <p className="text-xs text-zinc-500">{scenes.length} scenes • {scenes.reduce((acc, s) => acc + s.duration, 0).toFixed(1)}s total</p>
+                </div>
+                {onPlayAll && (
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onPlayAll();
+                        }}
+                        className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-600/10 border border-indigo-500/20 text-indigo-400 hover:bg-indigo-600 hover:text-white transition-all active:scale-95"
+                    >
+                        <Play className="w-3.5 h-3.5 fill-current" />
+                        <span className="text-[10px] font-bold uppercase tracking-wider">Play All</span>
+                    </button>
+                )}
             </div>
             <div className="flex-1 overflow-y-auto p-2 space-y-2">
                 {scenes.map((scene, index) => (
@@ -77,14 +97,21 @@ export function SceneList({ scenes, currentSceneId, onSelectScene, onPlayScene, 
                                         <span className="text-[10px] font-bold text-zinc-600 font-mono">#{index + 1}</span>
                                     </div>
                                     <div className="w-16 h-16 bg-zinc-950 rounded-md flex items-center justify-center text-zinc-700 border border-zinc-800 shrink-0 overflow-hidden relative">
-                                        {scene.status === 'generating_image' ? (
-                                            <div className="absolute inset-0 flex items-center justify-center bg-zinc-900/80">
+                                        {(scene.status === 'generating_image' || (scene.imageUrl && !loadedImages[scene.id])) ? (
+                                            <div className="absolute inset-0 flex items-center justify-center bg-zinc-900/80 z-10">
                                                 <Loader2 className="w-5 h-5 text-indigo-500 animate-spin" />
                                             </div>
-                                        ) : scene.imageUrl ? (
-                                            <div
-                                                className="w-full h-full bg-cover bg-center"
-                                                style={{ backgroundImage: `url(${scene.imageUrl})` }}
+                                        ) : null}
+
+                                        {scene.imageUrl ? (
+                                            <img
+                                                src={scene.imageUrl}
+                                                alt=""
+                                                className={cn(
+                                                    "w-full h-full object-cover transition-opacity duration-300",
+                                                    loadedImages[scene.id] ? "opacity-100" : "opacity-0"
+                                                )}
+                                                onLoad={() => handleImageLoad(scene.id)}
                                             />
                                         ) : (
                                             <ImageIcon className="w-5 h-5 opacity-20" />

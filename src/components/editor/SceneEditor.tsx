@@ -5,6 +5,7 @@ import { useSpeechRecognition } from '../../hooks/useSpeechRecognition';
 import { ttsService } from '../../services/tts';
 import { imageService } from '../../services/imageService';
 import { useVideoStore } from '../../store/useVideoStore';
+import { cn } from '../../lib/utils';
 
 interface SceneEditorProps {
     scene: Scene;
@@ -17,6 +18,8 @@ export function SceneEditor({ scene, index, onUpdate }: SceneEditorProps) {
     const [isRegeneratingAudio, setIsRegeneratingAudio] = useState(false);
     const [isRegeneratingImage, setIsRegeneratingImage] = useState(false);
     const [showImageModal, setShowImageModal] = useState(false);
+    const [isImageLoaded, setIsImageLoaded] = useState(false);
+    const [localImagePrompt, setLocalImagePrompt] = useState(scene.imagePrompt ?? scene.text);
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const project = useVideoStore(state => state.project);
 
@@ -34,6 +37,10 @@ export function SceneEditor({ scene, index, onUpdate }: SceneEditorProps) {
         },
         language: project?.language || 'english'
     });
+
+    useEffect(() => {
+        setLocalImagePrompt(scene.imagePrompt ?? scene.text);
+    }, [scene.imagePrompt, scene.text]);
 
     useEffect(() => {
         if (scene.audioUrl) {
@@ -230,15 +237,25 @@ export function SceneEditor({ scene, index, onUpdate }: SceneEditorProps) {
                     {/* Right Column: Vertical Preview */}
                     <div className="flex justify-center bg-zinc-900/30 rounded-xl p-4 border border-zinc-800/50">
                         <div className="relative w-[200px] aspect-[9/16] bg-zinc-900 rounded-lg border border-zinc-800 overflow-hidden group shadow-lg">
-                            {scene.status === 'generating_image' || isRegeneratingImage ? (
+                            {(scene.status === 'generating_image' || isRegeneratingImage || (scene.imageUrl && !isImageLoaded)) ? (
                                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-900/80 z-10">
                                     <Loader2 className="w-8 h-8 text-pink-500 animate-spin mb-2" />
-                                    <span className="text-[10px] text-zinc-400 font-medium uppercase tracking-wider">Generating...</span>
+                                    <span className="text-[10px] text-zinc-400 font-medium uppercase tracking-wider">
+                                        {(scene.status === 'generating_image' || isRegeneratingImage) ? 'Generating...' : 'Loading...'}
+                                    </span>
                                 </div>
                             ) : null}
 
                             {scene.imageUrl ? (
-                                <img src={scene.imageUrl} alt="Scene" className="w-full h-full object-cover" />
+                                <img
+                                    src={scene.imageUrl}
+                                    alt="Scene"
+                                    className={cn(
+                                        "w-full h-full object-cover transition-opacity duration-300",
+                                        isImageLoaded ? "opacity-100" : "opacity-0"
+                                    )}
+                                    onLoad={() => setIsImageLoaded(true)}
+                                />
                             ) : (
                                 <div className="flex items-center justify-center h-full text-zinc-700">
                                     No Image
@@ -310,8 +327,11 @@ export function SceneEditor({ scene, index, onUpdate }: SceneEditorProps) {
                                 <label className="block text-sm font-medium text-zinc-400">Image Prompt</label>
                                 <div className="bg-zinc-950 border border-zinc-800 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-pink-500/50 transition-all">
                                     <textarea
-                                        value={scene.imagePrompt ?? scene.text}
-                                        onChange={(e) => onUpdate({ imagePrompt: e.target.value })}
+                                        value={localImagePrompt}
+                                        onChange={(e) => {
+                                            setLocalImagePrompt(e.target.value);
+                                            onUpdate({ imagePrompt: e.target.value });
+                                        }}
                                         className="w-full h-32 bg-transparent p-4 text-sm text-zinc-100 focus:outline-none resize-none"
                                         placeholder="Describe the image..."
                                     />
@@ -328,7 +348,10 @@ export function SceneEditor({ scene, index, onUpdate }: SceneEditorProps) {
                                         </button>
 
                                         <button
-                                            onClick={() => onUpdate({ imagePrompt: '' })}
+                                            onClick={() => {
+                                                setLocalImagePrompt('');
+                                                onUpdate({ imagePrompt: '' });
+                                            }}
                                             disabled={!scene.imagePrompt && !scene.text}
                                             className="flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all border border-zinc-700/50 text-zinc-400 hover:text-red-400 hover:border-red-500/30 hover:bg-zinc-800 disabled:opacity-30"
                                             title="Clear prompt"
