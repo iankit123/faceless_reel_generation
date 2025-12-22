@@ -319,7 +319,15 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
             }, 1000);
 
             recorder.start();
-            if (bgMusicRef.current) bgMusicRef.current.play();
+            if (bgMusicRef.current) {
+                bgMusicRef.current.currentTime = 0;
+                await bgMusicRef.current.play();
+            }
+
+            // Ensure AudioContext is running
+            if (audioCtx.state === 'suspended') {
+                await audioCtx.resume();
+            }
 
             // Render scenes
             for (let i = 0; i < scenes.length; i++) {
@@ -334,13 +342,22 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
                     await new Promise((resolve) => { img.onload = resolve; img.onerror = resolve; });
                 }
 
-                // Play scene audio
+                // Prepare and wait for scene audio
                 const sceneAudio = new Audio(s.audioUrl);
+                sceneAudio.crossOrigin = "anonymous";
+                sceneAudio.preload = "auto";
+
+                await new Promise((resolve) => {
+                    sceneAudio.oncanplaythrough = resolve;
+                    sceneAudio.onerror = resolve; // Continue on error to avoid hang
+                    sceneAudio.load();
+                });
+
                 const sceneSource = audioCtx.createMediaElementSource(sceneAudio);
                 sceneSource.connect(dest);
 
+                await sceneAudio.play();
                 const startTime = performance.now();
-                sceneAudio.play();
 
                 // Animation loop for this scene
                 await new Promise<void>((resolve) => {
@@ -427,6 +444,7 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
                     renderFrame();
                 });
                 sceneAudio.pause();
+                sceneSource.disconnect();
             }
 
             if (bgMusicRef.current) bgMusicRef.current.pause();
