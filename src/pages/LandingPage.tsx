@@ -1,10 +1,9 @@
 import { ArrowRight, Star, Zap } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
-interface LandingPageProps {
-    onGetStarted: () => void;
-}
+export function LandingPage() {
+    const navigate = useNavigate();
 
-export function LandingPage({ onGetStarted }: LandingPageProps) {
     return (
         <div className="min-h-screen bg-zinc-950 text-zinc-100 overflow-hidden relative selection:bg-cyan-500/30">
             {/* Background Grid Pattern */}
@@ -45,7 +44,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
 
                     <div className="flex flex-col sm:flex-row items-center gap-4 pt-4">
                         <button
-                            onClick={onGetStarted}
+                            onClick={() => navigate('/videoprompt')}
                             className="group relative px-8 py-4 bg-cyan-500 text-zinc-950 font-bold rounded-full hover:bg-cyan-400 transition-all active:scale-95 flex items-center gap-2 shadow-[0_0_20px_rgba(34,211,238,0.3)]"
                         >
                             Get Started

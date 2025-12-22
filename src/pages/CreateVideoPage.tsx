@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ScriptInput } from '../components/create/ScriptInput';
 import { Wand2 } from 'lucide-react';
 import { useVideoStore } from '../store/useVideoStore';
@@ -6,6 +7,7 @@ import { storyService } from '../services/story';
 // import type { Scene } from '../types';
 
 export function CreateVideoPage() {
+    const navigate = useNavigate();
     const [language, setLanguage] = useState('hinglish');
     const [script, setScript] = useState('');
     const isGenerating = useVideoStore((state) => state.isGenerating);
@@ -34,6 +36,8 @@ export function CreateVideoPage() {
                     status: 'pending'
                 });
             });
+
+            navigate('/scenes');
 
         } catch (error) {
             console.error(error);

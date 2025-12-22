@@ -5,12 +5,14 @@ import { VideoPreview } from '../components/editor/VideoPreview';
 import { CaptionsTab } from '../components/editor/CaptionsTab';
 import { AudioTab } from '../components/editor/AudioTab';
 import { useEffect, useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Layers, Type, Music, ArrowLeft, Play } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 type EditorTab = 'frames' | 'captions' | 'audio';
 
 export function VideoEditorPage() {
+    const navigate = useNavigate();
     const project = useVideoStore((state) => state.project);
     const currentSceneId = useVideoStore((state) => state.currentSceneId);
     const setCurrentSceneId = useVideoStore((state) => state.setCurrentSceneId);
@@ -163,6 +165,7 @@ export function VideoEditorPage() {
                         onClick={() => {
                             if (window.confirm('Are you sure you want to change the prompt? This will clear your current project.')) {
                                 resetProject();
+                                navigate('/videoprompt');
                             }
                         }}
                         className="p-3 rounded-xl transition-all flex flex-col items-center gap-1 text-[10px] font-medium w-16 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900"
