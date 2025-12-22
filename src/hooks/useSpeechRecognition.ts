@@ -15,6 +15,12 @@ declare global {
 export function useSpeechRecognition({ onTranscript, language = 'english' }: UseSpeechRecognitionProps) {
     const [isListening, setIsListening] = useState(false);
     const recognitionRef = useRef<any>(null);
+    const callbackRef = useRef(onTranscript);
+
+    // Update the ref whenever onTranscript changes
+    useEffect(() => {
+        callbackRef.current = onTranscript;
+    }, [onTranscript]);
 
     useEffect(() => {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -36,13 +42,16 @@ export function useSpeechRecognition({ onTranscript, language = 'english' }: Use
                     transcript += event.results[i][0].transcript;
                 }
                 if (event.results[event.results.length - 1].isFinal) {
-                    onTranscript(transcript);
+                    callbackRef.current(transcript);
                 }
             };
 
             recognition.onerror = (event: any) => {
-                console.error("Speech recognition error:", event.error);
-                setIsListening(false);
+                const error = event.error;
+                console.error("Speech recognition error:", error);
+                if (error !== 'aborted') {
+                    setIsListening(false);
+                }
             };
 
             recognition.onend = () => {
@@ -54,10 +63,14 @@ export function useSpeechRecognition({ onTranscript, language = 'english' }: Use
 
         return () => {
             if (recognitionRef.current) {
-                recognitionRef.current.stop();
+                try {
+                    recognitionRef.current.stop();
+                } catch (e) {
+                    console.error("Error stopping recognition:", e);
+                }
             }
         };
-    }, [onTranscript, language]);
+    }, [language]); // Removed onTranscript from dependencies
 
     const toggleListening = useCallback((e?: React.MouseEvent) => {
         if (e) {
