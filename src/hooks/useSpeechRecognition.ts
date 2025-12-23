@@ -16,11 +16,37 @@ export function useSpeechRecognition({ onTranscript, language = 'english' }: Use
     const [isListening, setIsListening] = useState(false);
     const recognitionRef = useRef<any>(null);
     const callbackRef = useRef(onTranscript);
+    const silenceTimerRef = useRef<any>(null);
 
     // Update the ref whenever onTranscript changes
     useEffect(() => {
         callbackRef.current = onTranscript;
     }, [onTranscript]);
+
+    const stopListening = useCallback(() => {
+        if (recognitionRef.current) {
+            try {
+                recognitionRef.current.stop();
+            } catch (e) {
+                console.error("Error stopping recognition:", e);
+            }
+        }
+        if (silenceTimerRef.current) {
+            clearTimeout(silenceTimerRef.current);
+            silenceTimerRef.current = null;
+        }
+        setIsListening(false);
+    }, []);
+
+    const resetSilenceTimer = useCallback(() => {
+        if (silenceTimerRef.current) {
+            clearTimeout(silenceTimerRef.current);
+        }
+        silenceTimerRef.current = setTimeout(() => {
+            console.log("Silence detected, stopping...");
+            stopListening();
+        }, 2500); // 2.5 seconds of silence
+    }, [stopListening]);
 
     useEffect(() => {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -36,7 +62,12 @@ export function useSpeechRecognition({ onTranscript, language = 'english' }: Use
                 recognition.lang = 'en-US';
             }
 
+            recognition.onstart = () => {
+                resetSilenceTimer();
+            };
+
             recognition.onresult = (event: any) => {
+                resetSilenceTimer();
                 let transcript = '';
                 for (let i = event.resultIndex; i < event.results.length; i++) {
                     transcript += event.results[i][0].transcript;
@@ -52,10 +83,17 @@ export function useSpeechRecognition({ onTranscript, language = 'english' }: Use
                 if (error !== 'aborted') {
                     setIsListening(false);
                 }
+                if (silenceTimerRef.current) {
+                    clearTimeout(silenceTimerRef.current);
+                }
             };
 
             recognition.onend = () => {
                 setIsListening(false);
+                if (silenceTimerRef.current) {
+                    clearTimeout(silenceTimerRef.current);
+                    silenceTimerRef.current = null;
+                }
             };
 
             recognitionRef.current = recognition;
@@ -66,11 +104,14 @@ export function useSpeechRecognition({ onTranscript, language = 'english' }: Use
                 try {
                     recognitionRef.current.stop();
                 } catch (e) {
-                    console.error("Error stopping recognition:", e);
+                    // Silently fail if already stopped
                 }
             }
+            if (silenceTimerRef.current) {
+                clearTimeout(silenceTimerRef.current);
+            }
         };
-    }, [language]); // Removed onTranscript from dependencies
+    }, [language, resetSilenceTimer]);
 
     const toggleListening = useCallback((e?: React.MouseEvent) => {
         if (e) {

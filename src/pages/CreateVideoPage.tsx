@@ -22,12 +22,15 @@ export function CreateVideoPage() {
     const addScene = useVideoStore((s) => s.addScene);
     const saveProject = useVideoStore((s) => s.saveProject);
 
-    const handleGenerate = async () => {
-        if (!script.trim()) return;
+    const handleGenerate = async (overrideScript?: string, overrideLanguage?: string) => {
+        const finalScript = overrideScript || script;
+        const finalLanguage = overrideLanguage || language;
+
+        if (!finalScript.trim()) return;
 
         if (!user) {
-            localStorage.setItem('pending_video_script', script);
-            localStorage.setItem('pending_video_language', language);
+            localStorage.setItem('pending_video_script', finalScript);
+            localStorage.setItem('pending_video_language', finalLanguage);
             localStorage.setItem('is_generating_post_login', 'true');
             await signInWithGoogle();
             return;
@@ -43,8 +46,8 @@ export function CreateVideoPage() {
             await supabaseService.decrementCredits(user.id);
             await refreshCredits();
 
-            const story = await storyService.generateStory({ prompt: script, language });
-            initProject(story.theme, language, script);
+            const story = await storyService.generateStory({ prompt: finalScript, language: finalLanguage });
+            initProject(story.theme, finalLanguage, finalScript);
 
             story.scenes.forEach((s) => {
                 addScene({
@@ -77,10 +80,14 @@ export function CreateVideoPage() {
 
         if (!s || !l) return;
 
-        localStorage.clear();
+        // Clear BEFORE starting so we don't loop on failure
+        localStorage.removeItem('is_generating_post_login');
+        localStorage.removeItem('pending_video_script');
+        localStorage.removeItem('pending_video_language');
+
         setScript(s);
         setLanguage(l);
-        handleGenerate();
+        handleGenerate(s, l);
     }, [user]);
 
     return (
@@ -138,7 +145,7 @@ export function CreateVideoPage() {
                         />
 
                         <button
-                            onClick={handleGenerate}
+                            onClick={() => handleGenerate()}
                             disabled={isGenerating || !script.trim()}
                             className="w-full bg-teal-600 hover:bg-teal-500 disabled:opacity-40 text-zinc-950 font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition"
                         >

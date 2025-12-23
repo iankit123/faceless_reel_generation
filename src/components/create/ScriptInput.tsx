@@ -83,6 +83,13 @@ export function ScriptInput({
                     {isListening ? 'Stop' : 'Speak and write'}
                 </button>
 
+                {isListening && (
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500/5 border border-red-500/10 rounded-lg animate-pulse">
+                        <div className="w-1.5 h-1.5 bg-red-500 rounded-full" />
+                        <span className="text-[10px] font-bold text-red-400 uppercase tracking-tight">Auto-stop active</span>
+                    </div>
+                )}
+
                 <button
                     onClick={() => onChange('')}
                     disabled={disabled || !value}
