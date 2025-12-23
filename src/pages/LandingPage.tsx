@@ -1,11 +1,17 @@
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Star, Zap } from 'lucide-react';
 
+import logoImg from '../assets/logo.png';
+
 export function LandingPage() {
     const navigate = useNavigate();
 
     return (
         <div className="min-h-screen bg-zinc-950 text-zinc-100 overflow-hidden relative selection:bg-cyan-500/30">
+            {/* Logo in top left */}
+            <div className="absolute top-0 left-0 z-50 flex items-center">
+                <img src={logoImg} alt="Reel Shortss" className="h-20 w-auto" />
+            </div>
             {/* Background Grid Pattern */}
             <div className="absolute inset-0 z-0 opacity-20"
                 style={{

@@ -1,6 +1,7 @@
-import { Mic, MicOff, Trash2 } from 'lucide-react';
+import { Mic, MicOff, Trash2, Sparkles } from 'lucide-react';
 import { useSpeechRecognition } from '../../hooks/useSpeechRecognition';
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
+import { SuggestIdeasModal } from '../modals/SuggestIdeasModal';
 
 interface ScriptInputProps {
     value: string;
@@ -13,6 +14,7 @@ interface ScriptInputProps {
 
 export function ScriptInput({ value, onChange, disabled, label = "Video Idea", placeholder = "Describe your idea...", language = "english" }: ScriptInputProps) {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const [isIdeasModalOpen, setIsIdeasModalOpen] = useState(false);
     const { isListening, toggleListening, isSupported } = useSpeechRecognition({
         onTranscript: (transcript) => {
             onChange(value + (value ? ' ' : '') + transcript);
@@ -33,64 +35,70 @@ export function ScriptInput({ value, onChange, disabled, label = "Video Idea", p
 
     return (
         <div className="space-y-4">
-            <label className="block text-sm font-bold text-zinc-500 uppercase tracking-wider">
-                {label}
-            </label>
+            <SuggestIdeasModal
+                isOpen={isIdeasModalOpen}
+                onClose={() => setIsIdeasModalOpen(false)}
+                onSelect={onChange}
+            />
 
-            <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl overflow-hidden focus-within:ring-2 focus-within:ring-cyan-500/50 transition-all backdrop-blur-sm">
+            <div className="flex items-center justify-between">
+                <label className="block text-sm font-bold text-zinc-500 uppercase tracking-wider">
+                    {label}
+                </label>
+                <button
+                    onClick={() => setIsIdeasModalOpen(true)}
+                    className="px-4 py-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-400 hover:to-pink-400 text-white rounded-xl flex items-center gap-2 shadow-lg shadow-purple-500/20 active:scale-95 transition-all group"
+                >
+                    <Sparkles className="w-4 h-4 group-hover:rotate-12 transition-transform" />
+                    <span className="text-sm font-bold tracking-tight">Suggest Ideas</span>
+                </button>
+            </div>
+
+            <div className="relative group">
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-zinc-800 to-zinc-800 rounded-2xl blur opacity-20 group-focus-within:opacity-40 transition duration-500" />
                 <textarea
                     ref={textareaRef}
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
                     disabled={disabled}
                     placeholder={placeholder}
-                    className="w-full min-h-[160px] bg-transparent p-6 text-lg text-zinc-100 placeholder:text-zinc-600 focus:outline-none resize-none overflow-hidden"
+                    className="relative w-full min-h-[200px] bg-zinc-950/40 border border-zinc-900 rounded-2xl p-6 text-xl text-zinc-100 placeholder:text-zinc-700 focus:outline-none focus:border-zinc-800 focus:ring-1 focus:ring-zinc-800 transition-all resize-none overflow-hidden"
                 />
-
-                <div className="border-t border-zinc-800/50 p-4 bg-zinc-900/20 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <button
-                            onClick={toggleListening}
-                            disabled={disabled}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all border ${isListening
-                                ? 'bg-red-500/20 border-red-500/50 text-red-500 animate-pulse'
-                                : 'bg-zinc-800/50 border-zinc-700/50 text-zinc-400 hover:text-cyan-400 hover:border-cyan-500/30 hover:bg-zinc-800'
-                                }`}
-                        >
-                            {isListening ? (
-                                <>
-                                    <MicOff className="w-4 h-4" />
-                                    <span className="text-[11px] font-bold uppercase tracking-wider">Stop Listening</span>
-                                </>
-                            ) : (
-                                <>
-                                    <Mic className="w-4 h-4" />
-                                    <span className="text-[11px] font-bold uppercase tracking-wider">Speak and write</span>
-                                </>
-                            )}
-                        </button>
-
-                        {isListening && (
-                            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-cyan-500/10 border border-cyan-500/20 rounded-full">
-                                <div className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-pulse" />
-                                <span className="text-[9px] font-bold text-cyan-400 uppercase tracking-widest">Recording...</span>
-                            </div>
-                        )}
-                    </div>
-
-                    <button
-                        onClick={() => onChange('')}
-                        disabled={disabled || !value}
-                        className="flex items-center gap-2 px-4 py-2 rounded-full transition-all border border-zinc-700/50 text-zinc-400 hover:text-red-400 hover:border-red-500/30 hover:bg-zinc-800 disabled:opacity-30 disabled:cursor-not-allowed"
-                        title="Clear all text"
-                    >
-                        <Trash2 className="w-4 h-4" />
-                        <span className="text-[11px] font-bold uppercase tracking-wider">Clear All</span>
-                    </button>
-                </div>
             </div>
 
-            <p className="text-xs text-zinc-500">
+            <div className="grid grid-cols-2 gap-4">
+                <button
+                    onClick={toggleListening}
+                    disabled={disabled}
+                    className={`flex items-center justify-center gap-2 px-6 py-4 rounded-xl transition-all border ${isListening
+                        ? 'bg-red-500/10 border-red-500/50 text-red-500 animate-pulse'
+                        : 'bg-zinc-900/40 border-zinc-900 text-zinc-100 hover:bg-zinc-800/60 hover:border-zinc-800'
+                        }`}
+                >
+                    {isListening ? (
+                        <>
+                            <MicOff className="w-5 h-5 font-bold" />
+                            <span className="font-bold tracking-tight">Stop Listening</span>
+                        </>
+                    ) : (
+                        <>
+                            <Mic className="w-5 h-5" />
+                            <span className="font-bold tracking-tight text-zinc-300">Speak and Write</span>
+                        </>
+                    )}
+                </button>
+
+                <button
+                    onClick={() => onChange('')}
+                    disabled={disabled || !value}
+                    className="flex items-center justify-center gap-2 px-6 py-4 rounded-xl bg-zinc-900/40 border border-zinc-900 text-zinc-300 hover:bg-zinc-800/60 hover:border-zinc-800 disabled:opacity-20 disabled:cursor-not-allowed transition-all"
+                >
+                    <Trash2 className="w-5 h-5" />
+                    <span className="font-bold tracking-tight">Clear All</span>
+                </button>
+            </div>
+
+            <p className="text-sm text-zinc-600 font-medium">
                 Describe your video idea. The AI will generate a script, scenes, and narration.
             </p>
         </div>

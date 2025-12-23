@@ -187,10 +187,10 @@ export function CreateVideoPage() {
                         <div>
                             <h1 className="text-4xl lg:text-5xl font-black mb-4 tracking-tight">
                                 Create <span className="text-cyan-400 italic">viral</span> <br />
-                                faceless videos
+                                insta reels
                             </h1>
                             <p className="text-zinc-400 text-lg font-medium">
-                                Turn your ideas into viral videos in seconds.
+                                Turn your ideas into viral videos in 60 seconds
                             </p>
                         </div>
 
@@ -223,46 +223,36 @@ export function CreateVideoPage() {
                                 language={language}
                             />
 
-                            <button
-                                onClick={handleGenerate}
-                                disabled={isGenerating || !script.trim()}
-                                className="group relative w-full bg-cyan-500 hover:bg-cyan-400 disabled:opacity-50 disabled:cursor-not-allowed text-zinc-950 font-black py-5 rounded-2xl flex items-center justify-center gap-3 transition-all shadow-[0_0_30px_rgba(34,211,238,0.2)] active:scale-[0.98]"
-                            >
-                                {isGenerating ? (
-                                    <>
-                                        <div className="w-6 h-6 border-3 border-zinc-950/30 border-t-zinc-950 rounded-full animate-spin" />
-                                        <span className="text-lg">Generating Magic...</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <Wand2 className="w-6 h-6 group-hover:rotate-12 transition-transform" />
-                                        <span className="text-lg uppercase tracking-tight">Generate Video</span>
-                                    </>
-                                )}
-                            </button>
+                            <div className="pt-4 flex flex-col items-center">
+                                <button
+                                    onClick={handleGenerate}
+                                    disabled={isGenerating || !script.trim()}
+                                    className="group relative w-full bg-teal-600 hover:bg-teal-500 disabled:opacity-50 disabled:cursor-not-allowed text-zinc-950 font-black py-6 rounded-2xl flex items-center justify-center gap-3 transition-all shadow-[0_0_40px_rgba(20,184,166,0.3)] active:scale-[0.98] mt-2"
+                                >
+                                    {isGenerating ? (
+                                        <>
+                                            <div className="w-6 h-6 border-3 border-zinc-950/30 border-t-zinc-950 rounded-full animate-spin" />
+                                            <span className="text-xl">Generating...</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Wand2 className="w-7 h-7 group-hover:rotate-12 transition-transform" />
+                                            <span className="text-2xl font-black">Generate Video</span>
+                                        </>
+                                    )}
+                                </button>
+
+                                <p className="mt-6 text-zinc-600 text-sm font-medium">
+                                    Describe your video idea. The AI will generate a script, scenes, and narration.
+                                </p>
+                            </div>
 
                             {credits === 0 && user && (
-                                <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center gap-3 animate-in fade-in slide-in-from-top-1">
+                                <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center gap-3 animate-in fade-in slide-in-from-top-1">
                                     <AlertCircle className="w-5 h-5 text-amber-500 shrink-0" />
-                                    <p className="text-xs text-amber-200 font-medium">You have 0 credits. <button onClick={() => setIsPurchaseModalOpen(true)} className="text-amber-400 underline hover:text-amber-300">Buy more credits</button> to generate.</p>
+                                    <p className="text-sm text-amber-200 font-medium">You have 0 credits. <button onClick={() => setIsPurchaseModalOpen(true)} className="text-amber-400 font-bold underline hover:text-amber-300 ml-1">Buy more credits</button></p>
                                 </div>
                             )}
-
-                            {/* Example Prompts */}
-                            <div className="space-y-3">
-                                <label className="block text-sm font-bold text-zinc-500 uppercase tracking-wider">Try these ideas</label>
-                                <div className="flex flex-wrap gap-2">
-                                    {currentPrompts.map((p, i) => (
-                                        <button
-                                            key={i}
-                                            onClick={() => setScript(p)}
-                                            className="text-[11px] bg-zinc-900/50 hover:bg-zinc-800/80 border border-zinc-800 hover:border-cyan-500/30 text-zinc-400 hover:text-zinc-100 px-4 py-2 rounded-xl transition-all text-left backdrop-blur-sm group"
-                                        >
-                                            <span>{p}</span>
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
                         </div>
                     </div>
 

@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { LogOut, Coins, User as UserIcon, CreditCard } from 'lucide-react';
+import logoImg from '../../assets/logo.png';
 
 export function Header() {
     const { user, credits, signOut } = useAuth();
@@ -21,11 +22,8 @@ export function Header() {
 
     return (
         <header className="fixed top-0 left-0 right-0 z-50 h-16 border-b border-zinc-800 bg-zinc-950/80 backdrop-blur-md px-6 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-cyan-500 rounded-lg flex items-center justify-center font-black text-zinc-950 text-xl tracking-tighter">
-                    V
-                </div>
-                <span className="font-black text-lg uppercase tracking-widest hidden sm:inline-block">ViralReels</span>
+            <div className="flex items-center">
+                <img src={logoImg} alt="Reel Shorts" className="h-20 w-auto" />
             </div>
 
             <div className="flex items-center gap-4">
