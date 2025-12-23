@@ -20,26 +20,28 @@ export function LandingPage() {
 
             <main className="relative z-10 max-w-7xl mx-auto px-6 pt-20 pb-32 lg:pt-32 flex flex-col lg:flex-row items-center gap-16">
                 {/* Left Content */}
-                <div className="flex-1 text-center lg:text-left space-y-8 max-w-2xl">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-900 border border-zinc-800 text-xs font-medium text-zinc-400">
+                <div className="flex-1 text-center lg:text-left max-w-2xl">
+                    {/* <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-900 border border-zinc-800 text-xs font-medium text-zinc-400">
                         <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
                         <span className="flex items-center gap-1">
                             Powered by <span className="text-cyan-400 font-bold">GPT-5</span>
                         </span>
-                    </div>
+                    </div> */}
 
-                    <h1 className="text-5xl lg:text-7xl font-black tracking-tight leading-[1.1]">
+                    <h1 className="text-5xl lg:text-7xl font-black tracking-tight leading-[1.1] mb-0">
+
                         Create <span className="text-cyan-400 italic">viral</span> <br />
-                        faceless videos <br />
-                        on <span className="relative inline-block">
-                            Auto-Pilot.
+                        <span className="bg-gradient-to-r from-[#F58529] via-[#DD2A7B] to-[#8134AF] bg-clip-text text-transparent">
+                            Insta
+                        </span>{" "}
+                        reels in just 1 minute <br />
+                        <span className="relative inline-block">
                             <div className="absolute -bottom-2 left-0 w-full h-1 bg-cyan-400/30 blur-sm" />
                         </span>
                     </h1>
 
                     <p className="text-lg lg:text-xl text-zinc-400 font-medium leading-relaxed">
-                        Create AI Videos in minutes. Our AI creation tool <br className="hidden lg:block" />
-                        creates viral AI videos for you.
+                        Post reels on Insta and Youtube to become influencer and earn money
                     </p>
 
                     <div className="flex flex-col sm:flex-row items-center gap-4 pt-4">
