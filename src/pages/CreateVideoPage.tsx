@@ -138,27 +138,6 @@ export function CreateVideoPage() {
         }
     }, [user]);
 
-    const prompts = {
-        english: [
-            "Story of how a lion and dear became friends in jungle",
-            "Video showing why new born baby cry a lot",
-            "Ancient true story of Pyramids"
-        ],
-        hindi: [
-            "Bhagwan krishna ki kahani jisme wo gaanv waalo ko pahad uthanke baarish se bachate hai",
-            "Khargosh aur tortoise ki kahani",
-            "A short story",
-            "Panipat ki ladai"
-        ],
-        hinglish: [
-            "Bhagwan krishna ki kahani jisme wo gaanv waalo ko pahad uthanke baarish se bachate hai",
-            "Khargosh aur tortoise ki kahani",
-            "A short story",
-            "Panipat ki ladai"
-        ]
-    };
-
-    const currentPrompts = prompts[language as keyof typeof prompts] || prompts.hinglish;
 
     return (
         <div className="min-h-screen bg-zinc-950 text-zinc-100 overflow-hidden relative selection:bg-cyan-500/30">
