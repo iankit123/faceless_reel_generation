@@ -1,5 +1,5 @@
 import type { Scene } from '../../types';
-import { Play, Pause, Download, Loader2, Type, Music, ArrowLeft, Layers } from 'lucide-react';
+import { Play, Pause, Download, Loader2, Type, Music, ArrowLeft, Layers, Share2 } from 'lucide-react';
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useVideoStore } from '../../store/useVideoStore';
 import { CaptionsTab } from './CaptionsTab';
@@ -99,7 +99,7 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
         // Initialize AudioContext and GainNodes
         if (!audioCtxRef.current) {
             try {
-                // @ts-ignore
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 audioCtxRef.current = new (window.AudioContext || (window as any).AudioContext)();
 
                 // Narration Gain
@@ -306,98 +306,87 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
         setIsPlaying(!isPlaying);
     };
 
-    const handleExport = async () => {
-        if (isExporting) return;
-        setIsExporting(true);
-        setIsPlaying(false);
+    const generateVideoBlob = async () => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const exportAudioCtx = new (window.AudioContext || (window as any).AudioContext)();
+        const dest = exportAudioCtx.createMediaStreamDestination();
+
+        const decodeAudio = async (url: string) => {
+            const resp = await fetch(url);
+            const arrayBuffer = await resp.arrayBuffer();
+            return await exportAudioCtx.decodeAudioData(arrayBuffer);
+        };
+
+        const narrationBuffers: (AudioBuffer | null)[] = await Promise.all(
+            scenes.map(s => s.audioUrl ? decodeAudio(s.audioUrl) : Promise.resolve(null))
+        );
+
+        let bgBuffer: AudioBuffer | null = null;
+        if (project?.backgroundMusic?.url) {
+            try {
+                bgBuffer = await decodeAudio(project.backgroundMusic.url);
+            } catch (e) {
+                console.error('Failed to decode background music:', e);
+            }
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = 720;
+        canvas.height = 1280;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) throw new Error('Could not get canvas context');
+
+        const stream = canvas.captureStream(30);
+        const recorderStream = new MediaStream([
+            ...stream.getVideoTracks(),
+            ...dest.stream.getAudioTracks()
+        ]);
+
+        const mimeType = 'video/webm;codecs=vp9,opus';
+        if (!MediaRecorder.isTypeSupported(mimeType)) {
+            throw new Error('WebM with VP9/Opus is not supported in this browser');
+        }
+
+        const recorder = new MediaRecorder(recorderStream, { mimeType, videoBitsPerSecond: 5000000 });
+        const chunks: Blob[] = [];
+        recorder.ondataavailable = (e) => chunks.push(e.data);
+
+        const recordPromise = new Promise<Blob>((resolve) => {
+            recorder.onstop = () => resolve(new Blob(chunks, { type: mimeType }));
+        });
+
+        let currentOffset = 0;
+        narrationBuffers.forEach((buffer, idx) => {
+            if (buffer) {
+                const source = exportAudioCtx.createBufferSource();
+                source.buffer = buffer;
+                const gainNode = exportAudioCtx.createGain();
+                gainNode.gain.value = project?.narrationVolume ?? 1.0;
+                source.connect(gainNode);
+                gainNode.connect(dest);
+                source.start(exportAudioCtx.currentTime + currentOffset);
+            }
+            currentOffset += scenes[idx].duration;
+        });
+
+        if (bgBuffer) {
+            const bgSource = exportAudioCtx.createBufferSource();
+            bgSource.buffer = bgBuffer;
+            bgSource.loop = true;
+            const bgGain = exportAudioCtx.createGain();
+            bgGain.gain.value = project?.backgroundMusic?.volume ?? 0.3;
+            bgSource.connect(bgGain);
+            bgGain.connect(dest);
+            bgSource.start(exportAudioCtx.currentTime);
+        }
+
+        recorder.start();
+        setExportTimer(150);
+        const timerInterval = setInterval(() => {
+            setExportTimer((prev) => Math.max(0, prev - 1));
+        }, 1000);
 
         try {
-            // @ts-ignore
-            const exportAudioCtx = new (window.AudioContext || (window as any).AudioContext)();
-            const dest = exportAudioCtx.createMediaStreamDestination();
-
-            // Helper to decode audio from URL
-            const decodeAudio = async (url: string) => {
-                const resp = await fetch(url);
-                const arrayBuffer = await resp.arrayBuffer();
-                return await exportAudioCtx.decodeAudioData(arrayBuffer);
-            };
-
-            // 1. Pre-decode all audio assets
-            console.log('Export: Starting audio pre-decoding...');
-            const narrationBuffers: (AudioBuffer | null)[] = await Promise.all(
-                scenes.map(s => s.audioUrl ? decodeAudio(s.audioUrl) : Promise.resolve(null))
-            );
-
-            let bgBuffer: AudioBuffer | null = null;
-            if (project?.backgroundMusic?.url) {
-                try {
-                    bgBuffer = await decodeAudio(project.backgroundMusic.url);
-                } catch (e) {
-                    console.error('Failed to decode background music:', e);
-                }
-            }
-
-            // 2. Setup Canvas
-            const canvas = document.createElement('canvas');
-            canvas.width = 720;
-            canvas.height = 1280;
-            const ctx = canvas.getContext('2d');
-            if (!ctx) throw new Error('Could not get canvas context');
-
-            const stream = canvas.captureStream(30);
-            const recorderStream = new MediaStream([
-                ...stream.getVideoTracks(),
-                ...dest.stream.getAudioTracks()
-            ]);
-
-            // 3. Setup Recorder (Force WebM for reliability)
-            const mimeType = 'video/webm;codecs=vp9,opus';
-            if (!MediaRecorder.isTypeSupported(mimeType)) {
-                throw new Error('WebM with VP9/Opus is not supported in this browser');
-            }
-
-            const recorder = new MediaRecorder(recorderStream, { mimeType, videoBitsPerSecond: 5000000 });
-            const chunks: Blob[] = [];
-            recorder.ondataavailable = (e) => chunks.push(e.data);
-
-            const recordPromise = new Promise<Blob>((resolve) => {
-                recorder.onstop = () => resolve(new Blob(chunks, { type: mimeType }));
-            });
-
-            // 4. Schedule Audio Sources
-            let currentOffset = 0;
-            narrationBuffers.forEach((buffer, idx) => {
-                if (buffer) {
-                    const source = exportAudioCtx.createBufferSource();
-                    source.buffer = buffer;
-                    const gainNode = exportAudioCtx.createGain();
-                    gainNode.gain.value = project?.narrationVolume ?? 1.0;
-                    source.connect(gainNode);
-                    gainNode.connect(dest);
-                    source.start(exportAudioCtx.currentTime + currentOffset);
-                }
-                currentOffset += scenes[idx].duration;
-            });
-
-            if (bgBuffer) {
-                const bgSource = exportAudioCtx.createBufferSource();
-                bgSource.buffer = bgBuffer;
-                bgSource.loop = true;
-                const bgGain = exportAudioCtx.createGain();
-                bgGain.gain.value = project?.backgroundMusic?.volume ?? 0.3;
-                bgSource.connect(bgGain);
-                bgGain.connect(dest);
-                bgSource.start(exportAudioCtx.currentTime);
-            }
-
-            // 5. Start Recording and Render Loop
-            recorder.start();
-            setExportTimer(150);
-            const timerInterval = setInterval(() => {
-                setExportTimer((prev) => Math.max(0, prev - 1));
-            }, 1000);
-
             for (let i = 0; i < scenes.length; i++) {
                 const s = scenes[i];
                 onSelectScene(s.id);
@@ -493,11 +482,21 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
 
             recorder.stop();
             const webmBlob = await recordPromise;
+            return webmBlob;
+        } finally {
             clearInterval(timerInterval);
             await exportAudioCtx.close();
+        }
+    };
 
-            // 6. Backend Conversion to MP4
-            console.log('Export: Sending WebM for MP4 conversion...');
+    const handleExport = async () => {
+        if (isExporting) return;
+        setIsExporting(true);
+        setIsPlaying(false);
+
+        try {
+            const webmBlob = await generateVideoBlob();
+
             const formData = new FormData();
             formData.append('video', webmBlob, 'video.webm');
 
@@ -523,6 +522,57 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
         } catch (error) {
             console.error('Export failed:', error);
             alert(`Export failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        } finally {
+            setIsExporting(false);
+        }
+    };
+
+    const handleShare = async () => {
+        if (isExporting) return;
+        setIsExporting(true);
+        setIsPlaying(false);
+
+        try {
+            const webmBlob = await generateVideoBlob();
+
+            const formData = new FormData();
+            formData.append('video', webmBlob, 'video.webm');
+
+            const convertResp = await fetch('/api/video/convert', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!convertResp.ok) {
+                const errData = await convertResp.json();
+                throw new Error(errData.error || 'Conversion failed');
+            }
+
+            const mp4Blob = await convertResp.blob();
+            const fileName = (project?.title && !project.title.includes('-') ? project.title : 'my-reel') + '.mp4';
+            const file = new File([mp4Blob], fileName, { type: 'video/mp4' });
+
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                await navigator.share({
+                    files: [file],
+                    title: project?.title || 'Check out my reel!',
+                    text: 'Built with Reel Shorts 🎬'
+                });
+            } else {
+                // Fallback to download if share not supported for files
+                const url = URL.createObjectURL(mp4Blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = fileName;
+                a.click();
+                URL.revokeObjectURL(url);
+                alert('Sharing not directly supported on this browser/device. Video has been downloaded instead.');
+            }
+        } catch (error) {
+            console.error('Share failed:', error);
+            if (error instanceof Error && error.name !== 'AbortError') {
+                alert(`Share failed: ${error.message}`);
+            }
         } finally {
             setIsExporting(false);
         }
@@ -567,7 +617,9 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
                 bgMusicRef.current.pause();
                 try {
                     bgSourceRef.current?.disconnect();
-                } catch { }
+                } catch {
+                    // Ignore disconnect errors if not connected
+                }
                 bgSourceRef.current = null;
             }
             const audio = new Audio(musicUrl);
@@ -775,7 +827,6 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
                         </div>
                     </div>
 
-                    {/* Play & Download Buttons */}
                     <div className="flex justify-center items-center gap-4">
                         <button
                             onClick={togglePlayback}
@@ -789,25 +840,47 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
                             )}
                         </button>
 
-                        <button
-                            onClick={handleExport}
-                            disabled={isExporting || scenes.some(s => s.status !== 'ready')}
-                            className="p-4 rounded-full bg-indigo-600 text-white hover:bg-indigo-500 transition-colors shadow-lg shadow-indigo-500/20 disabled:opacity-50 disabled:cursor-not-allowed group relative"
-                            title="Download Video"
-                        >
-                            {isExporting ? (
-                                <Loader2 className="w-6 h-6 animate-spin" />
-                            ) : (
-                                <Download className="w-6 h-6" />
-                            )}
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={handleExport}
+                                disabled={isExporting || scenes.some(s => s.status !== 'ready')}
+                                className="p-4 rounded-full bg-zinc-800 text-white hover:bg-zinc-700 transition-colors shadow-lg shadow-black/20 disabled:opacity-50 disabled:cursor-not-allowed group relative"
+                                title="Download Video"
+                            >
+                                {isExporting ? (
+                                    <Loader2 className="w-6 h-6 animate-spin" />
+                                ) : (
+                                    <Download className="w-6 h-6" />
+                                )}
 
-                            {/* Tooltip for pending scenes */}
-                            {!isExporting && scenes.some(s => s.status !== 'ready') && (
-                                <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-48 p-2 bg-zinc-800 text-[10px] rounded shadow-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity">
-                                    Wait for all scenes to generate before downloading
-                                </div>
-                            )}
-                        </button>
+                                {/* Tooltip for pending scenes */}
+                                {!isExporting && scenes.some(s => s.status !== 'ready') && (
+                                    <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-48 p-2 bg-zinc-800 text-[10px] rounded shadow-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity">
+                                        Wait for all scenes to generate before downloading
+                                    </div>
+                                )}
+                            </button>
+
+                            <button
+                                onClick={handleShare}
+                                disabled={isExporting || scenes.some(s => s.status !== 'ready')}
+                                className="p-4 rounded-full bg-indigo-600 text-white hover:bg-indigo-500 transition-colors shadow-lg shadow-indigo-500/20 disabled:opacity-50 disabled:cursor-not-allowed group relative"
+                                title="Share to Instagram"
+                            >
+                                {isExporting ? (
+                                    <Loader2 className="w-6 h-6 animate-spin" />
+                                ) : (
+                                    <Share2 className="w-6 h-6" />
+                                )}
+
+                                {/* Tooltip for pending scenes */}
+                                {!isExporting && scenes.some(s => s.status !== 'ready') && (
+                                    <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-48 p-2 bg-zinc-800 text-[10px] rounded shadow-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity">
+                                        Wait for all scenes to generate before sharing
+                                    </div>
+                                )}
+                            </button>
+                        </div>
                     </div>
 
                     {/* Exporting Overlay */}
