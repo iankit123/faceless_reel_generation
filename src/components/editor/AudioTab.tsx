@@ -53,25 +53,35 @@ export function AudioTab() {
                 {/* Volume Controls */}
                 <div className="space-y-4 mb-6">
                     <div className="bg-zinc-900 p-4 rounded-xl border border-zinc-800">
-                        <label className="flex items-center gap-2 text-sm font-medium text-zinc-400 mb-2">
-                            <Volume2 className="w-4 h-4" />
-                            Narration Volume
+                        <label className="flex items-center justify-between gap-2 text-sm font-medium text-zinc-400 mb-2">
+                            <span className="flex items-center gap-2 italic">
+                                <Volume2 className="w-4 h-4" />
+                                Narration Volume
+                            </span>
+                            {project.narrationVolume > 1 && (
+                                <span className="text-[10px] bg-indigo-500 text-white px-2 py-0.5 rounded-full font-black uppercase tracking-tighter animate-pulse">
+                                    Boosted {(project.narrationVolume * 100).toFixed(0)}%
+                                </span>
+                            )}
                         </label>
                         <input
                             type="range"
                             min="0"
-                            max="1"
-                            step="0.01"
+                            max="3"
+                            step="0.1"
                             value={project.narrationVolume ?? 1.0}
                             onInput={(e) => {
                                 useVideoStore.getState().setNarrationVolume(parseFloat((e.target as HTMLInputElement).value));
                             }}
-                            className="w-full accent-indigo-500 cursor-pointer"
+                            onChange={(e) => {
+                                useVideoStore.getState().setNarrationVolume(parseFloat((e.target as HTMLInputElement).value));
+                            }}
+                            className="w-full h-1.5 bg-zinc-800 rounded-full appearance-none accent-indigo-500 cursor-pointer"
                         />
                     </div>
 
                     <div className="bg-zinc-900 p-4 rounded-xl border border-zinc-800">
-                        <label className="flex items-center gap-2 text-sm font-medium text-zinc-400 mb-2">
+                        <label className="flex items-center gap-2 text-sm font-medium text-zinc-400 mb-2 italic">
                             <Volume2 className="w-4 h-4" />
                             Music Volume
                         </label>
@@ -79,7 +89,7 @@ export function AudioTab() {
                             type="range"
                             min="0"
                             max="1"
-                            step="0.01"
+                            step="0.05"
                             value={project.backgroundMusic?.volume ?? 0.3}
                             onInput={(e) => {
                                 if (project.backgroundMusic) {
@@ -89,8 +99,16 @@ export function AudioTab() {
                                     });
                                 }
                             }}
+                            onChange={(e) => {
+                                if (project.backgroundMusic) {
+                                    useVideoStore.getState().setBackgroundMusic({
+                                        ...project.backgroundMusic,
+                                        volume: parseFloat((e.target as HTMLInputElement).value)
+                                    });
+                                }
+                            }}
                             disabled={!project.backgroundMusic}
-                            className="w-full accent-indigo-500 cursor-pointer"
+                            className="w-full h-1.5 bg-zinc-800 rounded-full appearance-none accent-indigo-500 cursor-pointer"
                         />
                     </div>
                 </div>

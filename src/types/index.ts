@@ -55,7 +55,7 @@ export interface CaptionSettings {
 export interface BackgroundMusic {
     name: string;
     url: string;
-    volume: number; // 0 to 1
+    volume: number; // 0 to 1 (capped at 1.0 for music)
 }
 
 export interface VideoProject {
@@ -66,7 +66,7 @@ export interface VideoProject {
     scenes: Scene[];
     captionSettings: CaptionSettings;
     backgroundMusic?: BackgroundMusic;
-    narrationVolume: number; // 0 to 1
+    narrationVolume: number; // 0 to 3 (boosted)
     language: string;
     createdAt: Date;
 }

@@ -68,7 +68,7 @@ export function SceneList({ scenes, currentSceneId, onSelectScene, onPlayScene, 
                         className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-600/10 border border-indigo-500/20 text-indigo-400 hover:bg-indigo-600 hover:text-white transition-all active:scale-95"
                     >
                         <Play className="w-3.5 h-3.5 fill-current" />
-                        <span className="text-[10px] font-bold uppercase tracking-wider">Play All</span>
+                        <span className="text-[10px] font-bold uppercase tracking-wider">Play Video</span>
                     </button>
                 )}
             </div>
@@ -82,7 +82,7 @@ export function SceneList({ scenes, currentSceneId, onSelectScene, onPlayScene, 
                     {!isGenerating ? (
                         "video generation complete"
                     ) : timer > 0 ? (
-                        `Video generation in progress. It will take ${timer} sec`
+                        `${timer} sec left to complete video generation`
                     ) : (
                         "it is taking more time, please wait"
                     )}

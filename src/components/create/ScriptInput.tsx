@@ -42,7 +42,7 @@ export function ScriptInput({ value, onChange, disabled, label = "Video Idea", p
             />
 
             <div className="flex items-center justify-between">
-                <label className="block text-sm font-bold text-zinc-500 uppercase tracking-wider">
+                <label className="block text-sm font-bold text-zinc-400 uppercase tracking-wider">
                     {label}
                 </label>
                 <button
@@ -55,35 +55,35 @@ export function ScriptInput({ value, onChange, disabled, label = "Video Idea", p
             </div>
 
             <div className="relative group">
-                <div className="absolute -inset-0.5 bg-gradient-to-r from-zinc-800 to-zinc-800 rounded-2xl blur opacity-20 group-focus-within:opacity-40 transition duration-500" />
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-zinc-700 to-zinc-700 rounded-2xl blur opacity-20 group-focus-within:opacity-40 transition duration-500" />
                 <textarea
                     ref={textareaRef}
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
                     disabled={disabled}
                     placeholder={placeholder}
-                    className="relative w-full min-h-[200px] bg-zinc-950/40 border border-zinc-900 rounded-2xl p-6 text-xl text-zinc-100 placeholder:text-zinc-700 focus:outline-none focus:border-zinc-800 focus:ring-1 focus:ring-zinc-800 transition-all resize-none overflow-hidden"
+                    className="relative w-full min-h-[200px] bg-zinc-950/40 border border-zinc-700 rounded-2xl p-6 text-xl text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 transition-all resize-none overflow-hidden"
                 />
             </div>
 
-            <div className="grid grid-cols-2 gap-0">
+            <div className="grid grid-cols-2 gap-4">
                 <button
                     onClick={toggleListening}
                     disabled={disabled}
-                    className={`flex items-center justify-center gap-1 px-1 py-1 rounded-xl transition-all border ${isListening
+                    className={`flex items-center justify-center gap-1 px-1 py-4 rounded-xl transition-all border ${isListening
                         ? 'bg-red-500/10 border-red-500/50 text-red-500 animate-pulse'
-                        : 'bg-zinc-900/40 border-zinc-900 text-zinc-100 hover:bg-zinc-800/60 hover:border-zinc-800'
+                        : 'bg-zinc-900/40 border-zinc-700 text-zinc-100 hover:bg-zinc-800/60 hover:border-zinc-600'
                         }`}
                 >
                     {isListening ? (
                         <>
                             <MicOff className="w-5 h-5 font-bold" />
-                            <span className="font-bold tracking-tight">Stop Listening</span>
+                            <span className=" tracking-tight">Stop Listening</span>
                         </>
                     ) : (
                         <>
                             <Mic className="w-5 h-5" />
-                            <span className="font-bold tracking-tight text-zinc-300">Speak and Write</span>
+                            <span className="tracking-tight text-zinc-100">Speak and Write</span>
                         </>
                     )}
                 </button>
@@ -91,14 +91,14 @@ export function ScriptInput({ value, onChange, disabled, label = "Video Idea", p
                 <button
                     onClick={() => onChange('')}
                     disabled={disabled || !value}
-                    className="flex items-center justify-center gap-2 px-6 py-4 rounded-xl bg-zinc-900/40 border border-zinc-900 text-zinc-300 hover:bg-zinc-800/60 hover:border-zinc-800 disabled:opacity-20 disabled:cursor-not-allowed transition-all"
+                    className="flex items-center justify-center gap-2 px-6 py-4 rounded-xl bg-zinc-900/40 border border-zinc-700 text-zinc-100 hover:bg-zinc-800/60 hover:border-zinc-600 disabled:opacity-20 disabled:cursor-not-allowed transition-all"
                 >
                     <Trash2 className="w-5 h-5" />
                     <span className="font-bold tracking-tight">Clear All</span>
                 </button>
             </div>
 
-            <p className="text-sm text-zinc-600 font-medium">
+            <p className="text-sm text-zinc-400 font-medium">
                 Describe your video idea. The AI will generate a script, scenes, and narration.
             </p>
         </div>

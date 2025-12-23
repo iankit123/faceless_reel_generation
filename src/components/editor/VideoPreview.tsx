@@ -80,15 +80,28 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
         }
     }, [scenes, scene.id, onSelectScene]);
 
+    const audioCtxRef = useRef<AudioContext | null>(null);
+    const gainNodeRef = useRef<GainNode | null>(null);
+
     // Audio setup effect - removed 'scenes' dependency to prevent resets
     useEffect(() => {
         // Reset audio when scene changes
         if (audioRef.current) {
             audioRef.current.pause();
             audioRef.current = null;
-            // Only set isPlaying to false if we're not auto-playing the next scene
             if (!autoPlayRef.current) {
                 setIsPlaying(false);
+            }
+        }
+
+        // Initialize AudioContext and GainNode for boosting
+        if (!audioCtxRef.current) {
+            try {
+                audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+                gainNodeRef.current = audioCtxRef.current.createGain();
+                gainNodeRef.current.connect(audioCtxRef.current.destination);
+            } catch (err) {
+                console.error("Failed to initialize AudioContext:", err);
             }
         }
 
@@ -96,12 +109,27 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
         setCurrentTime(currentSceneStartTime);
 
         if (scene?.audioUrl) {
-            audioRef.current = new Audio(scene.audioUrl);
-            audioRef.current.volume = project?.narrationVolume ?? 1.0;
+            const audio = new Audio(scene.audioUrl);
+            audio.crossOrigin = "anonymous";
+            audioRef.current = audio;
+
+            // Apply boosted volume via GainNode
+            const volume = project?.narrationVolume ?? 1.0;
+            if (audioCtxRef.current && gainNodeRef.current) {
+                try {
+                    const source = audioCtxRef.current.createMediaElementSource(audio);
+                    source.connect(gainNodeRef.current);
+                    gainNodeRef.current.gain.value = volume;
+                } catch (e) {
+                    // Source might already be connected if re-using, fallback to standard volume
+                    audio.volume = Math.min(volume, 1.0);
+                }
+            } else {
+                audio.volume = Math.min(volume, 1.0);
+            }
 
             // Handle audio ending
-            audioRef.current.onended = () => {
-                // Audio ended, we are in the "silence" phase
+            audio.onended = () => {
                 if (silenceStartRef.current === null) {
                     silenceStartRef.current = performance.now();
                 }
@@ -109,7 +137,10 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
 
             // Auto-play if flag is set
             if (autoPlayRef.current) {
-                const playPromise = audioRef.current.play();
+                if (audioCtxRef.current?.state === 'suspended') {
+                    audioCtxRef.current.resume();
+                }
+                const playPromise = audio.play();
                 if (playPromise !== undefined) {
                     playPromise
                         .then(() => setIsPlaying(true))
@@ -128,12 +159,15 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
                 audioRef.current = null;
             }
         };
-    }, [scene?.audioUrl, scene?.id, currentSceneStartTime, scene?.duration, project?.narrationVolume]);
+    }, [scene?.audioUrl, scene?.id, currentSceneStartTime, scene?.duration]);
 
     // Live Narration Volume Update
     useEffect(() => {
-        if (audioRef.current) {
-            audioRef.current.volume = project?.narrationVolume ?? 1.0;
+        const volume = project?.narrationVolume ?? 1.0;
+        if (gainNodeRef.current) {
+            gainNodeRef.current.gain.value = volume;
+        } else if (audioRef.current) {
+            audioRef.current.volume = Math.min(volume, 1.0);
         }
     }, [project?.narrationVolume]);
 
@@ -355,7 +389,6 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
                 const sceneAudio = new Audio(s.audioUrl);
                 sceneAudio.crossOrigin = "anonymous";
                 sceneAudio.preload = "auto";
-                sceneAudio.volume = project?.narrationVolume ?? 1.0;
 
                 await new Promise((resolve) => {
                     sceneAudio.oncanplaythrough = resolve;
@@ -364,7 +397,10 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
                 });
 
                 const sceneSource = audioCtx.createMediaElementSource(sceneAudio);
-                sceneSource.connect(dest);
+                const sceneGain = audioCtx.createGain();
+                sceneGain.gain.value = project?.narrationVolume ?? 1.0;
+                sceneSource.connect(sceneGain);
+                sceneGain.connect(dest);
 
                 await sceneAudio.play();
                 const startTime = performance.now();

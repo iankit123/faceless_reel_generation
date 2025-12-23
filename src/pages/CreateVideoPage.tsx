@@ -176,11 +176,11 @@ export function CreateVideoPage() {
                         <div className="space-y-6">
                             <div className="flex gap-4">
                                 <div className="flex-1">
-                                    <label className="block text-sm font-bold text-zinc-500 mb-2 uppercase tracking-wider">Language</label>
+                                    <label className="block text-sm font-bold text-zinc-400 mb-2 uppercase tracking-wider">Language</label>
                                     <select
                                         value={language}
                                         onChange={(e) => setLanguage(e.target.value)}
-                                        className="w-full bg-zinc-900/50 border border-zinc-800 rounded-xl px-4 py-3 text-zinc-100 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 transition-all backdrop-blur-sm"
+                                        className="w-full bg-zinc-900/50 border border-zinc-700 rounded-xl px-4 py-3 text-zinc-100 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 transition-all backdrop-blur-sm shadow-sm"
                                     >
                                         <option value="hinglish">Hinglish (Default)</option>
                                         <option value="hindi">Hindi</option>
@@ -193,7 +193,7 @@ export function CreateVideoPage() {
                                 value={script}
                                 onChange={setScript}
                                 disabled={isGenerating}
-                                label={`Video Idea (${language.charAt(0).toUpperCase() + language.slice(1)})`}
+                                label={`Video Idea`}
                                 placeholder={
                                     language === 'english' ? "Story of a horror house..." :
                                         language === 'hinglish' ? "Raja Harishchand ki kahani..." :
