@@ -115,6 +115,14 @@ export function VideoEditorPage() {
         processScene();
     }, [project, updateScene, isProcessing]);
 
+    const handleViewVideo = () => {
+        if (!project || project.scenes.length === 0) return;
+        setCurrentSceneId(project.scenes[0].id);
+        setForceAutoPlay(true);
+        setActiveTab('frames'); // For desktop, ensure we see the side
+        setMobileTab('preview'); // For mobile, switch to preview
+    };
+
     if (!project) return null;
 
     const currentScene = project.scenes.find(s => s.id === currentSceneId) || project.scenes[0];
@@ -184,6 +192,7 @@ export function VideoEditorPage() {
                         scenes={project.scenes}
                         currentSceneId={currentSceneId}
                         onSelectScene={setCurrentSceneId}
+                        onViewVideo={handleViewVideo}
                     />
                 )}
                 {activeTab === 'captions' && <CaptionsTab />}
@@ -283,6 +292,7 @@ export function VideoEditorPage() {
                                             setForceAutoPlay(true);
                                         }
                                     }}
+                                    onViewVideo={handleViewVideo}
                                     isMobile={true}
                                 />
                             </div>

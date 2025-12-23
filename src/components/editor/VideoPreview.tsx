@@ -82,8 +82,10 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
 
     const audioCtxRef = useRef<AudioContext | null>(null);
     const gainNodeRef = useRef<GainNode | null>(null);
+    const bgGainNodeRef = useRef<GainNode | null>(null);
+    const bgSourceRef = useRef<MediaElementAudioSourceNode | null>(null);
 
-    // Audio setup effect - removed 'scenes' dependency to prevent resets
+    // Audio setup effect
     useEffect(() => {
         // Reset audio when scene changes
         if (audioRef.current) {
@@ -94,12 +96,18 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
             }
         }
 
-        // Initialize AudioContext and GainNode for boosting
+        // Initialize AudioContext and GainNodes
         if (!audioCtxRef.current) {
             try {
                 audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+
+                // Narration Gain
                 gainNodeRef.current = audioCtxRef.current.createGain();
                 gainNodeRef.current.connect(audioCtxRef.current.destination);
+
+                // Background Music Gain
+                bgGainNodeRef.current = audioCtxRef.current.createGain();
+                bgGainNodeRef.current.connect(audioCtxRef.current.destination);
             } catch (err) {
                 console.error("Failed to initialize AudioContext:", err);
             }
@@ -121,7 +129,6 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
                     source.connect(gainNodeRef.current);
                     gainNodeRef.current.gain.value = volume;
                 } catch (e) {
-                    // Source might already be connected if re-using, fallback to standard volume
                     audio.volume = Math.min(volume, 1.0);
                 }
             } else {
@@ -532,23 +539,46 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
             if (bgMusicRef.current) {
                 bgMusicRef.current.pause();
                 bgMusicRef.current = null;
+                bgSourceRef.current = null;
             }
             return;
         }
 
         const musicUrl = project.backgroundMusic.url;
-        // Check if source is actually different (handling relative vs absolute URLs)
         const currentSrc = bgMusicRef.current?.getAttribute('src');
 
         if (!bgMusicRef.current || currentSrc !== musicUrl) {
-            if (bgMusicRef.current) bgMusicRef.current.pause();
-            bgMusicRef.current = new Audio(musicUrl);
-            bgMusicRef.current.loop = true;
+            if (bgMusicRef.current) {
+                bgMusicRef.current.pause();
+                bgSourceRef.current = null;
+            }
+            const audio = new Audio(musicUrl);
+            audio.crossOrigin = "anonymous";
+            audio.loop = true;
+            bgMusicRef.current = audio;
         }
 
-        bgMusicRef.current.volume = project.backgroundMusic.volume;
+        // Apply boosted volume via GainNode for mobile consistency
+        const volume = project.backgroundMusic.volume;
+        if (audioCtxRef.current && bgGainNodeRef.current) {
+            if (!bgSourceRef.current && bgMusicRef.current) {
+                try {
+                    bgSourceRef.current = audioCtxRef.current.createMediaElementSource(bgMusicRef.current);
+                    bgSourceRef.current.connect(bgGainNodeRef.current);
+                } catch (e) {
+                    // Fallback to standard volume if already connected or context fails
+                    bgMusicRef.current.volume = Math.min(volume, 1.0);
+                }
+            }
+            bgGainNodeRef.current.gain.value = volume;
+        } else if (bgMusicRef.current) {
+            bgMusicRef.current.volume = Math.min(volume, 1.0);
+        }
 
         if (isPlaying) {
+            if (audioCtxRef.current?.state === 'suspended') {
+                audioCtxRef.current.resume();
+            }
             bgMusicRef.current.play().catch(console.error);
         } else {
             bgMusicRef.current.pause();

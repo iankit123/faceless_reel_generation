@@ -9,13 +9,14 @@ interface SceneListProps {
     onSelectScene: (id: number | string) => void;
     onPlayScene?: (id: number | string) => void;
     onPlayAll?: () => void;
+    onViewVideo?: () => void;
     isMobile?: boolean;
 }
 
 import { useState, useEffect, useMemo } from 'react';
 import { ConfirmModal } from '../ui/ConfirmModal';
 
-export function SceneList({ scenes, currentSceneId, onSelectScene, onPlayScene, onPlayAll, isMobile }: SceneListProps) {
+export function SceneList({ scenes, currentSceneId, onSelectScene, onPlayScene, onPlayAll, onViewVideo, isMobile }: SceneListProps) {
     const addSceneAt = useVideoStore(state => state.addSceneAt);
     const removeScene = useVideoStore(state => state.removeScene);
     const [sceneToDelete, setSceneToDelete] = useState<number | string | null>(null);
@@ -76,11 +77,21 @@ export function SceneList({ scenes, currentSceneId, onSelectScene, onPlayScene, 
             {/* Progress Indicator */}
             <div className="px-4 py-3 bg-indigo-500/5 border-b border-zinc-800/50">
                 <p className={cn(
-                    "text-xs font-bold text-center transition-colors",
+                    "text-xs font-bold text-center transition-colors flex items-center justify-center gap-2",
                     isGenerating ? "text-red-500" : "text-green-400"
                 )}>
                     {!isGenerating ? (
-                        "video generation complete"
+                        <>
+                            Video generation complete
+                            {onViewVideo && (
+                                <button
+                                    onClick={onViewVideo}
+                                    className="ml-1 text-indigo-400 hover:text-indigo-300 underline font-black tracking-tighter"
+                                >
+                                    Play video
+                                </button>
+                            )}
+                        </>
                     ) : timer > 0 ? (
                         `${timer} sec left to complete video generation`
                     ) : (
