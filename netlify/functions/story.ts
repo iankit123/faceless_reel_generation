@@ -74,6 +74,7 @@ export const handler = async (event: any) => {
                     If a person is mentioned in image prompt, try to describe the person in detail speacially gender and age in all scenes, so that character remains similar in all scenes.
                     Internal guiding pattern:
                     “Image Theme: [Comic], [Ancient times] (same for all scenes)
+                    Person/Animal mentions: [name1, gender1, age1, species1; name2, gender2, age2, species2; ... ] (same for all scenes)
                     Scene Description: [camera framing] of [subject] in [setting], [lighting], [mood], highly detailed, visually coherent”
                     `
                 },
