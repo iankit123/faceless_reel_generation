@@ -29,6 +29,9 @@ export function CreateVideoPage() {
         if (!finalScript.trim()) return;
 
         if (!user) {
+            // Log prompt for analytics even if they don't sign up
+            await supabaseService.logGuestPrompt(finalScript, finalLanguage);
+
             localStorage.setItem('pending_video_script', finalScript);
             localStorage.setItem('pending_video_language', finalLanguage);
             localStorage.setItem('is_generating_post_login', 'true');

@@ -6,9 +6,6 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
-import multer from 'multer';
-import ffmpeg from 'fluent-ffmpeg';
-import { v4 as uuidv4 } from 'uuid';
 
 const __dirname = path.resolve();
 
@@ -31,14 +28,6 @@ const groq = new Groq({
 
 app.use(cors());
 app.use(express.json());
-
-// Configure Multer for temp storage
-const upload = multer({ dest: 'temp/' });
-
-// Ensure temp directory exists
-if (!fs.existsSync('temp')) {
-    fs.mkdirSync('temp');
-}
 
 // Health Check
 app.get('/api/health', (req, res) => {
@@ -130,7 +119,7 @@ app.post('/api/story', async (req, res) => {
                     Write a prompt for text to image generation
                     Describe key visual details (setting, subject appearance, environment, colors, textures)
                     Keep the theme same in all scenes consistent with the story context (Comic, Sketch, animated, fantasy, kids-friendly, etc). If mentioned specifically by user, use that theme.
-                    If a person is mentioned in image prompt, try to describe the person in detail speacially gender and age in all scenes, so that character remains similar in all scenes.
+                    If a person is mentioned in image prompt, try to describe the person in detail gender and age in all scenes, so that character remains similar in all scenes.
                     Internal guiding pattern:
                     “Image Theme: [Comic], [Ancient times] (same for all scenes)
                     Scene Description: [camera framing] of [subject] in [setting], [lighting], [mood], highly detailed, visually coherent”
@@ -250,53 +239,6 @@ app.post('/api/image/generate', async (req, res) => {
 });
 
 // Background music is served from the public folder by Vite/Netlify
-
-// Video Conversion Endpoint
-app.post('/api/video/convert', upload.single('video'), async (req, res) => {
-    if (!req.file) {
-        return res.status(400).json({ error: 'No video file provided' });
-    }
-
-    const inputPath = req.file.path;
-    const outputPath = path.join('temp', `${uuidv4()}.mp4`);
-
-    console.log('CONVERT_REQUEST:', { input: inputPath, output: outputPath });
-
-    ffmpeg(inputPath)
-        .outputOptions([
-            '-c:v libx264',
-            '-preset fast',
-            '-crf 23',
-            '-pix_fmt yuv420p',
-            '-c:a aac',
-            '-b:a 128k',
-            '-movflags +faststart'
-        ])
-        .on('start', (commandLine) => {
-            console.log('FFmpeg command:', commandLine);
-        })
-        .on('error', (err) => {
-            console.error('FFmpeg error:', err);
-            // Cleanup input file
-            if (fs.existsSync(inputPath)) fs.unlinkSync(inputPath);
-            res.status(500).json({ error: 'Conversion failed', details: err.message });
-        })
-        .on('end', () => {
-            console.log('FFmpeg conversion complete:', outputPath);
-
-            // Send the file and then clean up
-            res.download(outputPath, 'video.mp4', (err) => {
-                // Cleanup both files after download
-                if (fs.existsSync(inputPath)) fs.unlinkSync(inputPath);
-                if (fs.existsSync(outputPath)) fs.unlinkSync(outputPath);
-
-                if (err) {
-                    console.error('Download error:', err);
-                }
-            });
-        })
-        .save(outputPath);
-});
 
 app.get('/api/music', (req, res) => {
     try {

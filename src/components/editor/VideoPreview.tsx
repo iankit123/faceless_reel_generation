@@ -1,12 +1,13 @@
 import type { Scene } from '../../types';
-import { Play, Pause, Download, Loader2, Type, Music, ArrowLeft, Layers, Share2 } from 'lucide-react';
+import { Play, Pause, Download, Type, Music, ArrowLeft, Layers, Share2, X } from 'lucide-react';
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useVideoStore } from '../../store/useVideoStore';
 import { CaptionsTab } from './CaptionsTab';
 import { AudioTab } from './AudioTab';
 import { cn } from '../../lib/utils';
-import { X } from 'lucide-react';
 import { getTimedCaptions } from '../../lib/captions';
+import { UpgradeModal } from '../modals/UpgradeModal';
+import { PurchaseCreditModal } from '../modals/PurchaseCreditModal';
 
 interface VideoPreviewProps {
     scenes: Scene[];
@@ -21,10 +22,10 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
     const project = useVideoStore(state => state.project);
     const scene = scenes.find(s => s.id === currentSceneId) || scenes[0];
     const [isPlaying, setIsPlaying] = useState(false);
-    const [isExporting, setIsExporting] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
     const [activeSubTab, setActiveSubTab] = useState<'preview' | 'captions' | 'audio'>('preview');
-    const [exportTimer, setExportTimer] = useState(150);
+    const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
+    const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
 
     // Dynamic Captions
     const captionSegments = useMemo(() => {
@@ -306,276 +307,19 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
         setIsPlaying(!isPlaying);
     };
 
-    const generateVideoBlob = async () => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const exportAudioCtx = new (window.AudioContext || (window as any).AudioContext)();
-        const dest = exportAudioCtx.createMediaStreamDestination();
-
-        const decodeAudio = async (url: string) => {
-            const resp = await fetch(url);
-            const arrayBuffer = await resp.arrayBuffer();
-            return await exportAudioCtx.decodeAudioData(arrayBuffer);
-        };
-
-        const narrationBuffers: (AudioBuffer | null)[] = await Promise.all(
-            scenes.map(s => s.audioUrl ? decodeAudio(s.audioUrl) : Promise.resolve(null))
-        );
-
-        let bgBuffer: AudioBuffer | null = null;
-        if (project?.backgroundMusic?.url) {
-            try {
-                bgBuffer = await decodeAudio(project.backgroundMusic.url);
-            } catch (e) {
-                console.error('Failed to decode background music:', e);
-            }
-        }
-
-        const canvas = document.createElement('canvas');
-        canvas.width = 720;
-        canvas.height = 1280;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) throw new Error('Could not get canvas context');
-
-        const stream = canvas.captureStream(30);
-        const recorderStream = new MediaStream([
-            ...stream.getVideoTracks(),
-            ...dest.stream.getAudioTracks()
-        ]);
-
-        const mimeType = 'video/webm;codecs=vp9,opus';
-        if (!MediaRecorder.isTypeSupported(mimeType)) {
-            throw new Error('WebM with VP9/Opus is not supported in this browser');
-        }
-
-        const recorder = new MediaRecorder(recorderStream, { mimeType, videoBitsPerSecond: 5000000 });
-        const chunks: Blob[] = [];
-        recorder.ondataavailable = (e) => chunks.push(e.data);
-
-        const recordPromise = new Promise<Blob>((resolve) => {
-            recorder.onstop = () => resolve(new Blob(chunks, { type: mimeType }));
-        });
-
-        let currentOffset = 0;
-        narrationBuffers.forEach((buffer, idx) => {
-            if (buffer) {
-                const source = exportAudioCtx.createBufferSource();
-                source.buffer = buffer;
-                const gainNode = exportAudioCtx.createGain();
-                gainNode.gain.value = project?.narrationVolume ?? 1.0;
-                source.connect(gainNode);
-                gainNode.connect(dest);
-                source.start(exportAudioCtx.currentTime + currentOffset);
-            }
-            currentOffset += scenes[idx].duration;
-        });
-
-        if (bgBuffer) {
-            const bgSource = exportAudioCtx.createBufferSource();
-            bgSource.buffer = bgBuffer;
-            bgSource.loop = true;
-            const bgGain = exportAudioCtx.createGain();
-            bgGain.gain.value = project?.backgroundMusic?.volume ?? 0.3;
-            bgSource.connect(bgGain);
-            bgGain.connect(dest);
-            bgSource.start(exportAudioCtx.currentTime);
-        }
-
-        recorder.start();
-        setExportTimer(150);
-        const timerInterval = setInterval(() => {
-            setExportTimer((prev) => Math.max(0, prev - 1));
-        }, 1000);
-
-        try {
-            for (let i = 0; i < scenes.length; i++) {
-                const s = scenes[i];
-                onSelectScene(s.id);
-
-                const img = new Image();
-                img.crossOrigin = "anonymous";
-                if (s.imageUrl) {
-                    img.src = s.imageUrl;
-                    await new Promise((resolve) => { img.onload = resolve; img.onerror = resolve; });
-                }
-
-                const sceneStartTime = performance.now();
-                await new Promise<void>((resolve) => {
-                    const renderFrame = () => {
-                        const elapsed = (performance.now() - sceneStartTime) / 1000;
-                        if (elapsed >= s.duration) {
-                            resolve();
-                            return;
-                        }
-
-                        ctx.fillStyle = '#000';
-                        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-                        if (img.complete && img.naturalWidth > 0) {
-                            const scale = 1.2;
-                            let tx = 0, s_val = 1;
-                            const ty = 0;
-
-                            const progress = elapsed / s.duration;
-                            if (s.motionType === 'zoom_in') s_val = 1 + (0.2 * progress);
-                            else if (s.motionType === 'pan_left') tx = -10 * progress;
-                            else if (s.motionType === 'pan_right') tx = 10 * progress;
-
-                            const iw = img.naturalWidth;
-                            const ih = img.naturalHeight;
-                            const aspect = iw / ih;
-                            const targetAspect = canvas.width / canvas.height;
-
-                            let dw, dh;
-                            if (aspect > targetAspect) {
-                                dh = canvas.height;
-                                dw = dh * aspect;
-                            } else {
-                                dw = canvas.width;
-                                dh = dw / aspect;
-                            }
-
-                            ctx.save();
-                            ctx.translate(canvas.width / 2, canvas.height / 2);
-                            ctx.scale(s_val * scale, s_val * scale);
-                            ctx.translate(tx, ty);
-                            ctx.drawImage(img, -dw / 2, -dh / 2, dw, dh);
-                            ctx.restore();
-                        }
-
-                        if (s.captionsEnabled) {
-                            const sceneCaptions = getTimedCaptions(s.text, s.duration);
-                            const activeSeg = sceneCaptions.find(seg => elapsed >= seg.start && elapsed < seg.end);
-                            const text = activeSeg ? activeSeg.text : '';
-
-                            if (text) {
-                                ctx.font = 'bold 36px sans-serif';
-                                const words = text.split(' ');
-                                let line = '';
-                                const lines = [];
-                                for (const word of words) {
-                                    if (ctx.measureText(line + word).width < canvas.width - 80) {
-                                        line += word + ' ';
-                                    } else {
-                                        lines.push(line);
-                                        line = word + ' ';
-                                    }
-                                }
-                                lines.push(line);
-
-                                const lineHeight = 44;
-                                const totalHeight = lines.length * lineHeight;
-                                ctx.fillStyle = 'rgba(0,0,0,0.6)';
-                                ctx.fillRect(20, canvas.height - 150 - totalHeight, canvas.width - 40, totalHeight + 20);
-
-                                ctx.fillStyle = '#facc15';
-                                ctx.textAlign = 'center';
-                                lines.forEach((l, idx) => {
-                                    ctx.fillText(l.trim(), canvas.width / 2, canvas.height - 130 - totalHeight + (idx * lineHeight) + 30);
-                                });
-                            }
-                        }
-                        requestAnimationFrame(renderFrame);
-                    };
-                    renderFrame();
-                });
-            }
-
-            recorder.stop();
-            const webmBlob = await recordPromise;
-            return webmBlob;
-        } finally {
-            clearInterval(timerInterval);
-            await exportAudioCtx.close();
-        }
+    const handleExport = () => {
+        setIsPlaying(false);
+        setIsUpgradeModalOpen(true);
     };
 
-    const handleExport = async () => {
-        if (isExporting) return;
-        setIsExporting(true);
+    const handleShare = () => {
         setIsPlaying(false);
-
-        try {
-            const webmBlob = await generateVideoBlob();
-
-            const formData = new FormData();
-            formData.append('video', webmBlob, 'video.webm');
-
-            const convertResp = await fetch('/api/video/convert', {
-                method: 'POST',
-                body: formData
-            });
-
-            if (!convertResp.ok) {
-                const errData = await convertResp.json();
-                throw new Error(errData.error || 'Conversion failed');
-            }
-
-            const mp4Blob = await convertResp.blob();
-            const url = URL.createObjectURL(mp4Blob);
-            const a = document.createElement('a');
-            a.href = url;
-            const fileName = project?.title && !project.title.includes('-') ? project.title : 'my-reel';
-            a.download = `${fileName}.mp4`;
-            a.click();
-            URL.revokeObjectURL(url);
-
-        } catch (error) {
-            console.error('Export failed:', error);
-            alert(`Export failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-        } finally {
-            setIsExporting(false);
-        }
+        setIsUpgradeModalOpen(true);
     };
 
-    const handleShare = async () => {
-        if (isExporting) return;
-        setIsExporting(true);
-        setIsPlaying(false);
-
-        try {
-            const webmBlob = await generateVideoBlob();
-
-            const formData = new FormData();
-            formData.append('video', webmBlob, 'video.webm');
-
-            const convertResp = await fetch('/api/video/convert', {
-                method: 'POST',
-                body: formData
-            });
-
-            if (!convertResp.ok) {
-                const errData = await convertResp.json();
-                throw new Error(errData.error || 'Conversion failed');
-            }
-
-            const mp4Blob = await convertResp.blob();
-            const fileName = (project?.title && !project.title.includes('-') ? project.title : 'my-reel') + '.mp4';
-            const file = new File([mp4Blob], fileName, { type: 'video/mp4' });
-
-            if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                await navigator.share({
-                    files: [file],
-                    title: project?.title || 'Check out my reel!',
-                    text: 'Built with Reel Shorts 🎬'
-                });
-            } else {
-                // Fallback to download if share not supported for files
-                const url = URL.createObjectURL(mp4Blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = fileName;
-                a.click();
-                URL.revokeObjectURL(url);
-                alert('Sharing not directly supported on this browser/device. Video has been downloaded instead.');
-            }
-        } catch (error) {
-            console.error('Share failed:', error);
-            if (error instanceof Error && error.name !== 'AbortError') {
-                alert(`Share failed: ${error.message}`);
-            }
-        } finally {
-            setIsExporting(false);
-        }
+    const handleUpgradeNow = () => {
+        setIsUpgradeModalOpen(false);
+        setIsPurchaseModalOpen(true);
     };
 
     const formatTime = (seconds: number) => {
@@ -830,7 +574,7 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
                     <div className="flex justify-center items-center gap-4">
                         <button
                             onClick={togglePlayback}
-                            disabled={!scene.audioUrl || isExporting}
+                            disabled={!scene.audioUrl}
                             className="p-4 rounded-full bg-zinc-100 text-zinc-900 hover:bg-white transition-colors shadow-lg shadow-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {isPlaying ? (
@@ -843,18 +587,14 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
                         <div className="flex items-center gap-2">
                             <button
                                 onClick={handleExport}
-                                disabled={isExporting || scenes.some(s => s.status !== 'ready')}
+                                disabled={scenes.some(s => s.status !== 'ready')}
                                 className="p-4 rounded-full bg-zinc-800 text-white hover:bg-zinc-700 transition-colors shadow-lg shadow-black/20 disabled:opacity-50 disabled:cursor-not-allowed group relative"
                                 title="Download Video"
                             >
-                                {isExporting ? (
-                                    <Loader2 className="w-6 h-6 animate-spin" />
-                                ) : (
-                                    <Download className="w-6 h-6" />
-                                )}
+                                <Download className="w-6 h-6" />
 
                                 {/* Tooltip for pending scenes */}
-                                {!isExporting && scenes.some(s => s.status !== 'ready') && (
+                                {scenes.some(s => s.status !== 'ready') && (
                                     <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-48 p-2 bg-zinc-800 text-[10px] rounded shadow-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity">
                                         Wait for all scenes to generate before downloading
                                     </div>
@@ -863,18 +603,14 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
 
                             <button
                                 onClick={handleShare}
-                                disabled={isExporting || scenes.some(s => s.status !== 'ready')}
+                                disabled={scenes.some(s => s.status !== 'ready')}
                                 className="p-4 rounded-full bg-indigo-600 text-white hover:bg-indigo-500 transition-colors shadow-lg shadow-indigo-500/20 disabled:opacity-50 disabled:cursor-not-allowed group relative"
                                 title="Share to Instagram"
                             >
-                                {isExporting ? (
-                                    <Loader2 className="w-6 h-6 animate-spin" />
-                                ) : (
-                                    <Share2 className="w-6 h-6" />
-                                )}
+                                <Share2 className="w-6 h-6" />
 
                                 {/* Tooltip for pending scenes */}
-                                {!isExporting && scenes.some(s => s.status !== 'ready') && (
+                                {scenes.some(s => s.status !== 'ready') && (
                                     <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-48 p-2 bg-zinc-800 text-[10px] rounded shadow-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity">
                                         Wait for all scenes to generate before sharing
                                     </div>
@@ -883,38 +619,19 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
                         </div>
                     </div>
 
-                    {/* Exporting Overlay */}
-                    {isExporting && (
-                        <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center">
-                            <div className="w-24 h-24 mb-8 relative">
-                                <div className="absolute inset-0 border-4 border-indigo-500/20 rounded-full" />
-                                <div className="absolute inset-0 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
-                                <div className="absolute inset-0 flex items-center justify-center">
-                                    <Download className="w-8 h-8 text-indigo-400" />
-                                </div>
-                            </div>
-                            <h2 className="text-2xl font-bold text-white mb-2">Exporting Your Reel</h2>
-                            <div className="flex flex-col items-center gap-2 mb-6">
-                                <span className={`text-4xl font-mono font-bold ${exportTimer > 0 ? 'text-red-500' : 'text-amber-400'}`}>
-                                    {exportTimer}s
-                                </span>
-                                {exportTimer === 0 && (
-                                    <p className="text-amber-400 text-sm font-medium animate-pulse">
-                                        It is taking more time than expected, please wait...
-                                    </p>
-                                )}
-                            </div>
-                            <p className="text-zinc-400 max-w-md">
-                                We're rendering your scenes, captions, and music into a high-quality video.
-                                Please keep this tab open.
-                            </p>
-                            <div className="mt-8 px-4 py-2 bg-zinc-800 rounded-full text-xs font-mono text-zinc-500">
-                                Rendering in Portrait (720x1280)
-                            </div>
-                        </div>
-                    )}
                 </div>
             </div>
+
+            <UpgradeModal
+                isOpen={isUpgradeModalOpen}
+                onClose={() => setIsUpgradeModalOpen(false)}
+                onUpgrade={handleUpgradeNow}
+            />
+
+            <PurchaseCreditModal
+                isOpen={isPurchaseModalOpen}
+                onClose={() => setIsPurchaseModalOpen(false)}
+            />
         </div>
     );
 }

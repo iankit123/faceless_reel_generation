@@ -123,5 +123,21 @@ export const supabaseService = {
 
         if (error) throw error;
         return data;
+    },
+
+    async logGuestPrompt(prompt: string, language: string) {
+        // Record the prompt even if they don't sign up
+        // We catch errors here to ensure the main flow (redirect to login) isn't blocked
+        try {
+            await supabase
+                .from('guest_prompts')
+                .insert({
+                    prompt,
+                    language,
+                    created_at: new Date()
+                });
+        } catch (error) {
+            console.warn('Failed to log guest prompt:', error);
+        }
     }
 };
