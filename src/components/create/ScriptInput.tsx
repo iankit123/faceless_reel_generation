@@ -34,7 +34,7 @@ export function ScriptInput({ value, onChange, disabled, label = "Video Idea", p
     }
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-2">
             <SuggestIdeasModal
                 isOpen={isIdeasModalOpen}
                 onClose={() => setIsIdeasModalOpen(false)}
@@ -47,7 +47,7 @@ export function ScriptInput({ value, onChange, disabled, label = "Video Idea", p
                 </label>
                 <button
                     onClick={() => setIsIdeasModalOpen(true)}
-                    className="px-4 py-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-400 hover:to-pink-400 text-white rounded-xl flex items-center gap-2 shadow-lg shadow-purple-500/20 active:scale-95 transition-all group"
+                    className="px-2 py-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-400 hover:to-pink-400 text-white rounded-xl flex items-center gap-1 shadow-lg shadow-purple-500/20 active:scale-95 transition-all group"
                 >
                     <Sparkles className="w-4 h-4 group-hover:rotate-12 transition-transform" />
                     <span className="text-sm font-bold tracking-tight">Suggest Ideas</span>
@@ -66,11 +66,11 @@ export function ScriptInput({ value, onChange, disabled, label = "Video Idea", p
                 />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-0">
                 <button
                     onClick={toggleListening}
                     disabled={disabled}
-                    className={`flex items-center justify-center gap-2 px-6 py-4 rounded-xl transition-all border ${isListening
+                    className={`flex items-center justify-center gap-1 px-1 py-1 rounded-xl transition-all border ${isListening
                         ? 'bg-red-500/10 border-red-500/50 text-red-500 animate-pulse'
                         : 'bg-zinc-900/40 border-zinc-900 text-zinc-100 hover:bg-zinc-800/60 hover:border-zinc-800'
                         }`}
