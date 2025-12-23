@@ -80,9 +80,9 @@ export function LandingPage() {
                 </div >
 
                 {/* Right Content - Tilted Cards */}
-                < div className="flex-1 relative w-full max-w-md lg:max-w-none h-[400px] lg:h-[600px] mt-12 lg:mt-0 flex items-center justify-center" >
+                <div className="flex-1 relative w-full max-w-md lg:max-w-none h-[400px] lg:h-[600px] mt-12 lg:mt-0 flex items-center justify-center">
                     {/* Card 1 */}
-                    < div className="absolute w-48 lg:w-64 aspect-[9/16] bg-zinc-900 rounded-2xl border border-zinc-800 shadow-2xl overflow-hidden transform -rotate-12 -translate-x-32 lg:-translate-x-48 z-10 transition-transform hover:scale-105 hover:z-30 duration-500" >
+                    <div className="absolute w-48 lg:w-64 aspect-[9/16] bg-zinc-900 rounded-2xl border border-zinc-800 shadow-2xl overflow-hidden transform -rotate-12 left-1/2 -translate-x-1/2 -ml-32 lg:-ml-48 z-10 transition-transform hover:scale-105 hover:z-30 duration-500">
                         <img
                             src="https://images.unsplash.com/photo-1582125169590-59f4985fb32a?auto=format&fit=crop&q=80&w=800"
                             className="w-full h-full object-cover opacity-60"
@@ -93,10 +93,10 @@ export function LandingPage() {
                             <div className="h-1 w-12 bg-cyan-500 rounded-full mb-2" />
                             <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">The Cleopatra Effect</p>
                         </div>
-                    </div >
+                    </div>
 
                     {/* Card 2 (Center) */}
-                    < div className="absolute w-56 lg:w-72 aspect-[9/16] bg-zinc-900 rounded-2xl border border-zinc-700 shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-hidden z-20 transition-transform hover:scale-105 duration-500" >
+                    <div className="absolute w-56 lg:w-72 aspect-[9/16] bg-zinc-900 rounded-2xl border border-zinc-700 shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-hidden left-1/2 -translate-x-1/2 z-20 transition-transform hover:scale-105 duration-500">
                         <img
                             src="https://images.unsplash.com/photo-1541873676-a18131494184?auto=format&fit=crop&q=80&w=800"
                             className="w-full h-full object-cover"
@@ -107,10 +107,10 @@ export function LandingPage() {
                             <div className="inline-block px-2 py-1 bg-cyan-500 text-zinc-950 text-[10px] font-black uppercase mb-3 rounded-sm">History</div>
                             <p className="text-sm font-bold leading-tight">Story of 1st Man on Moon</p>
                         </div>
-                    </div >
+                    </div>
 
                     {/* Card 3 */}
-                    < div className="absolute w-48 lg:w-64 aspect-[9/16] bg-zinc-900 rounded-2xl border border-zinc-800 shadow-2xl overflow-hidden transform rotate-12 translate-x-32 lg:translate-x-48 z-10 transition-transform hover:scale-105 hover:z-30 duration-500" >
+                    <div className="absolute w-48 lg:w-64 aspect-[9/16] bg-zinc-900 rounded-2xl border border-zinc-800 shadow-2xl overflow-hidden transform rotate-12 left-1/2 -translate-x-1/2 ml-32 lg:ml-48 z-10 transition-transform hover:scale-105 hover:z-30 duration-500">
                         <img
                             src="https://plus.unsplash.com/premium_vector-1721077382049-f4deff3c4cf7?auto=format&fit=crop&q=80&w=800"
                             className="w-full h-full object-cover opacity-60"
@@ -121,12 +121,12 @@ export function LandingPage() {
                             <div className="h-1 w-12 bg-indigo-500 rounded-full mb-2" />
                             <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Young boy and his dog friend</p>
                         </div>
-                    </div >
-                </div >
-            </main >
+                    </div>
+                </div>
+            </main>
 
             {/* Features Section (Subtle) */}
-            < section className="relative z-10 max-w-7xl mx-auto px-6 py-20 border-t border-zinc-900" >
+            <section className="relative z-10 max-w-7xl mx-auto px-6 py-20 border-t border-zinc-900">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
                     {[
                         { title: 'AI Scripting', desc: 'Generate engaging scripts in seconds with our advanced AI.', icon: Zap },
@@ -142,7 +142,7 @@ export function LandingPage() {
                         </div>
                     ))}
                 </div>
-            </section >
-        </div >
+            </section>
+        </div>
     );
 }
