@@ -102,8 +102,8 @@ export function LandingPage() {
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-transparent" />
                         <div className="absolute bottom-6 left-6 right-6">
-                            <div className="inline-block px-2 py-1 bg-cyan-500 text-zinc-950 text-[10px] font-black uppercase mb-3 rounded-sm">Strategist</div>
-                            <p className="text-sm font-bold leading-tight">How to build a galactic empire in 3 steps</p>
+                            <div className="inline-block px-2 py-1 bg-cyan-500 text-zinc-950 text-[10px] font-black uppercase mb-3 rounded-sm">History</div>
+                            <p className="text-sm font-bold leading-tight">Story of 1st Man on Moon</p>
                         </div>
                     </div>
 
@@ -117,7 +117,7 @@ export function LandingPage() {
                         <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-transparent" />
                         <div className="absolute bottom-4 left-4 right-4">
                             <div className="h-1 w-12 bg-indigo-500 rounded-full mb-2" />
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">1969 History</p>
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Young boy and his dog friend</p>
                         </div>
                     </div>
                 </div>
