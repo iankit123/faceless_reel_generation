@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { Scene, VideoProject } from '../types';
 import { supabaseService } from '../services/supabase';
+import { getISTDate } from '../utils/date';
 
 interface VideoState {
     project: VideoProject | null;
@@ -44,7 +45,7 @@ export const useVideoStore = create<VideoState>((set, get) => ({
             },
             narrationVolume: 3.0,
             language: language || 'hinglish',
-            createdAt: new Date()
+            createdAt: getISTDate()
         }
     }),
 

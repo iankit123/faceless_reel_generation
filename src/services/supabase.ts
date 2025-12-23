@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import type { Scene, VideoProject } from '../types';
+import { getISTDate } from '../utils/date';
 
 export const supabaseService = {
     async saveProject(project: VideoProject, userId: string) {
@@ -116,7 +117,7 @@ export const supabaseService = {
                 amount,
                 credits_requested: credits,
                 status,
-                created_at: new Date()
+                created_at: getISTDate()
             })
             .select()
             .single();
@@ -134,7 +135,7 @@ export const supabaseService = {
                 .insert({
                     prompt,
                     language,
-                    created_at: new Date()
+                    created_at: getISTDate()
                 });
         } catch (error) {
             console.warn('Failed to log guest prompt:', error);
