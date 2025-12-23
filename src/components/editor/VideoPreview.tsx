@@ -99,7 +99,8 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
         // Initialize AudioContext and GainNodes
         if (!audioCtxRef.current) {
             try {
-                audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+                // @ts-ignore
+                audioCtxRef.current = new (window.AudioContext || (window as any).AudioContext)();
 
                 // Narration Gain
                 gainNodeRef.current = audioCtxRef.current.createGain();
@@ -128,7 +129,7 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
                     const source = audioCtxRef.current.createMediaElementSource(audio);
                     source.connect(gainNodeRef.current);
                     gainNodeRef.current.gain.value = volume;
-                } catch (e) {
+                } catch {
                     audio.volume = Math.min(volume, 1.0);
                 }
             } else {
@@ -166,7 +167,7 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
                 audioRef.current = null;
             }
         };
-    }, [scene?.audioUrl, scene?.id, currentSceneStartTime, scene?.duration]);
+    }, [scene?.audioUrl, scene?.id, currentSceneStartTime, scene?.duration, project?.narrationVolume]);
 
     // Live Narration Volume Update
     useEffect(() => {
@@ -311,80 +312,96 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
         setIsPlaying(false);
 
         try {
+            // @ts-ignore
+            const exportAudioCtx = new (window.AudioContext || (window as any).AudioContext)();
+            const dest = exportAudioCtx.createMediaStreamDestination();
+
+            // Helper to decode audio from URL
+            const decodeAudio = async (url: string) => {
+                const resp = await fetch(url);
+                const arrayBuffer = await resp.arrayBuffer();
+                return await exportAudioCtx.decodeAudioData(arrayBuffer);
+            };
+
+            // 1. Pre-decode all audio assets
+            console.log('Export: Starting audio pre-decoding...');
+            const narrationBuffers: (AudioBuffer | null)[] = await Promise.all(
+                scenes.map(s => s.audioUrl ? decodeAudio(s.audioUrl) : Promise.resolve(null))
+            );
+
+            let bgBuffer: AudioBuffer | null = null;
+            if (project?.backgroundMusic?.url) {
+                try {
+                    bgBuffer = await decodeAudio(project.backgroundMusic.url);
+                } catch (e) {
+                    console.error('Failed to decode background music:', e);
+                }
+            }
+
+            // 2. Setup Canvas
             const canvas = document.createElement('canvas');
-            canvas.width = 720; // 720x1280 is a good balance for mobile
+            canvas.width = 720;
             canvas.height = 1280;
             const ctx = canvas.getContext('2d');
             if (!ctx) throw new Error('Could not get canvas context');
 
             const stream = canvas.captureStream(30);
-            const audioCtx = new AudioContext();
-            const dest = audioCtx.createMediaStreamDestination();
-
-            // Mix background music if exists
-            let bgSource: MediaElementAudioSourceNode | null = null;
-            if (bgMusicRef.current) {
-                bgMusicRef.current.currentTime = 0;
-                bgSource = audioCtx.createMediaElementSource(bgMusicRef.current);
-                const bgGain = audioCtx.createGain();
-                bgGain.gain.value = project?.backgroundMusic?.volume || 0.3;
-                bgSource.connect(bgGain);
-                bgGain.connect(dest);
-            }
-
-            const mimeTypes = [
-                'video/mp4;codecs=h264,aac',
-                'video/mp4;codecs=h264,opus',
-                'video/mp4',
-                'video/webm;codecs=vp9,opus',
-                'video/webm'
-            ];
-
-            const supportedMineType = mimeTypes.find(type => MediaRecorder.isTypeSupported(type)) || 'video/webm';
-            console.log('Using mime type for export:', supportedMineType);
-
-            const recorder = new MediaRecorder(new MediaStream([
+            const recorderStream = new MediaStream([
                 ...stream.getVideoTracks(),
                 ...dest.stream.getAudioTracks()
-            ]), { mimeType: supportedMineType });
+            ]);
 
+            // 3. Setup Recorder (Force WebM for reliability)
+            const mimeType = 'video/webm;codecs=vp9,opus';
+            if (!MediaRecorder.isTypeSupported(mimeType)) {
+                throw new Error('WebM with VP9/Opus is not supported in this browser');
+            }
+
+            const recorder = new MediaRecorder(recorderStream, { mimeType, videoBitsPerSecond: 5000000 });
             const chunks: Blob[] = [];
             recorder.ondataavailable = (e) => chunks.push(e.data);
-            recorder.onstop = () => {
-                const extension = supportedMineType.includes('mp4') ? 'mp4' : 'webm';
-                const blob = new Blob(chunks, { type: supportedMineType });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                const fileName = project?.title && !project.title.includes('-') ? project.title : 'my-reel';
-                a.download = `${fileName}.${extension}`;
-                a.click();
-                URL.revokeObjectURL(url);
-            };
 
-            // Start timer
+            const recordPromise = new Promise<Blob>((resolve) => {
+                recorder.onstop = () => resolve(new Blob(chunks, { type: mimeType }));
+            });
+
+            // 4. Schedule Audio Sources
+            let currentOffset = 0;
+            narrationBuffers.forEach((buffer, idx) => {
+                if (buffer) {
+                    const source = exportAudioCtx.createBufferSource();
+                    source.buffer = buffer;
+                    const gainNode = exportAudioCtx.createGain();
+                    gainNode.gain.value = project?.narrationVolume ?? 1.0;
+                    source.connect(gainNode);
+                    gainNode.connect(dest);
+                    source.start(exportAudioCtx.currentTime + currentOffset);
+                }
+                currentOffset += scenes[idx].duration;
+            });
+
+            if (bgBuffer) {
+                const bgSource = exportAudioCtx.createBufferSource();
+                bgSource.buffer = bgBuffer;
+                bgSource.loop = true;
+                const bgGain = exportAudioCtx.createGain();
+                bgGain.gain.value = project?.backgroundMusic?.volume ?? 0.3;
+                bgSource.connect(bgGain);
+                bgGain.connect(dest);
+                bgSource.start(exportAudioCtx.currentTime);
+            }
+
+            // 5. Start Recording and Render Loop
+            recorder.start();
             setExportTimer(150);
             const timerInterval = setInterval(() => {
                 setExportTimer((prev) => Math.max(0, prev - 1));
             }, 1000);
 
-            recorder.start();
-            if (bgMusicRef.current) {
-                bgMusicRef.current.currentTime = 0;
-                await bgMusicRef.current.play();
-            }
-
-            // Ensure AudioContext is running
-            if (audioCtx.state === 'suspended') {
-                await audioCtx.resume();
-            }
-
-            // Render scenes
             for (let i = 0; i < scenes.length; i++) {
                 const s = scenes[i];
                 onSelectScene(s.id);
 
-                // Load image
                 const img = new Image();
                 img.crossOrigin = "anonymous";
                 if (s.imageUrl) {
@@ -392,42 +409,22 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
                     await new Promise((resolve) => { img.onload = resolve; img.onerror = resolve; });
                 }
 
-                // Prepare and wait for scene audio
-                const sceneAudio = new Audio(s.audioUrl);
-                sceneAudio.crossOrigin = "anonymous";
-                sceneAudio.preload = "auto";
-
-                await new Promise((resolve) => {
-                    sceneAudio.oncanplaythrough = resolve;
-                    sceneAudio.onerror = resolve; // Continue on error to avoid hang
-                    sceneAudio.load();
-                });
-
-                const sceneSource = audioCtx.createMediaElementSource(sceneAudio);
-                const sceneGain = audioCtx.createGain();
-                sceneGain.gain.value = project?.narrationVolume ?? 1.0;
-                sceneSource.connect(sceneGain);
-                sceneGain.connect(dest);
-
-                await sceneAudio.play();
-                const startTime = performance.now();
-
-                // Animation loop for this scene
+                const sceneStartTime = performance.now();
                 await new Promise<void>((resolve) => {
                     const renderFrame = () => {
-                        const elapsed = (performance.now() - startTime) / 1000;
+                        const elapsed = (performance.now() - sceneStartTime) / 1000;
                         if (elapsed >= s.duration) {
                             resolve();
                             return;
                         }
 
-                        // Draw image with motion
                         ctx.fillStyle = '#000';
                         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
                         if (img.complete && img.naturalWidth > 0) {
-                            const scale = 1.2; // Base scale for motion
-                            let tx = 0, ty = 0, s_val = 1;
+                            const scale = 1.2;
+                            let tx = 0, s_val = 1;
+                            const ty = 0;
 
                             const progress = elapsed / s.duration;
                             if (s.motionType === 'zoom_in') s_val = 1 + (0.2 * progress);
@@ -456,15 +453,13 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
                             ctx.restore();
                         }
 
-                        // Draw Captions
                         if (s.captionsEnabled) {
                             const sceneCaptions = getTimedCaptions(s.text, s.duration);
                             const activeSeg = sceneCaptions.find(seg => elapsed >= seg.start && elapsed < seg.end);
                             const text = activeSeg ? activeSeg.text : '';
 
                             if (text) {
-                                ctx.font = 'bold 32px sans-serif';
-                                // Simple text wrapping
+                                ctx.font = 'bold 36px sans-serif';
                                 const words = text.split(' ');
                                 let line = '';
                                 const lines = [];
@@ -478,36 +473,56 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
                                 }
                                 lines.push(line);
 
-                                const lineHeight = 40;
+                                const lineHeight = 44;
                                 const totalHeight = lines.length * lineHeight;
-
                                 ctx.fillStyle = 'rgba(0,0,0,0.6)';
                                 ctx.fillRect(20, canvas.height - 150 - totalHeight, canvas.width - 40, totalHeight + 20);
 
-                                ctx.fillStyle = '#facc15'; // Yellow-400
+                                ctx.fillStyle = '#facc15';
                                 ctx.textAlign = 'center';
                                 lines.forEach((l, idx) => {
                                     ctx.fillText(l.trim(), canvas.width / 2, canvas.height - 130 - totalHeight + (idx * lineHeight) + 30);
                                 });
                             }
                         }
-
                         requestAnimationFrame(renderFrame);
                     };
                     renderFrame();
                 });
-                sceneAudio.pause();
-                sceneSource.disconnect();
             }
 
-            if (bgMusicRef.current) bgMusicRef.current.pause();
             recorder.stop();
+            const webmBlob = await recordPromise;
             clearInterval(timerInterval);
-            await audioCtx.close();
+            await exportAudioCtx.close();
+
+            // 6. Backend Conversion to MP4
+            console.log('Export: Sending WebM for MP4 conversion...');
+            const formData = new FormData();
+            formData.append('video', webmBlob, 'video.webm');
+
+            const convertResp = await fetch('/api/video/convert', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!convertResp.ok) {
+                const errData = await convertResp.json();
+                throw new Error(errData.error || 'Conversion failed');
+            }
+
+            const mp4Blob = await convertResp.blob();
+            const url = URL.createObjectURL(mp4Blob);
+            const a = document.createElement('a');
+            a.href = url;
+            const fileName = project?.title && !project.title.includes('-') ? project.title : 'my-reel';
+            a.download = `${fileName}.mp4`;
+            a.click();
+            URL.revokeObjectURL(url);
 
         } catch (error) {
             console.error('Export failed:', error);
-            alert('Export failed. See console for details.');
+            alert(`Export failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
         } finally {
             setIsExporting(false);
         }
@@ -550,6 +565,9 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
         if (!bgMusicRef.current || currentSrc !== musicUrl) {
             if (bgMusicRef.current) {
                 bgMusicRef.current.pause();
+                try {
+                    bgSourceRef.current?.disconnect();
+                } catch { }
                 bgSourceRef.current = null;
             }
             const audio = new Audio(musicUrl);
@@ -558,32 +576,34 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
             bgMusicRef.current = audio;
         }
 
-        // Apply boosted volume via GainNode for mobile consistency
+        // Apply volume via GainNode for mobile consistency
         const volume = project.backgroundMusic.volume;
         if (audioCtxRef.current && bgGainNodeRef.current) {
             if (!bgSourceRef.current && bgMusicRef.current) {
                 try {
                     bgSourceRef.current = audioCtxRef.current.createMediaElementSource(bgMusicRef.current);
                     bgSourceRef.current.connect(bgGainNodeRef.current);
-                } catch (e) {
-                    // Fallback to standard volume if already connected or context fails
-                    bgMusicRef.current.volume = Math.min(volume, 1.0);
+                } catch {
+                    // Already connected or failed
                 }
             }
-            bgGainNodeRef.current.gain.value = volume;
+            // Use setTargetAtTime for smoother transitions
+            bgGainNodeRef.current.gain.setTargetAtTime(volume, audioCtxRef.current.currentTime, 0.05);
+
+            // Ensure context is resumed if we're trying to play or change volume
+            if (isPlaying && audioCtxRef.current.state === 'suspended') {
+                audioCtxRef.current.resume();
+            }
         } else if (bgMusicRef.current) {
             bgMusicRef.current.volume = Math.min(volume, 1.0);
         }
 
-        if (isPlaying) {
-            if (audioCtxRef.current?.state === 'suspended') {
-                audioCtxRef.current.resume();
-            }
+        if (isPlaying && bgMusicRef.current) {
             bgMusicRef.current.play().catch(console.error);
-        } else {
+        } else if (bgMusicRef.current) {
             bgMusicRef.current.pause();
         }
-    }, [project?.backgroundMusic?.url, project?.backgroundMusic?.volume, isPlaying]);
+    }, [project?.backgroundMusic?.url, project?.backgroundMusic?.volume, isPlaying, project?.backgroundMusic]);
 
     // Separate cleanup for unmount
     useEffect(() => {

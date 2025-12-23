@@ -6,7 +6,7 @@ interface AuthContextType {
     user: User | null;
     session: Session | null;
     loading: boolean;
-    credits: number;
+    credits: number | null;
     signInWithGoogle: () => Promise<void>;
     signOut: () => Promise<void>;
     refreshCredits: () => Promise<void>;
@@ -17,7 +17,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [session, setSession] = useState<Session | null>(null);
-    const [credits, setCredits] = useState(0);
+    const [credits, setCredits] = useState<number | null>(null);
     const [loading, setLoading] = useState(true);
 
     const refreshCredits = async () => {
@@ -91,7 +91,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const signOut = async () => {
         const { error } = await supabase.auth.signOut();
         if (error) throw error;
-        setCredits(0);
+        setCredits(null);
     };
 
     const value = {

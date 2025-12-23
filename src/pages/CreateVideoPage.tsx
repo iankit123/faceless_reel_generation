@@ -36,7 +36,7 @@ export function CreateVideoPage() {
             return;
         }
 
-        if (credits <= 0) {
+        if (credits !== null && credits <= 0) {
             setIsPurchaseModalOpen(true);
             return;
         }
@@ -166,7 +166,7 @@ export function CreateVideoPage() {
                             Write a simple idea. We handle script, scenes and narration.
                         </p>
 
-                        {credits === 0 && user && (
+                        {credits !== null && credits === 0 && user && (
                             <div className="flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2">
                                 <AlertCircle className="w-4 h-4 text-amber-400" />
                                 <p className="text-xs text-amber-200">

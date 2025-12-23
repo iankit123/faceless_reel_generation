@@ -42,7 +42,7 @@ export const useVideoStore = create<VideoState>((set, get) => ({
                 url: '/background_music/Else.mp3',
                 volume: 0.3
             },
-            narrationVolume: 1.0,
+            narrationVolume: 3.0,
             language: language || 'hinglish',
             createdAt: new Date()
         }
