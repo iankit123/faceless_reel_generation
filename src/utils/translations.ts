@@ -22,7 +22,7 @@ export const translations = {
         videoIdeaLabel: "Video Idea",
         generateButton: "Generate Video",
         generating: "Generating",
-        helperText: "Write a simple idea. We handle script, scenes and narration.",
+        // helperText: "We handle script, scenes and narration.",
         creditsLeft: "No credits left.",
         buyMore: "Buy more"
     },

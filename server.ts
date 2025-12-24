@@ -26,7 +26,7 @@ const imageCache = new Map<string, any>();
 
 // Initialize Groq
 const groq = new Groq({
-    apiKey: process.env.GROQ_API_KEY || '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'
+    apiKey: process.env.GROQ_API_KEY
 });
 
 app.use(cors());
@@ -385,8 +385,38 @@ app.post('/api/video/export', async (req, res) => {
                 // Filters for Captions/Thumbnail
                 const filters = [];
 
-                // Scale and Crop to 9:16
-                filters.push('scale=w=1080:h=1920:force_original_aspect_ratio=increase,crop=1080:1920');
+                // Scale and Crop to 9:16 + Motion Effects
+                if (scene.motionType && scene.motionType !== 'none') {
+                    // Pre-scale to a larger size for zoompan to avoid quality loss
+                    // zoompan works best with a larger canvas
+                    filters.push('scale=2160:3840'); // 2x 1080x1920
+
+                    const durationFrames = Math.ceil(scene.duration * 30);
+                    let zoompanFilter = '';
+
+                    switch (scene.motionType) {
+                        case 'zoom_in':
+                            zoompanFilter = `zoompan=z='min(zoom+0.001,1.5)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1:s=1080x1920:fps=30`;
+                            break;
+                        case 'pan_left':
+                            zoompanFilter = `zoompan=z='1.2':x='(1-on/${durationFrames})*(iw-iw/zoom)':y='ih/2-(ih/zoom/2)':d=1:s=1080x1920:fps=30`;
+                            break;
+                        case 'pan_right':
+                            zoompanFilter = `zoompan=z='1.2':x='(on/${durationFrames})*(iw-iw/zoom)':y='ih/2-(ih/zoom/2)':d=1:s=1080x1920:fps=30`;
+                            break;
+                        case 'pan_up':
+                            zoompanFilter = `zoompan=z='1.2':x='iw/2-(iw/zoom/2)':y='(1-on/${durationFrames})*(ih-ih/zoom)':d=1:s=1080x1920:fps=30`;
+                            break;
+                        case 'pan_down':
+                            zoompanFilter = `zoompan=z='1.2':x='iw/2-(iw/zoom/2)':y='(on/${durationFrames})*(ih-ih/zoom)':d=1:s=1080x1920:fps=30`;
+                            break;
+                        default:
+                            zoompanFilter = `scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920`;
+                    }
+                    filters.push(zoompanFilter);
+                } else {
+                    filters.push('scale=w=1080:h=1920:force_original_aspect_ratio=increase,crop=1080:1920');
+                }
 
                 const fontBold = '/System/Library/Fonts/Supplemental/Arial Bold.ttf';
                 const fontUnicode = '/Library/Fonts/Arial Unicode.ttf';

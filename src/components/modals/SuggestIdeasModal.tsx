@@ -13,6 +13,11 @@ const IDEAS: Idea[] = [
         hindi: "महाभारत के युद्ध की पृष्ठभूमि में एक भावनात्मक कहानी बनाओ। अर्जुन युद्धभूमि में भय और संदेह से घिरा हुआ है और धनुष नीचे रख देता है। श्रीकृष्ण शांति से उसे उसके कर्तव्य और आत्मबल की याद दिलाते हैं। कहानी में अर्जुन के मन का परिवर्तन स्पष्ट दिखना चाहिए। अंत में एक स्पष्ट नैतिक संदेश हो कि बिना फल की चिंता किए अपने धर्म का पालन करना ही सच्चा मार्ग है। भाषा गंभीर और पौराणिक हो।"
     },
     {
+        title: "Eagle and Chicken story",
+        english: "An eagle mistakenly stepped on here egg, and was very sad. One day she saw a chicken's egg in her nest, and she thought it is her, and took care of her. When egg hatched a white coloured chick got out. Eagle was shocked why it is not flying like her. Then realized it is different. Still she took care of her like own child",
+        hindi: "एक लोमड़ी खेत में एक नन्ही गाय और एक नन्हा सूअर रोज छोटी छोटी बातों पर लड़ते रहते हैं। एक दिन एक लोमड़ी खेत में हमला करने आती है। डर और अफरा तफरी के बीच दोनों मिलकर उसका सामना करते हैं। लोमड़ी के भाग जाने के बाद दोनों को दोस्ती और एकता का महत्व समझ आता है। अंत में एक सरल नैतिक संदेश हो कि मुश्किल समय में साथ रहना ही सच्ची ताकत है।"
+    },
+    {
         title: "Baby Cow and Pig story with friendship moral",
         english: "Create a heartwarming short story for an Instagram reel set on a farm. A baby cow and a baby pig fight and argue every day over small things. Suddenly a fox enters the farm to attack. Show fear, chaos, and then the cow and pig protecting each other and fighting back together. After the fox runs away, they realize the value of unity and become friends. End with a simple moral about friendship and standing together in tough times. Tone should be emotional and family friendly.",
         hindi: "एक खेत की पृष्ठभूमि में एक प्यारी कहानी बनाओ। एक नन्ही गाय और एक नन्हा सूअर रोज छोटी छोटी बातों पर लड़ते रहते हैं। एक दिन एक लोमड़ी खेत में हमला करने आती है। डर और अफरा तफरी के बीच दोनों मिलकर उसका सामना करते हैं। लोमड़ी के भाग जाने के बाद दोनों को दोस्ती और एकता का महत्व समझ आता है। अंत में एक सरल नैतिक संदेश हो कि मुश्किल समय में साथ रहना ही सच्ची ताकत है।"
