@@ -1,0 +1,56 @@
+export type UILanguage = 'en' | 'hi';
+
+export const translations = {
+    en: {
+        heroTitle_1: "Create",
+        heroTitle_italic: "viral",
+        heroTitle_2: "reels in just 1 minute",
+        heroSubtitle: "Post reels on Insta and Youtube to become influencer and earn money",
+        getStarted: "Get Started",
+        trustedBy: "Trusted by 27,000+ creators",
+        // features
+        feature1Title: "AI Scripting",
+        feature1Desc: "Generate engaging scripts in seconds with our advanced AI.",
+        feature2Title: "Voiceovers",
+        feature2Desc: "Choose from hundreds of realistic AI voices in any language.",
+        feature3Title: "Auto-Visuals",
+        feature3Desc: "AI automatically finds or generates the perfect visuals for your story.",
+        // CreateVideoPage
+        createHeader: "Create viral insta reels",
+        createSubheader: "Turn your idea into a ready to post reel in under 60 seconds",
+        languageLabel: "Language",
+        videoIdeaLabel: "Video Idea",
+        generateButton: "Generate Video",
+        generating: "Generating",
+        helperText: "Write a simple idea. We handle script, scenes and narration.",
+        creditsLeft: "No credits left.",
+        buyMore: "Buy more"
+    },
+    hi: {
+        heroTitle_1: "अब",
+        heroTitle_italic: "1 मिनट",
+        heroTitle_2: "में वायरल रील्स बनाएं",
+        heroSubtitle: "इंस्टा और यूट्यूब पर रील्स डालें, इन्फ्लुएंसर बनें और पैसे कमाएं",
+        getStarted: "शुरू करें",
+        trustedBy: "27,000+ क्रिएटर्स का भरोसा",
+        // features
+        feature1Title: "AI स्क्रिप्टिंग",
+        feature1Desc: "हमारे एडवांस AI के साथ सेकंडों में आकर्षक स्क्रिप्ट बनाएं।",
+        feature2Title: "वॉइसओवर",
+        feature2Desc: "किसी भी भाषा में सैकड़ों रियलिस्टिक AI आवाजों में से चुनें।",
+        feature3Title: "ऑटो-विजुअल्स",
+        feature3Desc: "AI आपकी कहानी के लिए परफेक्ट विजुअल्स ऑटोमेटिकली ढूंढता या बनाता है।",
+        // CreateVideoPage
+        createHeader: "वायरल इंस्टा रील बनाएं",
+        createSubheader: "60 सेकंड से कम समय में अपने विचार को पोस्ट के लिए तैयार रील में बदलें",
+        languageLabel: "भाषा",
+        videoIdeaLabel: "वीडियो का विचार",
+        generateButton: "वीडियो बनाएं",
+        generating: "बन रहा है",
+        helperText: "बस एक छोटा सा विचार लिखें। स्क्रिप्ट, सीन और नरेशन हम संभाल लेंगे।",
+        creditsLeft: "क्रेडिट खत्म हो गए हैं।",
+        buyMore: "और खरीदें"
+    }
+};
+
+export type TranslationKey = keyof typeof translations.en;

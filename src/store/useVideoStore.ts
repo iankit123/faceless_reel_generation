@@ -23,14 +23,30 @@ interface VideoState {
     saveProject: (userId: string) => Promise<void>;
     setTheme: (theme: string) => void;
     resetProject: () => void;
+    uiLanguage: 'en' | 'hi';
+    setUILanguage: (lang: 'en' | 'hi') => void;
+    timer: number;
+    setTimer: (time: number | ((prev: number) => number)) => void;
 }
 
 export const useVideoStore = create<VideoState>((set, get) => ({
     project: null,
     isGenerating: false,
     currentSceneId: null,
+    uiLanguage: (localStorage.getItem('preferred_ui_lang') as 'en' | 'hi') || 'en',
+    timer: 150,
+
+    setTimer: (time) => set((state) => ({
+        timer: typeof time === 'function' ? time(state.timer) : time
+    })),
+
+    setUILanguage: (lang) => {
+        localStorage.setItem('preferred_ui_lang', lang);
+        set({ uiLanguage: lang });
+    },
 
     initProject: (theme, language, prompt) => set({
+        timer: 150,
         project: {
             id: crypto.randomUUID(),
             title: 'New Video',

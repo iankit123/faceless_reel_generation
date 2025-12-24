@@ -8,11 +8,22 @@ import { storyService } from '../services/story';
 import { Header } from '../components/layout/Header';
 import { PurchaseCreditModal } from '../components/modals/PurchaseCreditModal';
 import { supabaseService } from '../services/supabase';
+import { translations } from '../utils/translations';
 
 export function CreateVideoPage() {
     const navigate = useNavigate();
     const { user, signInWithGoogle, credits, refreshCredits } = useAuth();
-    const [language, setLanguage] = useState('hinglish');
+    const uiLanguage = useVideoStore((s) => s.uiLanguage);
+    const t = translations[uiLanguage];
+
+    const [language, setLanguage] = useState(() => {
+        const saved = localStorage.getItem('preferred_language');
+        if (saved) {
+            localStorage.removeItem('preferred_language'); // Only use it once
+            return saved;
+        }
+        return 'hinglish';
+    });
     const [script, setScript] = useState('');
     const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
 
@@ -28,24 +39,26 @@ export function CreateVideoPage() {
 
         if (!finalScript.trim()) return;
 
-        if (!user) {
-            // Log prompt for analytics even if they don't sign up
-            await supabaseService.logGuestPrompt(finalScript, finalLanguage);
-
-            localStorage.setItem('pending_video_script', finalScript);
-            localStorage.setItem('pending_video_language', finalLanguage);
-            localStorage.setItem('is_generating_post_login', 'true');
-            await signInWithGoogle();
-            return;
-        }
-
-        if (credits !== null && credits <= 0) {
-            setIsPurchaseModalOpen(true);
-            return;
-        }
-
         setGenerating(true);
+
         try {
+            if (!user) {
+                // Log prompt for analytics even if they don't sign up
+                await supabaseService.logGuestPrompt(finalScript, finalLanguage);
+
+                localStorage.setItem('pending_video_script', finalScript);
+                localStorage.setItem('pending_video_language', finalLanguage);
+                localStorage.setItem('is_generating_post_login', 'true');
+                await signInWithGoogle();
+                return;
+            }
+
+            if (credits !== null && credits <= 0) {
+                setIsPurchaseModalOpen(true);
+                setGenerating(false);
+                return;
+            }
+
             await supabaseService.decrementCredits(user.id);
             await refreshCredits();
 
@@ -109,17 +122,17 @@ export function CreateVideoPage() {
                 <div className="space-y-8">
                     <div className="space-y-2">
                         <h1 className="text-3xl font-extrabold tracking-tight">
-                            Create <span className="text-cyan-400">viral</span> insta reels
+                            {t.createHeader}
                         </h1>
                         <p className="text-sm text-zinc-400">
-                            Turn your idea into a ready to post reel in under 60 seconds
+                            {t.createSubheader}
                         </p>
                     </div>
 
                     <div className="space-y-5">
                         <div>
                             <label className="block text-xs font-semibold text-zinc-400 mb-2 uppercase">
-                                Language
+                                {t.languageLabel}
                             </label>
                             <select
                                 value={language}
@@ -136,7 +149,7 @@ export function CreateVideoPage() {
                             value={script}
                             onChange={setScript}
                             disabled={isGenerating}
-                            label="Video Idea"
+                            label={t.videoIdeaLabel}
                             placeholder={
                                 language === 'english'
                                     ? 'A dark village with a hidden secret...'
@@ -155,30 +168,30 @@ export function CreateVideoPage() {
                             {isGenerating ? (
                                 <>
                                     <div className="w-4 h-4 border-2 border-zinc-900/30 border-t-zinc-900 rounded-full animate-spin" />
-                                    Generating
+                                    {t.generating}
                                 </>
                             ) : (
                                 <>
                                     <Wand2 className="w-4 h-4" />
-                                    Generate Video
+                                    {t.generateButton}
                                 </>
                             )}
                         </button>
 
                         <p className="text-xs text-zinc-500">
-                            Write a simple idea. We handle script, scenes and narration.
+                            {t.helperText}
                         </p>
 
                         {credits !== null && credits === 0 && user && (
                             <div className="flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2">
                                 <AlertCircle className="w-4 h-4 text-amber-400" />
                                 <p className="text-xs text-amber-200">
-                                    No credits left.
+                                    {t.creditsLeft}
                                     <button
                                         onClick={() => setIsPurchaseModalOpen(true)}
                                         className="ml-1 underline font-semibold"
                                     >
-                                        Buy more
+                                        {t.buyMore}
                                     </button>
                                 </p>
                             </div>

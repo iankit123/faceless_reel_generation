@@ -4,6 +4,20 @@ import { VideoEditorPage } from './pages/VideoEditorPage';
 import { LandingPage } from './pages/LandingPage';
 import { useVideoStore } from './store/useVideoStore';
 import { useAuth } from './contexts/AuthContext';
+import { useEffect } from 'react';
+
+function LanguageRedirect({ lang }: { lang: string }) {
+  const setUILanguage = useVideoStore((s) => s.setUILanguage);
+
+  useEffect(() => {
+    if (lang) {
+      localStorage.setItem('preferred_language', lang);
+      setUILanguage(lang === 'hindi' ? 'hi' : 'en');
+    }
+  }, [lang, setUILanguage]);
+
+  return <Navigate to="/" replace />;
+}
 
 function App() {
   const project = useVideoStore((state) => state.project);
@@ -21,6 +35,8 @@ function App() {
     <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans">
       <Routes>
         <Route path="/" element={<LandingPage />} />
+        <Route path="/english" element={<LanguageRedirect lang="english" />} />
+        <Route path="/hindi" element={<LanguageRedirect lang="hindi" />} />
         <Route path="/videoprompt" element={<CreateVideoPage />} />
         <Route
           path="/scenes"

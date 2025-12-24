@@ -19,9 +19,10 @@ import { ConfirmModal } from '../ui/ConfirmModal';
 export function SceneList({ scenes, currentSceneId, onSelectScene, onPlayScene, onPlayAll, onViewVideo, isMobile }: SceneListProps) {
     const addSceneAt = useVideoStore(state => state.addSceneAt);
     const removeScene = useVideoStore(state => state.removeScene);
+    const timer = useVideoStore(state => state.timer);
+    const setTimer = useVideoStore(state => state.setTimer);
     const [sceneToDelete, setSceneToDelete] = useState<number | string | null>(null);
     const [loadedImages, setLoadedImages] = useState<Record<string | number, boolean>>({});
-    const [timer, setTimer] = useState(150);
 
     const isGenerating = useMemo(() => scenes.some(s => s.status !== 'ready'), [scenes]);
 

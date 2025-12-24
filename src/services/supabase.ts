@@ -1,6 +1,7 @@
 import { supabase } from '../lib/supabase';
 import type { Scene, VideoProject } from '../types';
 import { getISTDate } from '../utils/date';
+import { getDeviceId } from '../utils/device';
 
 export const supabaseService = {
     async saveProject(project: VideoProject, userId: string) {
@@ -139,6 +140,21 @@ export const supabaseService = {
                 });
         } catch (error) {
             console.warn('Failed to log guest prompt:', error);
+        }
+    },
+
+    async logEvent(eventName: string, metadata: any = {}) {
+        try {
+            await supabase
+                .from('app_events')
+                .insert({
+                    event_name: eventName,
+                    device_id: getDeviceId(),
+                    metadata,
+                    created_at: getISTDate()
+                });
+        } catch (error) {
+            console.warn(`Failed to log event ${eventName}:`, error);
         }
     }
 };

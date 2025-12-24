@@ -1,9 +1,14 @@
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Star, Zap } from 'lucide-react';
 import { Header } from '../components/layout/Header';
+import { supabaseService } from '../services/supabase';
+import { useVideoStore } from '../store/useVideoStore';
+import { translations } from '../utils/translations';
 
 export function LandingPage() {
     const navigate = useNavigate();
+    const uiLanguage = useVideoStore((s) => s.uiLanguage);
+    const t = translations[uiLanguage];
 
     return (
         <div className="min-h-screen bg-zinc-950 text-zinc-100 overflow-hidden relative selection:bg-cyan-500/30">
@@ -31,27 +36,35 @@ export function LandingPage() {
                     </div> */}
 
                     <h1 className="text-5xl lg:text-7xl font-black tracking-tight leading-[1.1] mb-0">
-
-                        Create <span className="text-cyan-400 italic">viral</span> <br />
-                        <span className="bg-gradient-to-r from-[#F58529] via-[#DD2A7B] to-[#8134AF] bg-clip-text text-transparent">
-                            Insta
-                        </span>{" "}
-                        reels in just 1 minute <br />
-                        <span className="relative inline-block">
-                            <div className="absolute -bottom-2 left-0 w-full h-1 bg-cyan-400/30 blur-sm" />
-                        </span>
+                        {uiLanguage === 'hi' ? (
+                            <>
+                                अब <span className="text-cyan-400 italic">1 मिनट</span> <br />
+                                में <span className="bg-gradient-to-r from-[#F58529] via-[#DD2A7B] to-[#8134AF] bg-clip-text text-transparent">वायरल रील्स</span> बनाएं
+                            </>
+                        ) : (
+                            <>
+                                {t.heroTitle_1} <span className="text-cyan-400 italic">{t.heroTitle_italic}</span> <br />
+                                <span className="bg-gradient-to-r from-[#F58529] via-[#DD2A7B] to-[#8134AF] bg-clip-text text-transparent">
+                                    Insta
+                                </span>{" "}
+                                {t.heroTitle_2}
+                            </>
+                        )}
                     </h1>
 
-                    <p className="text-lg lg:text-xl text-zinc-300 font-medium leading-relaxed">
-                        Post reels on Insta and Youtube to become influencer and earn money
+                    <p className="text-lg lg:text-xl text-zinc-300 font-medium leading-relaxed mt-4">
+                        {t.heroSubtitle}
                     </p>
 
                     <div className="flex flex-col sm:flex-row items-center gap-4 pt-4">
                         <button
-                            onClick={() => navigate('/videoprompt')}
+                            onClick={() => {
+                                supabaseService.logEvent('get_started_click');
+                                navigate('/videoprompt');
+                            }}
                             className="group relative px-8 py-4 bg-cyan-500 text-zinc-950 font-bold rounded-full hover:bg-cyan-400 transition-all active:scale-95 flex items-center gap-2 shadow-[0_0_20px_rgba(34,211,238,0.3)]"
                         >
-                            Get Started
+                            {t.getStarted}
                             <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                         </button>
 
@@ -72,7 +85,7 @@ export function LandingPage() {
                                     {[1, 2, 3, 4, 5].map((i) => <Star key={i} className="w-3.5 h-3.5 fill-current" />)}
                                 </div>
                                 <p className="text-xs text-zinc-400 font-medium mt-1">
-                                    Trusted by 27,000+ creators
+                                    {t.trustedBy}
                                 </p>
                             </div>
                         </div >
@@ -91,7 +104,7 @@ export function LandingPage() {
                         <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-transparent" />
                         <div className="absolute bottom-4 left-4 right-4">
                             <div className="h-1 w-12 bg-cyan-500 rounded-full mb-2" />
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">The Cleopatra Effect</p>
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">{uiLanguage === 'hi' ? 'द क्लियोपेट्रा इफ़ेक्ट' : 'The Cleopatra Effect'}</p>
                         </div>
                     </div>
 
@@ -104,8 +117,8 @@ export function LandingPage() {
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-transparent" />
                         <div className="absolute bottom-6 left-6 right-6">
-                            <div className="inline-block px-2 py-1 bg-cyan-500 text-zinc-950 text-[10px] font-black uppercase mb-3 rounded-sm">History</div>
-                            <p className="text-sm font-bold leading-tight">Story of 1st Man on Moon</p>
+                            <div className="inline-block px-2 py-1 bg-cyan-500 text-zinc-950 text-[10px] font-black uppercase mb-3 rounded-sm">{uiLanguage === 'hi' ? 'इतिहास' : 'History'}</div>
+                            <p className="text-sm font-bold leading-tight">{uiLanguage === 'hi' ? 'चांद पर पहले इंसान की कहानी' : 'Story of 1st Man on Moon'}</p>
                         </div>
                     </div>
 
@@ -119,7 +132,7 @@ export function LandingPage() {
                         <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-transparent" />
                         <div className="absolute bottom-4 left-4 right-4">
                             <div className="h-1 w-12 bg-indigo-500 rounded-full mb-2" />
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Young boy and his dog friend</p>
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">{uiLanguage === 'hi' ? 'एक लड़का और उसका कुत्ता' : 'Young boy and his dog friend'}</p>
                         </div>
                     </div>
                 </div>
@@ -129,9 +142,9 @@ export function LandingPage() {
             <section className="relative z-10 max-w-7xl mx-auto px-6 py-20 border-t border-zinc-900">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
                     {[
-                        { title: 'AI Scripting', desc: 'Generate engaging scripts in seconds with our advanced AI.', icon: Zap },
-                        { title: 'Voiceovers', desc: 'Choose from hundreds of realistic AI voices in any language.', icon: Zap },
-                        { title: 'Auto-Visuals', desc: 'AI automatically finds or generates the perfect visuals for your story.', icon: Zap },
+                        { title: t.feature1Title, desc: t.feature1Desc, icon: Zap },
+                        { title: t.feature2Title, desc: t.feature2Desc, icon: Zap },
+                        { title: t.feature3Title, desc: t.feature3Desc, icon: Zap },
                     ].map((f, i) => (
                         <div key={i} className="space-y-4 group">
                             <div className="w-10 h-10 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center group-hover:border-cyan-500/50 transition-colors">
