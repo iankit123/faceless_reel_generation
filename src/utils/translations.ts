@@ -6,8 +6,8 @@ export const translations = {
         heroTitle_italic: "viral",
         heroTitle_2: "reels in just 1 minute",
         heroSubtitle: "Post reels on Insta and Youtube to become influencer and earn money",
-        getStarted: "Get Started",
-        trustedBy: "Trusted by 27,000+ creators",
+        createFirstVideo: "Create your first video",
+        trustedBy: "Trusted by over 12K happy creators",
         // features
         feature1Title: "AI Scripting",
         feature1Desc: "Generate engaging scripts in seconds with our advanced AI.",
@@ -31,8 +31,8 @@ export const translations = {
         heroTitle_italic: "1 मिनट",
         heroTitle_2: "में वायरल रील्स बनाएं",
         heroSubtitle: "इंस्टा और यूट्यूब पर रील्स डालें, इन्फ्लुएंसर बनें और पैसे कमाएं",
-        getStarted: "शुरू करें",
-        trustedBy: "27,000+ क्रिएटर्स का भरोसा",
+        createFirstVideo: "अपना पहला वीडियो बनाएं",
+        trustedBy: "12,000+ खुश क्रिएटर्स का भरोसा",
         // features
         feature1Title: "AI स्क्रिप्टिंग",
         feature1Desc: "हमारे एडवांस AI के साथ सेकंडों में आकर्षक स्क्रिप्ट बनाएं।",
