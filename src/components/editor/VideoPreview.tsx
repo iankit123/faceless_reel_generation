@@ -1,5 +1,5 @@
 import type { Scene } from '../../types';
-import { Play, Pause, Download, Type, Music, ArrowLeft, Layers, Share2, X } from 'lucide-react';
+import { Play, Pause, Download, Type, Music, ArrowLeft, Layers, Share2, X, Check } from 'lucide-react';
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useVideoStore } from '../../store/useVideoStore';
 import { CaptionsTab } from './CaptionsTab';
@@ -28,13 +28,15 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
     const [activeSubTab, setActiveSubTab] = useState<'preview' | 'captions' | 'audio'>('preview');
     const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
     const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
+    const [exportState, setExportState] = useState<'idle' | 'exporting' | 'success' | 'error'>('idle');
+    const [exportError, setExportError] = useState<string | null>(null);
 
     const handleExport = async () => {
         setIsPlaying(false);
         if (credits !== null && credits > 2) {
             console.log('EXPORT: Initiation export request...');
-            console.log('EXPORT: Scenes:', scenes.length);
-            console.log('EXPORT: Background Music:', project?.backgroundMusic?.name);
+            setExportState('exporting');
+            setExportError(null);
 
             try {
                 const response = await fetch('http://localhost:3000/api/video/export', {
@@ -43,7 +45,9 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
                     body: JSON.stringify({
                         scenes: scenes,
                         backgroundMusic: project?.backgroundMusic,
-                        narrationVolume: project?.narrationVolume || 1.0
+                        narrationVolume: project?.narrationVolume || 1.0,
+                        language: project?.language || 'hindi',
+                        captionSettings: project?.captionSettings
                     })
                 });
 
@@ -63,9 +67,11 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
                 window.URL.revokeObjectURL(url);
                 document.body.removeChild(a);
                 console.log('EXPORT: Download triggered successfully');
+                setExportState('success');
             } catch (error) {
                 console.error('EXPORT: Error during export:', error);
-                alert(`Export failed: ${error instanceof Error ? error.message : String(error)}`);
+                setExportState('error');
+                setExportError(error instanceof Error ? error.message : String(error));
             }
         } else {
             setIsUpgradeModalOpen(true);
@@ -687,6 +693,60 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
                 isOpen={isPurchaseModalOpen}
                 onClose={() => setIsPurchaseModalOpen(false)}
             />
+
+            {/* Export Progress Modal */}
+            {exportState !== 'idle' && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
+                    <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => exportState !== 'exporting' && setExportState('idle')} />
+                    <div className="relative w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-3xl p-8 shadow-2xl text-center space-y-6 overflow-hidden">
+                        {/* Background subtle glow */}
+                        <div className="absolute -top-24 -left-24 w-48 h-48 bg-indigo-500/10 blur-[100px] rounded-full" />
+                        <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-purple-500/10 blur-[100px] rounded-full" />
+
+                        <div className="relative space-y-4">
+                            {exportState === 'exporting' && (
+                                <>
+                                    <div className="w-16 h-16 border-4 border-zinc-800 border-t-indigo-500 rounded-full animate-spin mx-auto mb-6" />
+                                    <h3 className="text-xl font-bold text-white">Your reel is getting downloaded</h3>
+                                    <p className="text-zinc-400 text-sm">We are stitching together your scenes, audio, and captions. This may take a minute.</p>
+                                </>
+                            )}
+
+                            {exportState === 'success' && (
+                                <>
+                                    <div className="w-16 h-16 bg-green-500/20 text-green-500 rounded-full flex items-center justify-center mx-auto mb-6 scale-in">
+                                        <Check className="w-8 h-8" />
+                                    </div>
+                                    <h3 className="text-xl font-bold text-white">Download Successful!</h3>
+                                    <p className="text-zinc-400 text-sm">Your high-quality reel has been prepared and downloaded to your device.</p>
+                                    <button
+                                        onClick={() => setExportState('idle')}
+                                        className="w-full py-3 bg-zinc-800 hover:bg-zinc-700 text-white font-bold rounded-xl transition-all uppercase tracking-widest text-xs mt-4"
+                                    >
+                                        Close
+                                    </button>
+                                </>
+                            )}
+
+                            {exportState === 'error' && (
+                                <>
+                                    <div className="w-16 h-16 bg-red-500/20 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                                        <X className="w-8 h-8" />
+                                    </div>
+                                    <h3 className="text-xl font-bold text-white">Download Failed</h3>
+                                    <p className="text-red-400 text-sm">{exportError || 'An unexpected error occurred.'}</p>
+                                    <button
+                                        onClick={() => setExportState('idle')}
+                                        className="w-full py-3 bg-zinc-800 hover:bg-zinc-700 text-white font-bold rounded-xl transition-all uppercase tracking-widest text-xs mt-4"
+                                    >
+                                        Try Again
+                                    </button>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

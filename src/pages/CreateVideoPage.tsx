@@ -42,50 +42,73 @@ export function CreateVideoPage() {
         setGenerating(true);
 
         try {
+            // Tier 1 & 2: Guest Logic
             if (!user) {
-                // Log prompt for analytics even if they don't sign up
+                const guestCount = parseInt(localStorage.getItem('guest_video_count') || '0', 10);
+
+                // Track prompt even if they don't sign up
                 await supabaseService.logGuestPrompt(finalScript, finalLanguage);
 
-                localStorage.setItem('pending_video_script', finalScript);
-                localStorage.setItem('pending_video_language', finalLanguage);
-                localStorage.setItem('is_generating_post_login', 'true');
-                await signInWithGoogle();
-                return;
+                if (guestCount === 0) {
+                    // 1st Video: Allow Guest Generation
+                    console.log('FUNNEL: Allowing 1st guest generation');
+                    localStorage.setItem('guest_video_count', '1');
+
+                    // Proceed with generation (no credit check needed)
+                    await startGenerationFlow(finalScript, finalLanguage);
+                    return;
+                } else {
+                    // 2nd Video: Require Login
+                    console.log('FUNNEL: Guest count reached, requiring login for 2nd video');
+                    localStorage.setItem('pending_video_script', finalScript);
+                    localStorage.setItem('pending_video_language', finalLanguage);
+                    localStorage.setItem('is_generating_post_login', 'true');
+                    await signInWithGoogle();
+                    return;
+                }
             }
 
+            // Tier 3: Authenticated User Credit Check
             if (credits !== null && credits <= 0) {
+                console.log('FUNNEL: User logged in but 0 credits, showing purchase modal');
                 setIsPurchaseModalOpen(true);
                 setGenerating(false);
                 return;
             }
 
+            // Deduct credits and proceed
             await supabaseService.decrementCredits(user.id);
             await refreshCredits();
-
-            const story = await storyService.generateStory({ prompt: finalScript, language: finalLanguage });
-            initProject(story.theme, finalLanguage, finalScript);
-
-            story.scenes.forEach((s) => {
-                addScene({
-                    id: crypto.randomUUID(),
-                    text: s.text,
-                    duration: s.duration || 5,
-                    imagePrompt: s.imagePrompt,
-                    imageSettings: { width: 576, height: 1024, steps: 20, guidance: 7 },
-                    motionType: s.motionType || 'zoom_in',
-                    captionsEnabled: true,
-                    isThumbnail: s.isThumbnail,
-                    status: 'pending'
-                });
-            });
-
-            await saveProject(user.id);
-            navigate('/scenes');
+            await startGenerationFlow(finalScript, finalLanguage);
         } catch (e) {
             console.error(e);
         } finally {
             setGenerating(false);
         }
+    };
+
+    const startGenerationFlow = async (finalScript: string, finalLanguage: string) => {
+        const story = await storyService.generateStory({ prompt: finalScript, language: finalLanguage });
+        initProject(story.theme, finalLanguage, finalScript);
+
+        story.scenes.forEach((s) => {
+            addScene({
+                id: crypto.randomUUID(),
+                text: s.text,
+                duration: s.duration || 5,
+                imagePrompt: s.imagePrompt,
+                imageSettings: { width: 576, height: 1024, steps: 20, guidance: 7 },
+                motionType: s.motionType || 'zoom_in',
+                captionsEnabled: true,
+                isThumbnail: s.isThumbnail,
+                status: 'pending'
+            });
+        });
+
+        if (user) {
+            await saveProject(user.id);
+        }
+        navigate('/scenes');
     };
 
     useEffect(() => {

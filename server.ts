@@ -30,6 +30,77 @@ const groq = new Groq({
 });
 
 app.use(cors());
+
+function wrapText(text: string, maxChars: number = 20): string {
+    const words = text.split(' ');
+    let lines = [];
+    let currentLine = '';
+
+    words.forEach(word => {
+        if ((currentLine + word).length <= maxChars) {
+            currentLine += (currentLine === '' ? '' : ' ') + word;
+        } else {
+            if (currentLine) lines.push(currentLine);
+            currentLine = word;
+        }
+    });
+    if (currentLine) lines.push(currentLine);
+    // For textfile, we use literal newlines
+    return lines.join('\n');
+}
+
+function getTimedCaptions(text: string, totalDuration: number) {
+    if (!text || totalDuration <= 0) return [];
+
+    // Split by punctuation: . ! ? , ;
+    const rawSegments = text.split(/(?<=[.!?,;])\s+/);
+    const segments: string[] = [];
+    const MAX_LENGTH = 45;
+
+    rawSegments.forEach(seg => {
+        if (seg.length <= MAX_LENGTH) {
+            segments.push(seg);
+        } else {
+            const words = seg.split(/\s+/);
+            let current = '';
+            words.forEach(word => {
+                if ((current + (current ? ' ' : '') + word).length <= MAX_LENGTH) {
+                    current += (current ? ' ' : '') + word;
+                } else {
+                    if (current) segments.push(current);
+                    current = word;
+                }
+            });
+            if (current) segments.push(current);
+        }
+    });
+
+    const totalChars = segments.reduce((acc, s) => acc + s.length, 0);
+    let currentTime = 0;
+
+    return segments.map(s => {
+        const duration = (s.length / totalChars) * totalDuration;
+        const seg = {
+            text: s.trim(),
+            start: currentTime,
+            end: currentTime + duration
+        };
+        currentTime += duration;
+        return seg;
+    });
+}
+
+async function getTTSBuffer(text: string, voice?: string): Promise<Buffer> {
+    console.log(`TTS: Generating buffer for text: ${text.substring(0, 30)}...`);
+    const tts = new EdgeTTS();
+    const selectedVoice = voice || 'hi-IN-SwaraNeural';
+    await tts.synthesize(text, selectedVoice);
+    const audioBuffer = tts.toBuffer();
+    if (!audioBuffer || audioBuffer.length === 0) {
+        throw new Error('Empty audio buffer generated');
+    }
+    return audioBuffer;
+}
 app.use(express.json());
 
 // Health Check
@@ -49,16 +120,7 @@ app.post('/api/tts', async (req, res) => {
     let lastError = null;
     for (let i = 0; i <= 2; i++) {
         try {
-            console.log(`TTS Attempt ${i + 1} for text: ${text.substring(0, 30)}...`);
-            const tts = new EdgeTTS();
-            const selectedVoice = voice || 'hi-IN-SwaraNeural';
-            await tts.synthesize(text, selectedVoice);
-            const audioBuffer = tts.toBuffer();
-
-            if (!audioBuffer || audioBuffer.length === 0) {
-                throw new Error('Empty audio buffer generated');
-            }
-
+            const audioBuffer = await getTTSBuffer(text, voice);
             res.set({
                 'Content-Type': 'audio/mpeg',
                 'Content-Length': audioBuffer.length.toString(),
@@ -251,7 +313,7 @@ app.post('/api/image/generate', async (req, res) => {
 // Background music is served from the public folder by Vite/Netlify
 
 app.post('/api/video/export', async (req, res) => {
-    const { scenes, backgroundMusic, narrationVolume } = req.body;
+    const { scenes, backgroundMusic, narrationVolume, language, captionSettings } = req.body;
     console.log('EXPORT_REQUEST: Starting export for', scenes?.length, 'scenes');
 
     if (!scenes || scenes.length === 0) {
@@ -263,25 +325,47 @@ app.post('/api/video/export', async (req, res) => {
 
     try {
         const scenePaths: string[] = [];
+        const captionStyle = captionSettings?.style || 'default';
+        console.log(`EXPORT: Applying caption style: ${captionStyle}`);
 
         for (let i = 0; i < scenes.length; i++) {
             const scene = scenes[i];
             console.log(`EXPORT: Processing scene ${i + 1}/${scenes.length} (Thumbnail: ${!!scene.isThumbnail})`);
 
-            // Download assets
+            // Download or Resolve Image Asset
             const imagePath = path.join(tempDir, `image_${i}.jpg`);
+            if (scene.imageUrl?.startsWith('http')) {
+                console.log(`EXPORT: Downloading image from ${scene.imageUrl}`);
+                const imgRes = await fetch(scene.imageUrl);
+                if (!imgRes.ok) throw new Error(`Failed to download image: ${scene.imageUrl}`);
+                fs.writeFileSync(imagePath, Buffer.from(await imgRes.arrayBuffer()));
+            } else if (scene.imageUrl?.startsWith('/')) {
+                const localPath = path.join(__dirname, 'public', scene.imageUrl);
+                console.log(`EXPORT: Using local image from ${localPath}`);
+                if (fs.existsSync(localPath)) {
+                    fs.copyFileSync(localPath, imagePath);
+                } else {
+                    throw new Error(`Local image not found: ${localPath}`);
+                }
+            } else {
+                throw new Error(`Invalid image URL: ${scene.imageUrl}`);
+            }
+
+            // Obtain Audio Asset
             const audioPath = path.join(tempDir, `audio_${i}.mp3`);
             const sceneOutputPath = path.join(tempDir, `scene_${i}.mp4`);
 
-            const imgRes = await fetch(scene.imageUrl);
-            if (!imgRes.ok) throw new Error(`Failed to download image: ${scene.imageUrl}`);
-            const imgBuffer = Buffer.from(await imgRes.arrayBuffer());
-            fs.writeFileSync(imagePath, imgBuffer);
-
-            const audioRes = await fetch(scene.audioUrl);
-            if (!audioRes.ok) throw new Error(`Failed to download audio: ${scene.audioUrl}`);
-            const audioBuf = Buffer.from(await audioRes.arrayBuffer());
-            fs.writeFileSync(audioPath, audioBuf);
+            if (scene.audioUrl && scene.audioUrl.startsWith('http') && !scene.audioUrl.includes('blob:')) {
+                console.log(`EXPORT: Downloading audio from ${scene.audioUrl}`);
+                const audioRes = await fetch(scene.audioUrl);
+                if (!audioRes.ok) throw new Error(`Failed to download audio: ${scene.audioUrl}`);
+                fs.writeFileSync(audioPath, Buffer.from(await audioRes.arrayBuffer()));
+            } else {
+                console.log(`EXPORT: Audio URL is blob or missing, re-generating TTS for scene ${i}`);
+                const voice = language === 'english' ? 'en-GB-SoniaNeural' : 'hi-IN-SwaraNeural';
+                const audioBuffer = await getTTSBuffer(scene.text, voice);
+                fs.writeFileSync(audioPath, audioBuffer);
+            }
 
             // Render scene clip
             await new Promise((resolve, reject) => {
@@ -304,15 +388,52 @@ app.post('/api/video/export', async (req, res) => {
                 // Scale and Crop to 9:16
                 filters.push('scale=w=1080:h=1920:force_original_aspect_ratio=increase,crop=1080:1920');
 
+                const fontBold = '/System/Library/Fonts/Supplemental/Arial Bold.ttf';
+                const fontUnicode = '/Library/Fonts/Arial Unicode.ttf';
+                const fontComic = '/System/Library/Fonts/Supplemental/Comic Sans MS Bold.ttf';
+                const fontElegant = '/System/Library/Fonts/Supplemental/Georgia Bold.ttf';
+
+                let fontToUse = (language === 'hindi') ? fontUnicode : fontBold;
+
+                // Determine styling based on theme
+                let fontColor = 'yellow';
+                let boxColor = 'black@0.5';
+                let boxBorder = 20;
+
+                if (captionStyle === 'tiktok') {
+                    fontColor = 'white';
+                    boxColor = 'black@0.5';
+                } else if (captionStyle === 'beast') {
+                    fontColor = 'yellow';
+                    boxColor = 'black@0.8';
+                } else if (captionStyle === 'neon') {
+                    fontColor = '0x4ADE80'; // Neon Green
+                    boxColor = 'black@0.8';
+                } else if (captionStyle === 'comic') {
+                    fontToUse = fontComic;
+                    fontColor = '0xFFD700'; // Gold/Yellow
+                    boxColor = 'white@0.1';
+                } else if (captionStyle === 'elegant') {
+                    fontToUse = fontElegant;
+                    fontColor = 'white';
+                    boxColor = 'black@0.3';
+                }
+
                 if (scene.isThumbnail) {
-                    // Centered Hook Text for Thumbnail
-                    // We use a simple box background
-                    const cleanText = scene.text.replace(/[:"']/g, '');
-                    filters.push(`drawtext=text='${cleanText}':fontcolor=yellow:fontsize=80:x=(w-text_w)/2:y=(h-text_h)/2:box=1:boxcolor=black@0.6:boxborderw=40`);
+                    // UPPERCASE for Thumbnail as in UI, Much Bigger
+                    const wrapped = wrapText(scene.text.toUpperCase(), 12);
+                    const txtPath = path.join(tempDir, `thumb_${i}.txt`);
+                    fs.writeFileSync(txtPath, wrapped);
+                    filters.push(`drawtext=textfile='${txtPath}':fontfile='${fontToUse}':fontcolor=${fontColor}:fontsize=110:x=(w-text_w)/2:y=(h-text_h)/2:box=1:boxcolor=${boxColor}:boxborderw=60:line_spacing=40:shadowcolor=black@0.8:shadowx=5:shadowy=5:text_align=center`);
                 } else if (scene.captionsEnabled) {
-                    // Bottom Captions
-                    const cleanText = scene.text.replace(/[:"']/g, '');
-                    filters.push(`drawtext=text='${cleanText}':fontcolor=yellow:fontsize=60:x=(w-text_w)/2:y=h*0.8:box=1:boxcolor=black@0.5:boxborderw=20`);
+                    const segments = getTimedCaptions(scene.text, scene.duration);
+                    segments.forEach((seg, idx) => {
+                        const textToWrap = (captionStyle === 'beast') ? seg.text.toUpperCase() : seg.text;
+                        const wrapped = wrapText(textToWrap, 25);
+                        const txtPath = path.join(tempDir, `cap_${i}_${idx}.txt`);
+                        fs.writeFileSync(txtPath, wrapped);
+                        filters.push(`drawtext=textfile='${txtPath}':fontfile='${fontToUse}':fontcolor=${fontColor}:fontsize=75:x=(w-text_w)/2:y=h*0.82-text_h/2:box=1:boxcolor=${boxColor}:boxborderw=${boxBorder}:line_spacing=20:enable='between(t,${seg.start},${seg.end})':shadowcolor=black@0.8:shadowx=3:shadowy=3:text_align=center`);
+                    });
                 }
 
                 f.videoFilters(filters)
@@ -351,33 +472,56 @@ app.post('/api/video/export', async (req, res) => {
         // Add Background Music if present
         let finalOutputPath = concatenatedPath;
         if (backgroundMusic) {
-            console.log('EXPORT: Adding background music:', backgroundMusic.name);
+            console.log(`EXPORT: Adding background music: ${backgroundMusic.name} (Volume: ${backgroundMusic.volume})`);
             const musicPath = path.join(tempDir, 'music.mp3');
 
-            // Background music URLs might be relative (/background_music/...)
-            const musicUrl = backgroundMusic.url.startsWith('http')
-                ? backgroundMusic.url
-                : `http://localhost:${port}${backgroundMusic.url}`;
-
             try {
-                const musicRes = await fetch(musicUrl);
-                if (musicRes.ok) {
-                    const musicBuf = Buffer.from(await musicRes.arrayBuffer());
-                    fs.writeFileSync(musicPath, musicBuf);
+                // Background music URLs might be relative (/background_music/...) or absolute
+                if (backgroundMusic.url.startsWith('http') && !backgroundMusic.url.includes('localhost')) {
+                    console.log(`EXPORT: Downloading remote music from ${backgroundMusic.url}`);
+                    const musicRes = await fetch(backgroundMusic.url);
+                    if (!musicRes.ok) throw new Error(`Failed to download music: ${backgroundMusic.url}`);
+                    fs.writeFileSync(musicPath, Buffer.from(await musicRes.arrayBuffer()));
+                } else {
+                    // Resolve locally from public folder
+                    const localMusicPath = path.join(__dirname, 'public', backgroundMusic.url);
+                    console.log(`EXPORT: Resolving local music from ${localMusicPath}`);
+                    if (fs.existsSync(localMusicPath)) {
+                        fs.copyFileSync(localMusicPath, musicPath);
+                    } else {
+                        // Try stripped path
+                        const strippedPath = backgroundMusic.url.replace(/^\//, '');
+                        const altLocalPath = path.join(__dirname, 'public', strippedPath);
+                        if (fs.existsSync(altLocalPath)) {
+                            fs.copyFileSync(altLocalPath, musicPath);
+                        } else {
+                            throw new Error(`Local music not found: ${localMusicPath}`);
+                        }
+                    }
+                }
 
+                if (fs.existsSync(musicPath)) {
                     const mixedPath = path.join(tempDir, 'final_video.mp4');
+                    const nVol = (narrationVolume !== undefined) ? narrationVolume : 1.0;
+                    const mVol = (backgroundMusic.volume !== undefined) ? backgroundMusic.volume : 0.2;
+
+                    console.log(`EXPORT: Mixing audio - Narration: ${nVol}, Music: ${mVol}`);
+
                     await new Promise((resolve, reject) => {
                         ffmpeg()
                             .input(concatenatedPath)
                             .input(musicPath)
                             .complexFilter([
-                                `[0:a]volume=${narrationVolume || 1.0}[a1]`,
-                                `[1:a]volume=${backgroundMusic.volume || 0.2}[a2]`,
-                                '[a1][a2]amix=inputs=2:duration=first[a]'
+                                `[0:a]volume=${nVol}[a1]`,
+                                `[1:a]volume=${mVol}[a2]`,
+                                '[a1][a2]amix=inputs=2:duration=first:dropout_transition=2[a]'
                             ])
-                            .outputOptions(['-map 0:v', '-map [a]', '-c:v copy', '-c:a aac'])
+                            .outputOptions(['-map 0:v', '-map [a]', '-c:v copy', '-c:a aac', '-shortest'])
                             .on('end', resolve)
-                            .on('error', reject)
+                            .on('error', (err) => {
+                                console.error('EXPORT: FFmpeg amix error:', err);
+                                reject(err);
+                            })
                             .save(mixedPath);
                     });
                     finalOutputPath = mixedPath;
