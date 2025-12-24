@@ -91,33 +91,47 @@ export function LandingPage() {
             {/* True Full-Width Horizontal Moving Cards */}
             <div className="w-full overflow-hidden mt-0 py-4 flex">
                 <div className="flex gap-3 animate-infinite-scroll hover:[animation-play-state:paused] w-max px-4">
-                    {[1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3].map((item, idx) => (
-                        <div
-                            key={idx}
-                            className="w-[124px] sm:w-[130px] aspect-[9/16] bg-zinc-900 rounded-xl border border-zinc-800 shadow-xl overflow-hidden relative group transition-all duration-500 hover:scale-[1.02] hover:border-zinc-700"
-                        >
-                            <img
-                                src={[
-                                    "https://images.unsplash.com/photo-1582125169590-59f4985fb32a?auto=format&fit=crop&q=80&w=800",
-                                    "https://images.unsplash.com/photo-1541873676-a18131494184?auto=format&fit=crop&q=80&w=800",
-                                    "https://plus.unsplash.com/premium_vector-1721077382049-f4deff3c4cf7?auto=format&fit=crop&q=80&w=800"
-                                ][item - 1]}
-                                className="w-full h-full object-cover opacity-70 group-hover:opacity-90 transition-opacity duration-500"
-                                alt={`Sample ${item}`}
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-t from-zinc-950/90 via-zinc-950/20 to-transparent" />
-                            <div className="absolute bottom-3 left-3 right-3 text-left">
-                                <p className="text-[10px] font-black italic tracking-wider text-white mb-0.5 drop-shadow-lg leading-tight uppercase truncate">
-                                    {[
-                                        uiLanguage === 'hi' ? 'द क्लियोपेट्रा इफ़ेक्ट' : 'WAR STORY',
-                                        uiLanguage === 'hi' ? 'इतिहास' : 'HISTORY',
-                                        uiLanguage === 'hi' ? 'एक लड़का और उसका कुत्ता' : 'BIBLE STORIES'
-                                    ][item - 1]}
-                                </p>
-                                <div className="h-0.5 w-6 bg-cyan-500 rounded-full" />
+                    {(() => {
+                        const samples = [
+                            { type: 'video', url: '/samples/my-reel-1766600900717.mp4', title: uiLanguage === 'hi' ? 'द क्लियोपेट्रा इफ़ेक्ट' : 'WAR STORY' },
+                            { type: 'image', url: 'https://images.unsplash.com/photo-1541873676-a18131494184?auto=format&fit=crop&q=80&w=800', title: uiLanguage === 'hi' ? 'इतिहास' : 'HISTORY' },
+                            { type: 'image', url: 'https://plus.unsplash.com/premium_vector-1721077382049-f4deff3c4cf7?auto=format&fit=crop&q=80&w=800', title: uiLanguage === 'hi' ? 'एक लड़का और उसका कुत्ता' : 'BIBLE STORIES' },
+                            { type: 'image', url: 'https://images.unsplash.com/photo-1582125169590-59f4985fb32a?auto=format&fit=crop&q=80&w=800', title: uiLanguage === 'hi' ? 'द क्लियोपेट्रा इफ़ेक्ट' : 'WAR STORY' },
+                        ];
+                        // Repeat samples to ensure the carousel is wide enough for infinite scroll
+                        const allSamples = [...samples, ...samples, ...samples, ...samples, ...samples];
+
+                        return allSamples.map((item, idx) => (
+                            <div
+                                key={idx}
+                                className="w-[124px] sm:w-[130px] aspect-[9/16] bg-zinc-900 rounded-xl border border-zinc-800 shadow-xl overflow-hidden relative group transition-all duration-500 hover:scale-[1.02] hover:border-zinc-700"
+                            >
+                                {item.type === 'video' ? (
+                                    <video
+                                        src={item.url}
+                                        autoPlay
+                                        muted
+                                        loop
+                                        playsInline
+                                        className="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-opacity duration-500"
+                                    />
+                                ) : (
+                                    <img
+                                        src={item.url}
+                                        className="w-full h-full object-cover opacity-70 group-hover:opacity-90 transition-opacity duration-500"
+                                        alt={item.title}
+                                    />
+                                )}
+                                <div className="absolute inset-0 bg-gradient-to-t from-zinc-950/90 via-zinc-950/20 to-transparent pointer-events-none" />
+                                <div className="absolute bottom-3 left-3 right-3 text-left">
+                                    <p className="text-[10px] font-black italic tracking-wider text-white mb-0.5 drop-shadow-lg leading-tight uppercase truncate">
+                                        {item.title}
+                                    </p>
+                                    <div className="h-0.5 w-6 bg-cyan-500 rounded-full" />
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        ));
+                    })()}
                 </div>
             </div>
 
