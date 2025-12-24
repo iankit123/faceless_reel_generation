@@ -29,11 +29,44 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
     const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
     const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
 
-    const handleExport = () => {
+    const handleExport = async () => {
         setIsPlaying(false);
         if (credits !== null && credits > 2) {
-            alert("Download started! Your high-quality reel is being prepared.");
-            // In a real production scenario, we would trigger the backend conversion here
+            console.log('EXPORT: Initiation export request...');
+            console.log('EXPORT: Scenes:', scenes.length);
+            console.log('EXPORT: Background Music:', project?.backgroundMusic?.name);
+
+            try {
+                const response = await fetch('http://localhost:3000/api/video/export', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        scenes: scenes,
+                        backgroundMusic: project?.backgroundMusic,
+                        narrationVolume: project?.narrationVolume || 1.0
+                    })
+                });
+
+                if (!response.ok) {
+                    const errData = await response.json();
+                    throw new Error(errData.details || 'Export failed');
+                }
+
+                console.log('EXPORT: Success! Downloading blob...');
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `my-reel-${Date.now()}.mp4`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                console.log('EXPORT: Download triggered successfully');
+            } catch (error) {
+                console.error('EXPORT: Error during export:', error);
+                alert(`Export failed: ${error instanceof Error ? error.message : String(error)}`);
+            }
         } else {
             setIsUpgradeModalOpen(true);
         }

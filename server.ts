@@ -250,6 +250,167 @@ app.post('/api/image/generate', async (req, res) => {
 
 // Background music is served from the public folder by Vite/Netlify
 
+app.post('/api/video/export', async (req, res) => {
+    const { scenes, backgroundMusic, narrationVolume } = req.body;
+    console.log('EXPORT_REQUEST: Starting export for', scenes?.length, 'scenes');
+
+    if (!scenes || scenes.length === 0) {
+        return res.status(400).json({ error: 'No scenes provided' });
+    }
+
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'reel-export-'));
+    console.log('EXPORT: Created temp directory:', tempDir);
+
+    try {
+        const scenePaths: string[] = [];
+
+        for (let i = 0; i < scenes.length; i++) {
+            const scene = scenes[i];
+            console.log(`EXPORT: Processing scene ${i + 1}/${scenes.length} (Thumbnail: ${!!scene.isThumbnail})`);
+
+            // Download assets
+            const imagePath = path.join(tempDir, `image_${i}.jpg`);
+            const audioPath = path.join(tempDir, `audio_${i}.mp3`);
+            const sceneOutputPath = path.join(tempDir, `scene_${i}.mp4`);
+
+            const imgRes = await fetch(scene.imageUrl);
+            if (!imgRes.ok) throw new Error(`Failed to download image: ${scene.imageUrl}`);
+            const imgBuffer = Buffer.from(await imgRes.arrayBuffer());
+            fs.writeFileSync(imagePath, imgBuffer);
+
+            const audioRes = await fetch(scene.audioUrl);
+            if (!audioRes.ok) throw new Error(`Failed to download audio: ${scene.audioUrl}`);
+            const audioBuf = Buffer.from(await audioRes.arrayBuffer());
+            fs.writeFileSync(audioPath, audioBuf);
+
+            // Render scene clip
+            await new Promise((resolve, reject) => {
+                let f = ffmpeg()
+                    .input(imagePath)
+                    .loop(scene.duration)
+                    .input(audioPath)
+                    .videoCodec('libx264')
+                    .audioCodec('aac')
+                    .outputOptions([
+                        '-pix_fmt yuv420p',
+                        '-r 30',
+                        '-s 1080x1920',
+                        '-shortest'
+                    ]);
+
+                // Filters for Captions/Thumbnail
+                const filters = [];
+
+                // Scale and Crop to 9:16
+                filters.push('scale=w=1080:h=1920:force_original_aspect_ratio=increase,crop=1080:1920');
+
+                if (scene.isThumbnail) {
+                    // Centered Hook Text for Thumbnail
+                    // We use a simple box background
+                    const cleanText = scene.text.replace(/[:"']/g, '');
+                    filters.push(`drawtext=text='${cleanText}':fontcolor=yellow:fontsize=80:x=(w-text_w)/2:y=(h-text_h)/2:box=1:boxcolor=black@0.6:boxborderw=40`);
+                } else if (scene.captionsEnabled) {
+                    // Bottom Captions
+                    const cleanText = scene.text.replace(/[:"']/g, '');
+                    filters.push(`drawtext=text='${cleanText}':fontcolor=yellow:fontsize=60:x=(w-text_w)/2:y=h*0.8:box=1:boxcolor=black@0.5:boxborderw=20`);
+                }
+
+                f.videoFilters(filters)
+                    .on('end', () => {
+                        console.log(`EXPORT: Scene ${i} rendered successfully`);
+                        resolve(true);
+                    })
+                    .on('error', (err) => {
+                        console.error(`EXPORT: Error rendering scene ${i}:`, err);
+                        reject(err);
+                    })
+                    .save(sceneOutputPath);
+            });
+
+            scenePaths.push(sceneOutputPath);
+        }
+
+        // Concatenate Scenes
+        console.log('EXPORT: Concatenating', scenePaths.length, 'scenes');
+        const listPath = path.join(tempDir, 'list.txt');
+        const listContent = scenePaths.map(p => `file '${p}'`).join('\n');
+        fs.writeFileSync(listPath, listContent);
+
+        const concatenatedPath = path.join(tempDir, 'concatenated.mp4');
+        await new Promise((resolve, reject) => {
+            ffmpeg()
+                .input(listPath)
+                .inputOptions(['-f concat', '-safe 0'])
+                .videoCodec('copy')
+                .audioCodec('copy')
+                .on('end', resolve)
+                .on('error', reject)
+                .save(concatenatedPath);
+        });
+
+        // Add Background Music if present
+        let finalOutputPath = concatenatedPath;
+        if (backgroundMusic) {
+            console.log('EXPORT: Adding background music:', backgroundMusic.name);
+            const musicPath = path.join(tempDir, 'music.mp3');
+
+            // Background music URLs might be relative (/background_music/...)
+            const musicUrl = backgroundMusic.url.startsWith('http')
+                ? backgroundMusic.url
+                : `http://localhost:${port}${backgroundMusic.url}`;
+
+            try {
+                const musicRes = await fetch(musicUrl);
+                if (musicRes.ok) {
+                    const musicBuf = Buffer.from(await musicRes.arrayBuffer());
+                    fs.writeFileSync(musicPath, musicBuf);
+
+                    const mixedPath = path.join(tempDir, 'final_video.mp4');
+                    await new Promise((resolve, reject) => {
+                        ffmpeg()
+                            .input(concatenatedPath)
+                            .input(musicPath)
+                            .complexFilter([
+                                `[0:a]volume=${narrationVolume || 1.0}[a1]`,
+                                `[1:a]volume=${backgroundMusic.volume || 0.2}[a2]`,
+                                '[a1][a2]amix=inputs=2:duration=first[a]'
+                            ])
+                            .outputOptions(['-map 0:v', '-map [a]', '-c:v copy', '-c:a aac'])
+                            .on('end', resolve)
+                            .on('error', reject)
+                            .save(mixedPath);
+                    });
+                    finalOutputPath = mixedPath;
+                }
+            } catch (err) {
+                console.error('EXPORT: Error adding music, fallback to no-music version:', err);
+            }
+        }
+
+        console.log('EXPORT: Sending final file to client');
+        res.download(finalOutputPath, 'my-reel.mp4', () => {
+            // Cleanup temp dir
+            try {
+                fs.rmSync(tempDir, { recursive: true, force: true });
+                console.log('EXPORT: Cleaned up temp directory');
+            } catch (err) {
+                console.error('EXPORT: Failed to cleanup temp dir:', err);
+            }
+        });
+
+    } catch (error) {
+        console.error('EXPORT_ERROR:', error);
+        res.status(500).json({
+            error: 'Video export failed',
+            details: error instanceof Error ? error.message : String(error)
+        });
+        // Cleanup on error
+        try {
+            fs.rmSync(tempDir, { recursive: true, force: true });
+        } catch (err) { }
+    }
+});
+
 app.get('/api/music', (req, res) => {
     try {
         const musicDir = path.join(__dirname, 'public', 'background_music');
