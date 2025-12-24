@@ -6,6 +6,9 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
+import ffmpeg from 'fluent-ffmpeg';
+import os from 'os';
+import { pipeline } from 'stream/promises';
 
 const __dirname = path.resolve();
 
