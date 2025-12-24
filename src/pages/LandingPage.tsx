@@ -13,7 +13,7 @@ export function LandingPage() {
 
     return (
         <div className="min-h-screen bg-zinc-950 text-zinc-100 overflow-hidden relative selection:bg-cyan-500/30">
-            <Header />
+            <Header hideUserMenu={true} isFixed={false} />
             {/* Background Grid Pattern */}
             <div className="absolute inset-0 z-0 opacity-20"
                 style={{
