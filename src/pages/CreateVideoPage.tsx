@@ -203,10 +203,6 @@ export function CreateVideoPage() {
                             )}
                         </button>
 
-                        <p className="text-xs text-zinc-500">
-                            {t.helperText}
-                        </p>
-
                         {credits !== null && credits === 0 && user && (
                             <div className="flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2">
                                 <AlertCircle className="w-4 h-4 text-amber-400" />

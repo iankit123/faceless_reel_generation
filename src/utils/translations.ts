@@ -22,7 +22,6 @@ export const translations = {
         videoIdeaLabel: "Video Idea",
         generateButton: "Generate Video",
         generating: "Generating",
-        // helperText: "We handle script, scenes and narration.",
         creditsLeft: "No credits left.",
         buyMore: "Buy more"
     },
@@ -47,7 +46,6 @@ export const translations = {
         videoIdeaLabel: "वीडियो का विचार",
         generateButton: "वीडियो बनाएं",
         generating: "बन रहा है",
-        helperText: "बस एक छोटा सा विचार लिखें। स्क्रिप्ट, सीन और नरेशन हम संभाल लेंगे।",
         creditsLeft: "क्रेडिट खत्म हो गए हैं।",
         buyMore: "और खरीदें"
     }
