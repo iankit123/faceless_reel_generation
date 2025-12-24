@@ -8,6 +8,7 @@ import { cn } from '../../lib/utils';
 import { getTimedCaptions } from '../../lib/captions';
 import { UpgradeModal } from '../modals/UpgradeModal';
 import { PurchaseCreditModal } from '../modals/PurchaseCreditModal';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface VideoPreviewProps {
     scenes: Scene[];
@@ -20,12 +21,32 @@ interface VideoPreviewProps {
 
 export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, forceAutoPlay, onBackToScenes }: VideoPreviewProps) {
     const project = useVideoStore(state => state.project);
+    const { credits } = useAuth();
     const scene = scenes.find(s => s.id === currentSceneId) || scenes[0];
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
     const [activeSubTab, setActiveSubTab] = useState<'preview' | 'captions' | 'audio'>('preview');
     const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
     const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
+
+    const handleExport = () => {
+        setIsPlaying(false);
+        if (credits !== null && credits > 2) {
+            alert("Download started! Your high-quality reel is being prepared.");
+            // In a real production scenario, we would trigger the backend conversion here
+        } else {
+            setIsUpgradeModalOpen(true);
+        }
+    };
+
+    const handleShare = () => {
+        setIsPlaying(false);
+        if (credits !== null && credits > 2) {
+            alert("Preparing for Instagram... Your video will be ready shortly.");
+        } else {
+            setIsUpgradeModalOpen(true);
+        }
+    };
 
     // Dynamic Captions
     const captionSegments = useMemo(() => {
@@ -305,16 +326,6 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
             autoPlayRef.current = false;
         }
         setIsPlaying(!isPlaying);
-    };
-
-    const handleExport = () => {
-        setIsPlaying(false);
-        setIsUpgradeModalOpen(true);
-    };
-
-    const handleShare = () => {
-        setIsPlaying(false);
-        setIsUpgradeModalOpen(true);
     };
 
     const handleUpgradeNow = () => {
