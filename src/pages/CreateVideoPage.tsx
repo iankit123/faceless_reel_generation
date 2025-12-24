@@ -18,11 +18,17 @@ export function CreateVideoPage() {
     const t = translations[uiLanguage];
 
     const [language, setLanguage] = useState(() => {
+        // 1. Check for explicit path override (set by App.tsx redirect)
         const saved = localStorage.getItem('preferred_language');
         if (saved) {
             localStorage.removeItem('preferred_language'); // Only use it once
             return saved;
         }
+
+        // 2. Fallback to current UI language preference
+        if (uiLanguage === 'hi') return 'hindi';
+        if (uiLanguage === 'en') return 'english';
+
         return 'hinglish';
     });
     const [script, setScript] = useState('');
