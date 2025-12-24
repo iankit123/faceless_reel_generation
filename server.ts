@@ -387,9 +387,9 @@ app.post('/api/video/export', async (req, res) => {
 
                 // Scale and Crop to 9:16 + Motion Effects
                 if (scene.motionType && scene.motionType !== 'none') {
-                    // Pre-scale to a larger size for zoompan to avoid quality loss
-                    // zoompan works best with a larger canvas
-                    filters.push('scale=2160:3840'); // 2x 1080x1920
+                    // Pre-scale to a larger size for zoompan to avoid quality loss (2x 1080x1920)
+                    // CRITICAL: Use force_original_aspect_ratio and crop to prevent stretching
+                    filters.push('scale=w=2160:h=3840:force_original_aspect_ratio=increase,crop=2160:3840');
 
                     const durationFrames = Math.ceil(scene.duration * 30);
                     let zoompanFilter = '';
@@ -411,7 +411,7 @@ app.post('/api/video/export', async (req, res) => {
                             zoompanFilter = `zoompan=z='1.2':x='iw/2-(iw/zoom/2)':y='(on/${durationFrames})*(ih-ih/zoom)':d=1:s=1080x1920:fps=30`;
                             break;
                         default:
-                            zoompanFilter = `scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920`;
+                            zoompanFilter = `scale=w=1080:h=1920:force_original_aspect_ratio=increase,crop=1080:1920`;
                     }
                     filters.push(zoompanFilter);
                 } else {
