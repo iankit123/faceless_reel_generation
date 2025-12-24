@@ -501,8 +501,19 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
                         </div>
                     )}
 
+                    {/* Thumbnail Title Overlay */}
+                    {scene.isThumbnail && (
+                        <div className="absolute inset-0 flex items-center justify-center z-30 p-8">
+                            <div className="bg-black/60 p-6 rounded-2xl border border-white/20 shadow-1xl">
+                                <h2 className="text-2xl font-black text-yellow-400 text-center leading-tight uppercase tracking-tight drop-shadow-lg">
+                                    {scene.text} !!
+                                </h2>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Captions Layer */}
-                    {scene.captionsEnabled && (
+                    {scene.captionsEnabled && !scene.isThumbnail && (
                         <div className={captionStyle.container}>
                             <p className={captionStyle.text}>
                                 {activeCaption}

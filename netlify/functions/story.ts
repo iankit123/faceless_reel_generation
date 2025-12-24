@@ -67,6 +67,12 @@ export const handler = async (event: any) => {
                     }
                     Keep it to 6-10 scenes. ${languageInstruction}
 
+                    CRITICAL: The FIRST scene (index 0) MUST ALWAYS be a Thumbnail scene.
+                    - Set "isThumbnail": true for this scene.
+                    - "text" for this scene should be a short, highly compelling hook/title (e.g. "Secret of the Pyramids", "Why Lions don't eat Grass"). 
+                    - It should NOT be a long character dialogue, but a viral hook.
+                    - "duration" should be short (2-3 seconds).
+
                     For each imagePrompt:
                     Write a prompt for text to image generation
                     Describe key visual details (setting, subject appearance, environment, colors, textures)

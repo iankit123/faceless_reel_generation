@@ -9,6 +9,7 @@ export interface Scene {
     imageSettings: ImageSettings;
     motionType: MotionType;
     captionsEnabled: boolean;
+    isThumbnail?: boolean;
     status: 'pending' | 'generating_audio' | 'generating_image' | 'ready' | 'error';
 }
 
@@ -41,6 +42,7 @@ export interface StoryResponse {
         imagePrompt: string;
         motionType?: MotionType;
         duration?: number;
+        isThumbnail?: boolean;
     }[];
 }
 

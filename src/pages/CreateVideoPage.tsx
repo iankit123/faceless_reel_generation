@@ -74,6 +74,7 @@ export function CreateVideoPage() {
                     imageSettings: { width: 576, height: 1024, steps: 20, guidance: 7 },
                     motionType: s.motionType || 'zoom_in',
                     captionsEnabled: true,
+                    isThumbnail: s.isThumbnail,
                     status: 'pending'
                 });
             });
