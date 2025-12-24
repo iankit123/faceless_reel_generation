@@ -59,7 +59,7 @@ export const handler = async (event: any) => {
                     prompt,
                     model: modelName,
                     n: 1,
-                    size: size || "512x512",
+                    size: size || "1024x1024",
                     response_format: "url",
                     quality: quality || "low",
                     style: style || "vivid"

@@ -189,7 +189,7 @@ app.post('/api/image/generate', async (req, res) => {
                 body: JSON.stringify({
                     prompt: prompt,
                     model: model,
-                    size: "512x512",
+                    size: "1024x1024",
                     response_format: "url",
                     output_format: "webp", /*still gives png, some issue in api */
                     quality: "low"
