@@ -144,18 +144,29 @@ export function SceneList({ scenes, currentSceneId, onSelectScene, onPlayScene, 
                                         : "bg-zinc-900 border-zinc-800 hover:border-zinc-700"
                                 )}
                             >
-                                <div className="flex items-start gap-3">
-                                    <div className="flex flex-col items-center justify-center pt-1">
-                                        <span className="text-[10px] font-bold text-zinc-600 font-mono">
-                                            {scene.isThumbnail ? 'THUMBNAIL' : `#${index + 1}`}
+                                <div className="flex items-stretch gap-3">
+                                    {/* THUMB / INDEX COLUMN */}
+                                    <div className="w-8 flex items-center justify-center border-r border-zinc-800">
+                                        <span
+                                            className="text-[10px] font-bold text-zinc-500 font-mono tracking-wider"
+                                            style={{
+                                                writingMode: 'vertical-rl',
+                                                transform: scene.isThumbnail ? 'rotate(180deg)' : 'rotate(270deg)'
+                                            }}
+                                        >
+                                            {scene.isThumbnail ? 'THUMB' : `#${index}`}
                                         </span>
                                     </div>
+
+
+                                    {/* THUMBNAIL IMAGE */}
                                     <div className="w-16 h-16 bg-zinc-950 rounded-md flex items-center justify-center text-zinc-700 border border-zinc-800 shrink-0 overflow-hidden relative">
                                         {(scene.status !== 'ready' || (scene.imageUrl && !loadedImages[scene.id])) ? (
                                             <div className="absolute inset-0 flex items-center justify-center bg-zinc-900/80 z-10">
                                                 <Loader2 className="w-5 h-5 text-indigo-500 animate-spin" />
                                             </div>
                                         ) : null}
+
 
                                         {scene.imageUrl ? (
                                             <div className="relative w-full h-full">
