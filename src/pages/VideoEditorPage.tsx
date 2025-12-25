@@ -5,7 +5,7 @@ import { VideoPreview } from '../components/editor/VideoPreview';
 import { CaptionsTab } from '../components/editor/CaptionsTab';
 import { AudioTab } from '../components/editor/AudioTab';
 import { useEffect, useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Layers, Type, Music, ArrowLeft, Play, PlusIcon } from 'lucide-react';
 import { cn } from '../lib/utils';
 
@@ -19,7 +19,8 @@ export function VideoEditorPage() {
     const updateScene = useVideoStore((state) => state.updateScene);
     const resetProject = useVideoStore((state) => state.resetProject);
     const [activeTab, setActiveTab] = useState<EditorTab>('frames');
-    const [mobileTab, setMobileTab] = useState<'scenes' | 'preview'>('scenes');
+    const [searchParams, setSearchParams] = useSearchParams();
+    const mobileTab = (searchParams.get('tab') === 'preview' ? 'preview' : 'scenes') as 'scenes' | 'preview';
     const [isSceneEditorOpen, setIsSceneEditorOpen] = useState(false);
     const [forceAutoPlay, setForceAutoPlay] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
@@ -120,7 +121,7 @@ export function VideoEditorPage() {
         setCurrentSceneId(project.scenes[0].id);
         setForceAutoPlay(true);
         setActiveTab('frames'); // For desktop, ensure we see the side
-        setMobileTab('preview'); // For mobile, switch to preview
+        setSearchParams({ tab: 'preview' }); // URL navigation
     };
 
     if (!project) return null;
@@ -234,7 +235,7 @@ export function VideoEditorPage() {
                         <span className="text-[10px] font-bold uppercase tracking-wider">New Video</span>
                     </button>
                     <button
-                        onClick={() => setMobileTab('scenes')}
+                        onClick={() => setSearchParams({})}
                         className={cn(
                             "flex-1 h-full flex flex-col items-center justify-center gap-1 transition-all relative",
                             mobileTab === 'scenes'
@@ -249,10 +250,7 @@ export function VideoEditorPage() {
                         )}
                     </button>
                     <button
-                        onClick={() => {
-                            setMobileTab('preview');
-                            setForceAutoPlay(false);
-                        }}
+                        onClick={() => setSearchParams({ tab: 'preview' })}
                         className={cn(
                             "flex-1 h-full flex flex-col items-center justify-center gap-1 transition-all relative",
                             mobileTab === 'preview'
@@ -282,13 +280,13 @@ export function VideoEditorPage() {
                                     }}
                                     onPlayScene={(id) => {
                                         setCurrentSceneId(id);
-                                        setMobileTab('preview');
+                                        setSearchParams({ tab: 'preview' });
                                         setForceAutoPlay(true);
                                     }}
                                     onPlayAll={() => {
                                         if (project.scenes.length > 0) {
                                             setCurrentSceneId(project.scenes[0].id);
-                                            setMobileTab('preview');
+                                            setSearchParams({ tab: 'preview' });
                                             setForceAutoPlay(true);
                                         }
                                     }}
@@ -305,7 +303,7 @@ export function VideoEditorPage() {
                                 onSelectScene={setCurrentSceneId}
                                 isMobile={true}
                                 forceAutoPlay={forceAutoPlay}
-                                onBackToScenes={() => setMobileTab('scenes')}
+                                onBackToScenes={() => setSearchParams({})}
                             />
                         </div>
                     )}

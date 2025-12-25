@@ -5,6 +5,7 @@ import { supabaseService } from '../services/supabase';
 import { useVideoStore } from '../store/useVideoStore';
 import { translations } from '../utils/translations';
 import { VideoCarousel } from '../components/VideoCarousel';
+import { Footer } from '../components/layout/Footer';
 
 export function LandingPage() {
     const navigate = useNavigate();
@@ -15,7 +16,7 @@ export function LandingPage() {
         <div className="min-h-screen bg-zinc-950 text-zinc-100 overflow-hidden relative selection:bg-cyan-500/30">
             <Header hideUserMenu={true} isFixed={false} />
             {/* Background Grid Pattern */}
-            <div className="absolute inset-0 z-0 opacity-20"
+            <div className="absolute inset-0 z-0 opacity-20 pointer-events-none"
                 style={{
                     backgroundImage: `radial-gradient(circle at 2px 2px, #3f3f46 1px, transparent 0)`,
                     backgroundSize: '40px 40px'
@@ -23,8 +24,8 @@ export function LandingPage() {
             />
 
             {/* Subtle Glow Effects */}
-            <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-500/10 blur-[120px] rounded-full z-0" />
-            <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-cyan-500/10 blur-[120px] rounded-full z-0" />
+            <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-500/10 blur-[120px] rounded-full z-0 pointer-events-none" />
+            <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-cyan-500/10 blur-[120px] rounded-full z-0 pointer-events-none" />
 
             <main className="relative z-10 max-w-7xl mx-auto px-6 pt-20 pb-4 flex flex-col items-center">
                 {/* Hero Headers */}
@@ -110,6 +111,7 @@ export function LandingPage() {
                     ))}
                 </div>
             </section>
+            <Footer />
         </div>
     );
 }

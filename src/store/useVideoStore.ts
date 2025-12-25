@@ -139,7 +139,16 @@ export const useVideoStore = create<VideoState>()(
                             supabaseService.saveScene(scene, project.id, index)
                         )
                     );
-                } catch (error) {
+                } catch (error: any) {
+                    // Check if this is a guest session (using device ID, not a real user)
+                    const isGuest = userId.includes('-') && userId.length > 20; // UUID-ish check
+                    const isPermissionError = error.code === '42501' || error.status === 401;
+
+                    if (isGuest && isPermissionError) {
+                        console.warn('Supabase RLS/Auth blocked guest save. Proceeding without persistence.', error);
+                        return; // Catch and swallow for guests so they aren't blocked
+                    }
+
                     console.error('Failed to save project to Supabase:', error);
                     throw error;
                 }

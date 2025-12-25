@@ -2,6 +2,8 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { CreateVideoPage } from './pages/CreateVideoPage';
 import { VideoEditorPage } from './pages/VideoEditorPage';
 import { LandingPage } from './pages/LandingPage';
+import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage';
+import { TermsOfServicePage } from './pages/TermsOfServicePage';
 import { useVideoStore } from './store/useVideoStore';
 import { useAuth } from './contexts/AuthContext';
 import { useEffect } from 'react';
@@ -44,6 +46,8 @@ function App() {
             project ? <VideoEditorPage /> : <Navigate to="/videoprompt" replace />
           }
         />
+        <Route path="/privacypolicy" element={<PrivacyPolicyPage />} />
+        <Route path="/terms" element={<TermsOfServicePage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </div>
