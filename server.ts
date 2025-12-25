@@ -9,6 +9,8 @@ import fs from 'fs';
 import ffmpeg from 'fluent-ffmpeg';
 import os from 'os';
 import { pipeline } from 'stream/promises';
+import multer from 'multer';
+import { exec } from 'child_process';
 
 const __dirname = path.resolve();
 
@@ -101,6 +103,17 @@ async function getTTSBuffer(text: string, voice?: string): Promise<Buffer> {
     }
     return audioBuffer;
 }
+
+const storage = multer.diskStorage({
+    destination: '/tmp/reel-ocr-uploads',
+    filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        const ext = path.extname(file.originalname);
+        cb(null, file.fieldname + '-' + uniqueSuffix + ext);
+    }
+});
+const upload = multer({ storage });
+
 app.use(express.json());
 
 // Health Check
@@ -583,6 +596,77 @@ app.post('/api/video/export', async (req, res) => {
             fs.rmSync(tempDir, { recursive: true, force: true });
         } catch (err) { }
     }
+});
+
+app.post('/api/ocr', upload.single('image'), async (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ error: 'No image uploaded' });
+    }
+
+    const imagePath = req.file.path;
+    console.log(`OCR: Processing image at ${imagePath}`);
+
+    // paddleocr ocr -i ./sample.png
+    const command = `/opt/miniconda3/bin/paddleocr ocr -i "${imagePath}"`;
+
+    exec(command, {
+        maxBuffer: 10 * 1024 * 1024, // 10MB buffer
+        env: { ...process.env, DISABLE_MODEL_SOURCE_CHECK: 'True' }
+    }, (error, stdout, stderr) => {
+        const cleanup = () => {
+            try {
+                if (fs.existsSync(imagePath)) fs.unlinkSync(imagePath);
+            } catch (e) { }
+        };
+
+        // Combine both because paddleocr often logs to stderr
+        const fullOutput = (stdout + '\n' + stderr).replace(/\x1B\[[0-9;]*[mK]/g, ''); // Strip ANSI colors
+        console.log('--- OCR FULL OUTPUT ---');
+        console.log(fullOutput);
+
+        try {
+            let extractedText = '';
+
+            // Look for 'rec_texts': [...] or "rec_texts": [...]
+            const recTextsMatch = fullOutput.match(/['"]rec_texts['"]\s*:\s*\[(.*?)\]/s);
+
+            if (recTextsMatch && recTextsMatch[1]) {
+                const textsStr = recTextsMatch[1];
+                // Extract strings: correctly handles '...' and "..." segments 
+                // by matching each quote type until its specific closing counterpart.
+                const textSegments = textsStr.match(/'[^']*'|"[^"]*"/g)?.map(s => s.slice(1, -1)) || [];
+                extractedText = textSegments.join(' ');
+            }
+
+            if (!extractedText || extractedText.trim() === '') {
+                console.warn('OCR: No text extracted from output strings');
+
+                // Fallback: If we can't find rec_texts list, maybe it failed
+                if (!fullOutput.includes('rec_texts')) {
+                    return res.status(500).json({
+                        error: 'OCR extraction failed - No result found',
+                        details: error?.message || 'Command succeeded but produced no text marker',
+                        stdout: stdout,
+                        stderr: stderr
+                    });
+                }
+            }
+
+            console.log('OCR: Extracted Text Success:', extractedText.substring(0, 50) + '...');
+            cleanup();
+            res.json({ text: extractedText });
+
+        } catch (err: any) {
+            console.error('OCR Parse Error:', err);
+            cleanup();
+            res.status(500).json({
+                error: 'Failed to parse OCR output',
+                details: err.message,
+                stdout: stdout,
+                stderr: stderr
+            });
+        }
+    });
 });
 
 app.get('/api/music', (req, res) => {

@@ -6,11 +6,12 @@ export function VideoCarousel() {
     const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
 
     const samples = [
-        { type: 'video', url: '/samples/my-reel-1766600900717.mp4', title: uiLanguage === 'hi' ? 'द क्लियोपेट्रा इफ़ेक्ट' : 'Astroid story' },
+        { type: 'video', url: '/samples/my-reel-1766600900717.mp4#t=0.001', title: uiLanguage === 'hi' ? 'द क्लियोपेट्रा इफ़ेक्ट' : 'Astroid story' },
         { type: 'image', url: 'https://images.unsplash.com/photo-1541873676-a18131494184?auto=format&fit=crop&q=80&w=800', title: uiLanguage === 'hi' ? 'इतिहास' : 'Moon Landing was FAKE' },
-        { type: 'video', url: '/samples/my-reel-1766603727116.mp4', title: uiLanguage === 'hi' ? 'वायरल रील्स' : 'Mahabharat' },
+        { type: 'video', url: '/samples/my-reel-1766603727116.mp4#t=0.001', title: uiLanguage === 'hi' ? 'वायरल रील्स' : 'Mahabharat' },
         { type: 'image', url: 'https://images.unsplash.com/photo-1582125169590-59f4985fb32a?auto=format&fit=crop&q=80&w=800', title: uiLanguage === 'hi' ? 'द क्लियोपेट्रा इफ़ेक्ट' : 'Cleaupatra' },
-        { type: 'video', url: '/samples/my-reel-1766604338659.mp4', title: uiLanguage === 'hi' ? 'इतिहास' : 'EAGEL AND CHICKEN' },
+        { type: 'video', url: '/samples/my-reel-1766604338659.mp4#t=0.001', title: uiLanguage === 'hi' ? 'इतिहास' : 'EAGEL AND CHICKEN' },
+        { type: 'video', url: '/samples/my-reel-1766644056603.mp4#t=0.001', title: uiLanguage === 'hi' ? 'वायरल' : 'New Viral Reel' },
         { type: 'image', url: 'https://plus.unsplash.com/premium_vector-1721077382049-f4deff3c4cf7?auto=format&fit=crop&q=80&w=800', title: uiLanguage === 'hi' ? 'एक लड़का और उसका कुत्ता' : 'School Boy' },
     ];
 
@@ -59,6 +60,7 @@ export function VideoCarousel() {
                                 muted
                                 loop
                                 playsInline
+                                preload="auto"
                                 className="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-opacity duration-500"
                             />
                         ) : (

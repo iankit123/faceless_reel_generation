@@ -1,4 +1,4 @@
-import { Mic, MicOff, Trash2, Sparkles } from 'lucide-react';
+import { Mic, MicOff, Trash2, Sparkles, Camera } from 'lucide-react';
 import { useSpeechRecognition } from '../../hooks/useSpeechRecognition';
 import { useRef, useEffect, useState } from 'react';
 import { SuggestIdeasModal } from '../modals/SuggestIdeasModal';
@@ -21,7 +21,9 @@ export function ScriptInput({
     language = "english"
 }: ScriptInputProps) {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const [isIdeasModalOpen, setIsIdeasModalOpen] = useState(false);
+    const [isOCRProcessing, setIsOCRProcessing] = useState(false);
 
     const { isListening, toggleListening } = useSpeechRecognition({
         onTranscript: (t) => onChange(value + (value ? ' ' : '') + t),
@@ -33,6 +35,39 @@ export function ScriptInput({
         textareaRef.current.style.height = 'auto';
         textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
     }, [value]);
+
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setIsOCRProcessing(true);
+        const formData = new FormData();
+        formData.append('image', file);
+
+        try {
+            const response = await fetch('http://localhost:3000/api/ocr', {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (!response.ok) {
+                const errData = await response.json().catch(() => ({}));
+                console.error('OCR Server Error:', errData);
+                throw new Error(errData.details || 'OCR failed');
+            }
+
+            const data = await response.json();
+            if (data.text) {
+                onChange(value + (value ? ' ' : '') + data.text);
+            }
+        } catch (error) {
+            console.error('OCR Error:', error);
+            alert('Failed to extract text from image. Please try again.');
+        } finally {
+            setIsOCRProcessing(false);
+            if (fileInputRef.current) fileInputRef.current.value = '';
+        }
+    };
 
     return (
         <div className="space-y-2">
@@ -70,17 +105,38 @@ export function ScriptInput({
                 className="w-full min-h-[96px] bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-3 text-sm text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/30 resize-none overflow-hidden"
             />
 
-            <div className="flex gap-3">
+            <div className="flex items-center gap-2">
                 <button
                     onClick={toggleListening}
-                    disabled={disabled}
+                    disabled={disabled || isOCRProcessing}
                     className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm border transition ${isListening
                         ? 'border-red-500/40 text-red-400 bg-red-500/10'
                         : 'border-zinc-800 bg-zinc-900 hover:bg-zinc-800'
                         }`}
                 >
                     {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-                    {isListening ? 'Stop' : 'Speak and write'}
+                    {isListening ? 'Stop' : 'Speak'}
+                </button>
+
+                <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileUpload}
+                    accept="image/*"
+                    className="hidden"
+                />
+
+                <button
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={disabled || isOCRProcessing}
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm border border-zinc-800 bg-zinc-900 hover:bg-zinc-800 transition disabled:opacity-40"
+                >
+                    {isOCRProcessing ? (
+                        <div className="w-4 h-4 border-2 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin" />
+                    ) : (
+                        <Camera className="w-4 h-4" />
+                    )}
+                    {isOCRProcessing ? 'Processing...' : 'Screenshot to story'}
                 </button>
 
                 {isListening && (
@@ -90,13 +146,15 @@ export function ScriptInput({
                     </div>
                 )}
 
+                <div className="flex-1" />
+
                 <button
                     onClick={() => onChange('')}
-                    disabled={disabled || !value}
-                    className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm border border-zinc-800 bg-zinc-900 hover:bg-zinc-800 disabled:opacity-30"
+                    disabled={disabled || !value || isOCRProcessing}
+                    className="p-2 text-zinc-500 hover:text-red-400 transition-colors disabled:opacity-0"
+                    title="Clear prompt"
                 >
-                    <Trash2 className="w-4 h-4" />
-                    Clear
+                    <Trash2 className="w-5 h-5" />
                 </button>
             </div>
         </div>
