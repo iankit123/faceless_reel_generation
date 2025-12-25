@@ -9,6 +9,7 @@ import { getTimedCaptions } from '../../lib/captions';
 import { UpgradeModal } from '../modals/UpgradeModal';
 import { PurchaseCreditModal } from '../modals/PurchaseCreditModal';
 import { useAuth } from '../../contexts/AuthContext';
+import { SignInModal } from '../modals/SignInModal';
 
 interface VideoPreviewProps {
     scenes: Scene[];
@@ -21,19 +22,29 @@ interface VideoPreviewProps {
 
 export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, forceAutoPlay, onBackToScenes }: VideoPreviewProps) {
     const project = useVideoStore(state => state.project);
-    const { credits } = useAuth();
+    const { user, credits } = useAuth();
     const scene = scenes.find(s => s.id === currentSceneId) || scenes[0];
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
     const [activeSubTab, setActiveSubTab] = useState<'preview' | 'captions' | 'audio'>('preview');
     const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
+    const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
     const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
     const [exportState, setExportState] = useState<'idle' | 'exporting' | 'success' | 'error'>('idle');
     const [exportError, setExportError] = useState<string | null>(null);
 
-    const handleExport = async () => {
+    const handleExport = useCallback(async () => {
         setIsPlaying(false);
-        if (credits !== null && credits > 2) {
+
+        // 1. Guest Check
+        if (!user) {
+            localStorage.setItem('pending_download', 'true');
+            setIsSignInModalOpen(true);
+            return;
+        }
+
+        // 2. Credit Check (> 0 instead of > 2)
+        if (credits !== null && credits > 0) {
             console.log('EXPORT: Initiation export request...');
             setExportState('exporting');
             setExportError(null);
@@ -76,11 +87,24 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
         } else {
             setIsUpgradeModalOpen(true);
         }
-    };
+    }, [user, credits, scenes, project]);
+
+    // Handle Auto-download after sign-in
+    useEffect(() => {
+        const isReady = scenes.every(s => s.status === 'ready');
+        if (user && credits !== null && isReady && localStorage.getItem('pending_download') === 'true') {
+            localStorage.removeItem('pending_download');
+            handleExport();
+        }
+    }, [user, credits, handleExport, scenes]);
 
     const handleShare = () => {
         setIsPlaying(false);
-        if (credits !== null && credits > 2) {
+        if (!user) {
+            setIsSignInModalOpen(true);
+            return;
+        }
+        if (credits !== null && credits > 0) {
             alert("Preparing for Instagram... Your video will be ready shortly.");
         } else {
             setIsUpgradeModalOpen(true);
@@ -692,6 +716,12 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
             <PurchaseCreditModal
                 isOpen={isPurchaseModalOpen}
                 onClose={() => setIsPurchaseModalOpen(false)}
+            />
+
+            <SignInModal
+                isOpen={isSignInModalOpen}
+                onClose={() => setIsSignInModalOpen(false)}
+                redirectTo="/scenes"
             />
 
             {/* Export Progress Modal */}

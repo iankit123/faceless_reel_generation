@@ -41,8 +41,8 @@ export const handler = async (event: any) => {
         }
 
         const models = [
-            'bria/bria-3.2',
             'openai/gpt-image-1.5:free',
+            'bria/bria-3.2',
             'black-forest-labs/flux-1-schnell',
             'stability-ai/sdxl'
         ];
@@ -75,17 +75,22 @@ export const handler = async (event: any) => {
             return data.data[0].url;
         };
 
-        // Try in batches of 2 for speed and reliability
+        // Try models one by one to optimize cost and avoid double generation
         let imageUrl = null;
-        try {
-            imageUrl = await Promise.any([tryModel(models[0]), tryModel(models[1])]);
-        } catch (e) {
-            console.log('First batch failed, trying second batch...');
+        let lastError = null;
+
+        for (const modelName of models) {
             try {
-                imageUrl = await Promise.any([tryModel(models[2]), tryModel(models[3])]);
-            } catch (e2) {
-                throw new Error('All models failed');
+                imageUrl = await tryModel(modelName);
+                if (imageUrl) break;
+            } catch (e: any) {
+                console.warn(`Model ${modelName} failed, moving to next... Error: ${e.message}`);
+                lastError = e;
             }
+        }
+
+        if (!imageUrl) {
+            throw new Error(`All models failed. Last error: ${lastError?.message}`);
         }
 
         console.log('Image generated successfully:', imageUrl);

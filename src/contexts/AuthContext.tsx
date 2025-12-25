@@ -7,7 +7,7 @@ interface AuthContextType {
     session: Session | null;
     loading: boolean;
     credits: number | null;
-    signInWithGoogle: () => Promise<void>;
+    signInWithGoogle: (redirectToPath?: string) => Promise<void>;
     signOut: () => Promise<void>;
     refreshCredits: () => Promise<void>;
 }
@@ -78,11 +78,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return () => subscription.unsubscribe();
     }, []);
 
-    const signInWithGoogle = async () => {
+    const signInWithGoogle = async (redirectToPath?: string) => {
         const { error } = await supabase.auth.signInWithOAuth({
             provider: 'google',
             options: {
-                redirectTo: `${window.location.origin}/videoprompt`
+                redirectTo: redirectToPath
+                    ? `${window.location.origin}${redirectToPath}`
+                    : `${window.location.origin}/videoprompt`
             }
         });
         if (error) throw error;

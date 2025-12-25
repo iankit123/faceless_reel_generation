@@ -29,129 +29,139 @@ interface VideoState {
     setTimer: (time: number | ((prev: number) => number)) => void;
 }
 
-export const useVideoStore = create<VideoState>((set, get) => ({
-    project: null,
-    isGenerating: false,
-    currentSceneId: null,
-    uiLanguage: (localStorage.getItem('preferred_ui_lang') as 'en' | 'hi') || 'en',
-    timer: 150,
+import { persist } from 'zustand/middleware';
 
-    setTimer: (time) => set((state) => ({
-        timer: typeof time === 'function' ? time(state.timer) : time
-    })),
+export const useVideoStore = create<VideoState>()(
+    persist(
+        (set, get) => ({
+            project: null,
+            isGenerating: false,
+            currentSceneId: null,
+            uiLanguage: (localStorage.getItem('preferred_ui_lang') as 'en' | 'hi') || 'en',
+            timer: 150,
 
-    setUILanguage: (lang) => {
-        localStorage.setItem('preferred_ui_lang', lang);
-        set({ uiLanguage: lang });
-    },
+            setTimer: (time) => set((state) => ({
+                timer: typeof time === 'function' ? time(state.timer) : time
+            })),
 
-    initProject: (theme, language, prompt) => set({
-        timer: 150,
-        project: {
-            id: crypto.randomUUID(),
-            title: 'New Video',
-            theme,
-            prompt,
-            scenes: [],
-            captionSettings: { style: 'default' },
-            backgroundMusic: {
-                name: 'Else.mp3',
-                url: '/background_music/Else.mp3',
-                volume: 0.3
+            setUILanguage: (lang) => {
+                localStorage.setItem('preferred_ui_lang', lang);
+                set({ uiLanguage: lang });
             },
-            narrationVolume: 3.0,
-            language: language || 'hinglish',
-            createdAt: getISTDate()
+
+            initProject: (theme, language, prompt) => set({
+                timer: 150,
+                project: {
+                    id: crypto.randomUUID(),
+                    title: 'New Video',
+                    theme,
+                    prompt,
+                    scenes: [],
+                    captionSettings: { style: 'default' },
+                    backgroundMusic: {
+                        name: 'Else.mp3',
+                        url: '/background_music/Else.mp3',
+                        volume: 0.3
+                    },
+                    narrationVolume: 3.0,
+                    language: language || 'hinglish',
+                    createdAt: getISTDate()
+                }
+            }),
+
+            setProject: (project) => set({ project }),
+
+            updateScene: (sceneId, updates) => set((state) => {
+                if (!state.project) return state;
+                const newScenes = state.project.scenes.map((scene) =>
+                    scene.id === sceneId ? { ...scene, ...updates } : scene
+                );
+                return { project: { ...state.project, scenes: newScenes } };
+            }),
+
+            addScene: (scene) => set((state) => {
+                if (!state.project) return state;
+                return { project: { ...state.project, scenes: [...state.project.scenes, scene] } };
+            }),
+
+            addSceneAt: (index, scene) => set((state) => {
+                if (!state.project) return state;
+                const newScenes = [...state.project.scenes];
+                newScenes.splice(index, 0, scene);
+                return { project: { ...state.project, scenes: newScenes } };
+            }),
+
+            removeScene: (sceneId) => set((state) => {
+                if (!state.project) return state;
+                return { project: { ...state.project, scenes: state.project.scenes.filter(s => s.id !== sceneId) } };
+            }),
+
+            setGenerating: (isGenerating) => set({ isGenerating }),
+            setCurrentSceneId: (currentSceneId) => set({ currentSceneId }),
+
+            updateCaptionSettings: (settings) => set((state) => {
+                if (!state.project) return state;
+                return {
+                    project: {
+                        ...state.project,
+                        captionSettings: { ...state.project.captionSettings, ...settings }
+                    }
+                };
+            }),
+
+            setBackgroundMusic: (music) => set((state) => {
+                if (!state.project) return state;
+                return {
+                    project: {
+                        ...state.project,
+                        backgroundMusic: music
+                    }
+                };
+            }),
+            setNarrationVolume: (volume) => set((state) => {
+                if (!state.project) return state;
+                return {
+                    project: {
+                        ...state.project,
+                        narrationVolume: volume
+                    }
+                };
+            }),
+            saveProject: async (userId) => {
+                if (!userId) {
+                    console.log('STORE: Guest mode, skipping Supabase save');
+                    return;
+                }
+                const { project } = get();
+                if (!project) return;
+
+                try {
+                    await supabaseService.saveProject(project, userId);
+                    // Save all scenes
+                    await Promise.all(
+                        project.scenes.map((scene, index) =>
+                            supabaseService.saveScene(scene, project.id, index)
+                        )
+                    );
+                } catch (error) {
+                    console.error('Failed to save project to Supabase:', error);
+                    throw error;
+                }
+            },
+            setTheme: (theme) => set((state) => {
+                if (!state.project) return state;
+                return {
+                    project: {
+                        ...state.project,
+                        theme
+                    }
+                };
+            }),
+            resetProject: () => set({ project: null, currentSceneId: null, isGenerating: false }),
+        }),
+        {
+            name: 'reel-generator-storage',
+            partialize: (state) => ({ project: state.project }), // Only persist the project
         }
-    }),
-
-    setProject: (project) => set({ project }),
-
-    updateScene: (sceneId, updates) => set((state) => {
-        if (!state.project) return state;
-        const newScenes = state.project.scenes.map((scene) =>
-            scene.id === sceneId ? { ...scene, ...updates } : scene
-        );
-        return { project: { ...state.project, scenes: newScenes } };
-    }),
-
-    addScene: (scene) => set((state) => {
-        if (!state.project) return state;
-        return { project: { ...state.project, scenes: [...state.project.scenes, scene] } };
-    }),
-
-    addSceneAt: (index, scene) => set((state) => {
-        if (!state.project) return state;
-        const newScenes = [...state.project.scenes];
-        newScenes.splice(index, 0, scene);
-        return { project: { ...state.project, scenes: newScenes } };
-    }),
-
-    removeScene: (sceneId) => set((state) => {
-        if (!state.project) return state;
-        return { project: { ...state.project, scenes: state.project.scenes.filter(s => s.id !== sceneId) } };
-    }),
-
-    setGenerating: (isGenerating) => set({ isGenerating }),
-    setCurrentSceneId: (currentSceneId) => set({ currentSceneId }),
-
-    updateCaptionSettings: (settings) => set((state) => {
-        if (!state.project) return state;
-        return {
-            project: {
-                ...state.project,
-                captionSettings: { ...state.project.captionSettings, ...settings }
-            }
-        };
-    }),
-
-    setBackgroundMusic: (music) => set((state) => {
-        if (!state.project) return state;
-        return {
-            project: {
-                ...state.project,
-                backgroundMusic: music
-            }
-        };
-    }),
-    setNarrationVolume: (volume) => set((state) => {
-        if (!state.project) return state;
-        return {
-            project: {
-                ...state.project,
-                narrationVolume: volume
-            }
-        };
-    }),
-    saveProject: async (userId) => {
-        if (!userId) {
-            console.log('STORE: Guest mode, skipping Supabase save');
-            return;
-        }
-        const { project } = get();
-        if (!project) return;
-
-        try {
-            await supabaseService.saveProject(project, userId);
-            // Save all scenes
-            await Promise.all(
-                project.scenes.map((scene, index) =>
-                    supabaseService.saveScene(scene, project.id, index)
-                )
-            );
-        } catch (error) {
-            console.error('Failed to save project to Supabase:', error);
-            throw error;
-        }
-    },
-    setTheme: (theme) => set((state) => {
-        if (!state.project) return state;
-        return {
-            project: {
-                ...state.project,
-                theme
-            }
-        };
-    }),
-    resetProject: () => set({ project: null, currentSceneId: null, isGenerating: false }),
-}));
+    )
+);
