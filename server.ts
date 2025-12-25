@@ -177,8 +177,8 @@ app.post('/api/story', async (req, res) => {
             messages: [
                 {
                     role: "system",
-                    content: `You are a viral short-form video script writer. 
-                    Create a compelling story based on the user's prompt.
+                    content: `You are a viral reels video script writer. 
+                    Create a compelling story to be put on instagram reels based on the user's prompt.
                     Output ONLY a JSON object with this structure:
                     {
                         "title": "...",
@@ -191,13 +191,15 @@ app.post('/api/story', async (req, res) => {
                             }
                         ]
                     }
-                    Keep it to 6-10 scenes. ${languageInstruction}
+                    Keep it to 7-10 scenes. ${languageInstruction}
 
                     CRITICAL: The FIRST scene (index 0) MUST ALWAYS be a Thumbnail scene.
                     - Set "isThumbnail": true for 이 scene.
                     - "text" for this scene should be a short, highly compelling hook/title (e.g. "Secret of the Pyramids", "Why Lions don't eat Grass"). 
                     - It should NOT be a long character dialogue, but a viral hook.
                     - "duration" should be short (2-3 seconds).
+
+                    CRITICAL: The LAST scene should be either a moral of story or end of story type or a suspense creating scene.
 
                     For each imagePrompt:
                     Write a prompt for text to image generation
