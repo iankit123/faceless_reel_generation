@@ -206,8 +206,8 @@ export function CreateVideoPage() {
                                 language === 'english'
                                     ? 'Enter video script... if need suggestions take from above'
                                     : language === 'hinglish'
-                                        ? 'Video के लिए स्टोरी लिखिए... सुझाव चाइए तो उपर से ले सकते है'
-                                        : 'Video के लिए स्टोरी लिखिए... सुझाव चाइए तो उपर से ले सकते है'
+                                        ? 'Video के लिए स्टोरी लिखिए... सुझाव चाइए तो उपर सफैद डब्बे से ले'
+                                        : 'Video के लिए स्टोरी लिखिए... सुझाव चाइए तो उपर सफैद डब्बे से ले'
                             }
                             language={language}
                         />
