@@ -72,7 +72,7 @@ export const handler = async (event: any) => {
                     ],
                 },
             ],
-            model: "llama-4-scout-17b-16e-instruct",
+            model: "meta-llama/llama-4-scout-17b-16e-instruct",
         });
 
         const extractedText = response.choices[0]?.message?.content || '';
