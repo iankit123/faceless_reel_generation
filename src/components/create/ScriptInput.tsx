@@ -109,7 +109,7 @@ export function ScriptInput({
                 <button
                     onClick={toggleListening}
                     disabled={disabled || isOCRProcessing}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm border transition ${isListening
+                    className={`flex items-center gap-1 px-1 py-2 rounded-lg text-sm border transition ${isListening
                         ? 'border-red-500/40 text-red-400 bg-red-500/10'
                         : 'border-zinc-800 bg-zinc-900 hover:bg-zinc-800'
                         }`}
@@ -129,7 +129,7 @@ export function ScriptInput({
                 <button
                     onClick={() => fileInputRef.current?.click()}
                     disabled={disabled || isOCRProcessing}
-                    className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm border border-zinc-800 bg-zinc-900 hover:bg-zinc-800 transition disabled:opacity-40"
+                    className="flex items-center gap-1 px-1 py-2 rounded-lg text-sm border border-zinc-800 bg-zinc-900 hover:bg-zinc-800 transition disabled:opacity-40"
                 >
                     {isOCRProcessing ? (
                         <div className="w-4 h-4 border-2 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin" />
