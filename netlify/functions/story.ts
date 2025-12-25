@@ -23,11 +23,12 @@ async function expandStory(groq: Groq, prompt: string, language: string) {
                 1. Characters & Arc: Add specific characters, a setting, and a clear emotional conflict or arc.
                 2. Narration Style: Write in a natural, spoken narration style suitable for a voiceover.
                 3. Structure: Keep it conversational and fast-paced for short-form video (Reels/TikTok).
-                4. Output Structure: You MUST return a JSON object with:
+                4. Visual Metadata: The "title" and "theme" fields MUST ALWAYS be in English for internal processing, even if narration is in another language.
+                5. Output Structure: You MUST return a JSON object with:
                    {
-                     "title": "A catchy viral title",
-                     "theme": "A concise visual style description (e.g. Cinematic, Cyberpunk, Watercolor)",
-                     "narration": "The full narrated text (60-90 seconds worth of speech)."
+                     "title": "A catchy viral title (English)",
+                     "theme": "A concise visual style description (English)",
+                     "narration": "The full narrated text."
                    }
                 
                 ${languageInstruction}
@@ -75,9 +76,9 @@ async function generateScenes(groq: Groq, expandedStory: any, language: string) 
                 1. Fragmentation: Split the "Full Narration" into 6-10 logical scene segments. Every word of the narration must be included across the scenes.
                 2. Thumbnail: The VERY FIRST scene (index 0) MUST be a thumbnail scene. 
                    - Set "isThumbnail": true.
-                   - "text" should be a short, clickable hook (e.g. "The Secret is Out!").
+                   - "text" should be a short, clickable hook (translated based on language instruction).
                    - "duration" should be 2-3 seconds.
-                3. Image Prompts: For each scene, write an imagePrompt that:
+                3. Image Prompts: For each scene, write an "imagePrompt" ALWAYS in English.
                    - Describes the subject, setting, and mood in detail.
                    - Maintains STRICT visual consistency (features, clothes, age) for characters across all scenes.
                 4. Motion: Assign "motionType" (zoom_in, pan_left, etc.) that fits the scene's mood.
