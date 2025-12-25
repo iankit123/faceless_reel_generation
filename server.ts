@@ -151,6 +151,57 @@ app.post('/api/tts', async (req, res) => {
     });
 });
 
+// -------------------- STAGE 1: PROMPT EXPANSION --------------------
+
+async function expandPromptToStory(prompt: string, language: string) {
+    let languageInstruction =
+        language === 'english'
+            ? 'Write in simple spoken English.'
+            : 'Write in simple spoken Hindi (Devanagari).';
+
+    const completion = await groq.chat.completions.create({
+        messages: [
+            {
+                role: 'system',
+                content: `
+You are a storyteller.
+Expand even a 1–5 word idea into a short narrated story.
+
+Rules:
+- Add characters, setting, conflict, resolution
+- Spoken narration style, not prose
+- Short clear sentences
+- NO scenes
+- NO image prompts
+
+Output ONLY JSON:
+{
+  "title": "...",
+  "theme": "...",
+  "narration": "full story narration"
+}
+
+${languageInstruction}
+`
+            },
+            {
+                role: 'user',
+                content: prompt
+            }
+        ],
+        model: 'llama-3.3-70b-versatile',
+        temperature: 0.8,
+        max_tokens: 700,
+        response_format: { type: 'json_object' }
+    });
+
+    const content = completion.choices[0]?.message?.content;
+    if (!content) throw new Error('Stage 1: No content received');
+
+    return JSON.parse(content);
+}
+
+
 // Story Generation Endpoint
 app.post('/api/story', async (req, res) => {
     try {
@@ -173,63 +224,66 @@ app.post('/api/story', async (req, res) => {
             languageInstruction = "Generate the 'text' field in English.";
         }
 
+        // -------- STAGE 1: Expand short prompt into full story --------
+        const expandedStory = await expandPromptToStory(prompt, language);
+
+        // -------- STAGE 2: Convert story into reel scenes --------
         const completion = await groq.chat.completions.create({
             messages: [
                 {
                     role: "system",
-                    content: `You are a viral reels video script writer. 
-                    Create a compelling story to be put on instagram reels based on the user's prompt.
-                    Output ONLY a JSON object with this structure:
-                    {
-                        "title": "...",
-                        "theme": "...",
-                        "scenes": [
-                            {
-                                "text": "...",
-                                "imagePrompt": "...",
-                                "motionType": "zoom_in" | "pan_left" | "pan_right" | "pan_up" | "pan_down" | "none"
-                            }
-                        ]
-                    }
-                    Keep it to 7-10 scenes. ${languageInstruction}
+                    content: `
+You convert a narrated story into Instagram Reel scenes.
 
-                    CRITICAL: The FIRST scene (index 0) MUST ALWAYS be a Thumbnail scene.
-                    - Set "isThumbnail": true for 이 scene.
-                    - "text" for this scene should be a short, highly compelling hook/title (e.g. "Secret of the Pyramids", "Why Lions don't eat Grass"). 
-                    - It should NOT be a long character dialogue, but a viral hook.
-                    - "duration" should be short (2-3 seconds).
+Rules:
+- Do NOT invent new story content
+- Use the narration exactly as given
+- 7–10 scenes total
+- FIRST scene MUST be thumbnail (isThumbnail=true)
+- Thumbnail text must be short viral hook
+- LAST scene must conclude or give moral
+- Keep characters and visual theme consistent
 
-                    CRITICAL: The LAST scene should be either a moral of story or end of story type or a suspense creating scene.
-
-                    For each imagePrompt:
-                    Write a prompt for text to image generation
-                    Describe key visual details (setting, subject appearance, environment, colors, textures)
-                    Keep the theme same in all scenes consistent with the story context (Comic, Sketch, animated, fantasy, kids-friendly, etc). If mentioned specifically by user, use that theme.
-                    If a person is mentioned in image prompt, try to describe the person in detail speacially gender and age in all scenes, so that character remains similar in all scenes.
-                    Internal guiding pattern:
-                    “Image Theme: [Comic], [Ancient times] (same for all scenes)
-                    Person/Animal mentions: [name1, gender1, age1, species1; name2, gender2, age2, species2; ... ] (same for all scenes)
-                    Scene Description: [camera framing] of [subject] in [setting], [lighting], [mood], highly detailed, visually coherent”
-                    `
+Output ONLY JSON:
+{
+  "title": "...",
+  "theme": "...",
+  "scenes": [
+    {
+      "text": "...",
+      "imagePrompt": "...",
+      "motionType": "zoom_in | pan_left | pan_right | pan_up | pan_down | none",
+      "isThumbnail": true
+    }
+  ]
+}
+`
                 },
                 {
                     role: "user",
-                    content: `Create a insta reel compatible story about: ${prompt}`
+                    content: `
+Title: ${expandedStory.title}
+Theme: ${expandedStory.theme}
+
+Story:
+${expandedStory.narration}
+`
                 }
             ],
             model: "llama-3.3-70b-versatile",
-            temperature: 0.7,
-            max_tokens: 1000, // Keep it fast
+            temperature: 0.6,
+            max_tokens: 1000,
             response_format: { type: "json_object" }
         });
 
         const content = completion.choices[0]?.message?.content;
         if (!content) {
-            throw new Error('No content received from Groq');
+            throw new Error('Stage 2: No content received from Groq');
         }
 
         const story = JSON.parse(content);
         res.json(story);
+
 
     } catch (error) {
         console.error('STORY_ERROR_CRITICAL:', error);
