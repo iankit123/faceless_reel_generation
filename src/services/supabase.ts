@@ -129,32 +129,32 @@ export const supabaseService = {
 
     async logGuestPrompt(prompt: string, language: string) {
         // Record the prompt even if they don't sign up
-        // We catch errors here to ensure the main flow (redirect to login) isn't blocked
-        try {
-            await supabase
-                .from('guest_prompts')
-                .insert({
-                    prompt,
-                    language,
-                    created_at: getISTDate()
-                });
-        } catch (error) {
-            console.warn('Failed to log guest prompt:', error);
+        // We handle errors gracefully to ensure the main flow isn't blocked
+        const { error } = await supabase
+            .from('guest_prompts')
+            .insert({
+                prompt,
+                language,
+                created_at: getISTDate()
+            });
+
+        if (error) {
+            console.warn('Supabase Guest Prompt Log Skipped:', error.message);
         }
     },
 
     async logEvent(eventName: string, metadata: any = {}) {
-        try {
-            await supabase
-                .from('app_events')
-                .insert({
-                    event_name: eventName,
-                    device_id: getDeviceId(),
-                    metadata,
-                    created_at: getISTDate()
-                });
-        } catch (error) {
-            console.warn(`Failed to log event ${eventName}:`, error);
+        const { error } = await supabase
+            .from('app_events')
+            .insert({
+                event_name: eventName,
+                device_id: getDeviceId(),
+                metadata,
+                created_at: getISTDate()
+            });
+
+        if (error) {
+            console.warn(`Supabase Event Log Skipped (${eventName}):`, error.message);
         }
     }
 };

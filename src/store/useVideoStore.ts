@@ -141,12 +141,27 @@ export const useVideoStore = create<VideoState>()(
                     );
                 } catch (error: any) {
                     // Check if this is a guest session (using device ID, not a real user)
-                    const isGuest = userId.includes('-') && userId.length > 20; // UUID-ish check
-                    const isPermissionError = error.code === '42501' || error.status === 401;
+                    const isGuest = !userId || (userId.includes('-') && userId.length > 20); // UUID-ish check
 
-                    if (isGuest && isPermissionError) {
-                        console.warn('Supabase RLS/Auth blocked guest save. Proceeding without persistence.', error);
-                        return; // Catch and swallow for guests so they aren't blocked
+                    // common Supabase/PostgREST error codes:
+                    // 42501: RLS Permission Denied
+                    // 23503: Foreign Key Violation (guest deviceId doesn't exist in auth.users)
+                    // 23505: Unique Violation (already handled by upsert, but just in case)
+                    // 401: Unauthorized (missing schema permissions for anon)
+                    const isPermissionOrFKError =
+                        error.code === '42501' ||
+                        error.code === '23503' ||
+                        error.status === 401 ||
+                        error.message?.includes('permission denied');
+
+                    if (isGuest && isPermissionOrFKError) {
+                        console.warn('Supabase Guest Save Skipped:', {
+                            reason: error.message || 'RLS/FK Restriction',
+                            code: error.code,
+                            status: error.status,
+                            suggestion: 'To enable guest persistence, run the SQL script provided in the walkthrough.'
+                        });
+                        return; // Catch and swallow for guests so they aren't blocked from generating
                     }
 
                     console.error('Failed to save project to Supabase:', error);

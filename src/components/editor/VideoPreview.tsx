@@ -203,7 +203,8 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
         setCurrentTime(currentSceneStartTime);
 
         if (scene?.audioUrl) {
-            const audio = new Audio(scene.audioUrl);
+            const currentAudioUrl = scene.audioUrl;
+            const audio = new Audio(currentAudioUrl);
             audio.crossOrigin = "anonymous";
             audioRef.current = audio;
 
@@ -228,22 +229,26 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
                 }
             };
 
+            // Diagnostic for dead blobs
+            audio.onerror = () => {
+                const err = audio.error;
+                if (err && (err.code === 4 || currentAudioUrl.startsWith('blob:'))) {
+                    console.warn(`Audio source failed for scene ${scene.id}. This often happens with stale session blobs.`);
+                }
+            };
+
             // Auto-play if flag is set
-            if (autoPlayRef.current) {
-                if (audioCtxRef.current?.state === 'suspended') {
-                    audioCtxRef.current.resume();
-                }
-                const playPromise = audio.play();
-                if (playPromise !== undefined) {
-                    playPromise
-                        .then(() => setIsPlaying(true))
-                        .catch(error => {
-                            console.error("Auto-play failed:", error);
-                            setIsPlaying(false);
-                        });
-                }
-                autoPlayRef.current = false;
+            const playPromise = audio.play();
+            if (playPromise !== undefined) {
+                playPromise
+                    .then(() => setIsPlaying(true))
+                    .catch(error => {
+                        if (error.name === 'AbortError') return; // Silence unmount interruptions
+                        console.error("Auto-play failed:", error);
+                        setIsPlaying(false);
+                    });
             }
+            autoPlayRef.current = false;
         }
 
         return () => {
@@ -379,16 +384,33 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
         };
     }, [isPlaying, animate]);
 
-    const togglePlayback = () => {
+    const togglePlayback = async () => {
         if (!audioRef.current) return;
 
         if (isPlaying) {
             audioRef.current.pause();
+            setIsPlaying(false);
         } else {
-            audioRef.current.play();
-            autoPlayRef.current = false;
+            try {
+                if (audioCtxRef.current?.state === 'suspended') {
+                    await audioCtxRef.current.resume();
+                }
+                await audioRef.current.play();
+                setIsPlaying(true);
+                autoPlayRef.current = false;
+            } catch (error: any) {
+                if (error.name === 'AbortError') return;
+                console.error("Playback failed:", error);
+
+                // Alert user if the source is clearly broken
+                const isSourceError = audioRef.current.error || error.name === 'NotSupportedError';
+                if (isSourceError && scene?.audioUrl?.startsWith('blob:')) {
+                    alert("Audio session expired. Please re-generate this scene to fix playback.");
+                }
+
+                setIsPlaying(false);
+            }
         }
-        setIsPlaying(!isPlaying);
     };
 
     const handleUpgradeNow = () => {
