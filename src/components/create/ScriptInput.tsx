@@ -36,18 +36,31 @@ export function ScriptInput({
         textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
     }, [value]);
 
+    const fileToBase64 = (file: File): Promise<string> => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => {
+                const base64 = (reader.result as string).split(',')[1];
+                resolve(base64);
+            };
+            reader.onerror = error => reject(error);
+        });
+    };
+
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
         setIsOCRProcessing(true);
-        const formData = new FormData();
-        formData.append('image', file);
-
         try {
-            const response = await fetch('http://localhost:3000/api/ocr', {
+            const base64 = await fileToBase64(file);
+
+            // Use relative path for deployment
+            const response = await fetch('/api/ocr', {
                 method: 'POST',
-                body: formData,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ image: base64 }),
             });
 
             if (!response.ok) {

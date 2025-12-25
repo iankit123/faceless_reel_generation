@@ -599,11 +599,25 @@ app.post('/api/video/export', async (req, res) => {
 });
 
 app.post('/api/ocr', upload.single('image'), async (req, res) => {
-    if (!req.file) {
-        return res.status(400).json({ error: 'No image uploaded' });
+    let imagePath = '';
+
+    if (req.file) {
+        imagePath = req.file.path;
+    } else if (req.body.image) {
+        // Handle base64 from JSON (needed for deployment/refactored frontend)
+        const base64Data = req.body.image;
+        const tempFilename = `ocr-${Date.now()}-${Math.round(Math.random() * 1E9)}.png`;
+        imagePath = path.join('/tmp/reel-ocr-uploads', tempFilename);
+        if (!fs.existsSync('/tmp/reel-ocr-uploads')) {
+            fs.mkdirSync('/tmp/reel-ocr-uploads', { recursive: true });
+        }
+        fs.writeFileSync(imagePath, Buffer.from(base64Data, 'base64'));
     }
 
-    const imagePath = req.file.path;
+    if (!imagePath) {
+        return res.status(400).json({ error: 'No image provided' });
+    }
+
     console.log(`OCR: Processing image at ${imagePath}`);
 
     // paddleocr ocr -i ./sample.png
