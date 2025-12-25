@@ -1,7 +1,9 @@
-import { Mic, MicOff, Trash2, Sparkles, Camera } from 'lucide-react';
+import { Mic, MicOff, Trash2, Lightbulb, Camera } from 'lucide-react';
 import { useSpeechRecognition } from '../../hooks/useSpeechRecognition';
 import { useRef, useEffect, useState } from 'react';
 import { SuggestIdeasModal } from '../modals/SuggestIdeasModal';
+import { useVideoStore } from '../../store/useVideoStore';
+import { translations } from '../../utils/translations';
 
 interface ScriptInputProps {
     value: string;
@@ -24,6 +26,8 @@ export function ScriptInput({
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [isIdeasModalOpen, setIsIdeasModalOpen] = useState(false);
     const [isOCRProcessing, setIsOCRProcessing] = useState(false);
+    const uiLanguage = useVideoStore(s => s.uiLanguage);
+    const t = translations[uiLanguage];
 
     const { isListening, toggleListening } = useSpeechRecognition({
         onTranscript: (t) => onChange(value + (value ? ' ' : '') + t),
@@ -88,6 +92,7 @@ export function ScriptInput({
                 isOpen={isIdeasModalOpen}
                 onClose={() => setIsIdeasModalOpen(false)}
                 onSelect={onChange}
+                selectedLanguage={language}
             />
 
             <div className="flex items-center justify-between">
@@ -95,17 +100,33 @@ export function ScriptInput({
                     {label}
                 </label>
 
-                <button
-                    onClick={() => setIsIdeasModalOpen(true)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg
-             bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500
-             text-white shadow-md shadow-purple-500/25
-             hover:from-indigo-400 hover:to-pink-400
-             active:scale-95 transition"
-                >
-                    <Sparkles className="w-3.5 h-3.5" />
-                    Suggest ideas
-                </button>
+                <div className="flex items-center gap-3 relative">
+                    {/* Visual Prompt Arrow */}
+                    <div className="absolute -left-16 top-1/2 -translate-y-1/2 hidden sm:flex flex-col items-center animate-bounce-x">
+                        <span className="text-[9px] font-black text-white/40 uppercase tracking-tighter mb-1 rotate-[-12deg]">
+                            {uiLanguage === 'hi' ? 'इसे आज़माएं!' : 'Try this!'}
+                        </span>
+                        <svg width="46" height="24" viewBox="0 0 46 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-white/60 drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]">
+                            <path d="M2 18C10 6 25 4 42 12M42 12L34 6M42 12L36 20" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                    </div>
+
+                    <button
+                        onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setIsIdeasModalOpen(true);
+                        }}
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg
+                 bg-zinc-100 text-zinc-950 border border-zinc-200
+                 shadow-lg shadow-white/5
+                 hover:bg-white hover:scale-105
+                 active:scale-95 transition-all group"
+                    >
+                        <Lightbulb className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500/20 group-hover:fill-yellow-500/40 transition-all" />
+                        {t.suggestIdeas}
+                    </button>
+                </div>
 
             </div>
 

@@ -8,6 +8,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Layers, Type, Music, ArrowLeft, Play, PlusIcon } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { ConfirmModal } from '../components/ui/ConfirmModal';
 
 type EditorTab = 'frames' | 'captions' | 'audio';
 
@@ -25,6 +26,19 @@ export function VideoEditorPage() {
     const [forceAutoPlay, setForceAutoPlay] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
     const processingRef = useRef(false);
+
+    // Confirmation Modal State
+    const [confirmModal, setConfirmModal] = useState<{
+        isOpen: boolean;
+        title: string;
+        message: string;
+        onConfirm: () => void;
+    }>({
+        isOpen: false,
+        title: '',
+        message: '',
+        onConfirm: () => { }
+    });
 
     useEffect(() => {
         if (project?.scenes.length && !currentSceneId) {
@@ -171,11 +185,21 @@ export function VideoEditorPage() {
 
                 <div className="mt-auto pb-6">
                     <button
-                        onClick={() => {
-                            if (window.confirm('Are you sure you want to change the prompt? This will clear your current project.')) {
-                                resetProject();
-                                navigate('/videoprompt');
-                            }
+                        onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            if (confirmModal.isOpen) return; // Guard
+                            console.log('DEBUG: [VideoEditorPage] Desktop Back/Change Prompt clicked');
+                            setConfirmModal({
+                                isOpen: true,
+                                title: 'Change Prompt',
+                                message: 'Are you sure you want to change the prompt? This will clear your current project.',
+                                onConfirm: () => {
+                                    console.log('DEBUG: [VideoEditorPage] Desktop Confirm OK, resetting and navigating');
+                                    resetProject();
+                                    navigate('/videoprompt');
+                                }
+                            });
                         }}
                         className="p-3 rounded-xl transition-all flex flex-col items-center gap-1 text-[10px] font-medium w-16 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900"
                         title="Change Complete Prompt"
@@ -223,11 +247,21 @@ export function VideoEditorPage() {
                 {/* Mobile Top Navigation */}
                 <div className="h-14 border-b border-zinc-800 bg-zinc-950 flex items-center shrink-0 sticky top-0 z-50">
                     <button
-                        onClick={() => {
-                            if (window.confirm('Start a new video? This will clear your current project.')) {
-                                resetProject();
-                                navigate('/videoprompt');
-                            }
+                        onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            if (confirmModal.isOpen) return; // Guard
+                            console.log('DEBUG: [VideoEditorPage] New Video button clicked');
+                            setConfirmModal({
+                                isOpen: true,
+                                title: 'Start New Video',
+                                message: 'Start a new video? This will clear your current project.',
+                                onConfirm: () => {
+                                    console.log('DEBUG: [VideoEditorPage] Confirm OK, resetting project and navigating to /videoprompt');
+                                    resetProject();
+                                    navigate('/videoprompt');
+                                }
+                            });
                         }}
                         className="flex-1 h-full flex flex-col items-center justify-center gap-1 transition-all relative text-zinc-500 hover:text-zinc-400"
                     >
@@ -334,6 +368,20 @@ export function VideoEditorPage() {
                     )}
                 </div>
             </div>
+
+            <ConfirmModal
+                isOpen={confirmModal.isOpen}
+                title={confirmModal.title}
+                message={confirmModal.message}
+                onConfirm={() => {
+                    confirmModal.onConfirm();
+                    setConfirmModal(prev => ({ ...prev, isOpen: false }));
+                }}
+                onCancel={() => {
+                    console.log('DEBUG: [VideoEditorPage] Confirm Modal Cancelled');
+                    setConfirmModal(prev => ({ ...prev, isOpen: false }));
+                }}
+            />
         </div>
     );
 }

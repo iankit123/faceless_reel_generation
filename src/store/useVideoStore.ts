@@ -23,6 +23,7 @@ interface VideoState {
     saveProject: (userId: string) => Promise<void>;
     setTheme: (theme: string) => void;
     resetProject: () => void;
+    regenerateAllAudio: () => void;
     uiLanguage: 'en' | 'hi';
     setUILanguage: (lang: 'en' | 'hi') => void;
     timer: number;
@@ -178,6 +179,20 @@ export const useVideoStore = create<VideoState>()(
                 };
             }),
             resetProject: () => set({ project: null, currentSceneId: null, isGenerating: false }),
+            regenerateAllAudio: () => set((state) => {
+                if (!state.project) return state;
+                const newScenes = state.project.scenes.map(s => ({
+                    ...s,
+                    audioUrl: undefined,
+                    status: 'pending' as const
+                }));
+                return {
+                    project: {
+                        ...state.project,
+                        scenes: newScenes
+                    }
+                };
+            }),
         }),
         {
             name: 'reel-generator-storage',

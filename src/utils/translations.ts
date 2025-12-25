@@ -23,7 +23,8 @@ export const translations = {
         generateButton: "Generate Video",
         generating: "Generating",
         creditsLeft: "No credits left.",
-        buyMore: "Buy more"
+        buyMore: "Buy more",
+        suggestIdeas: "Suggest Ideas"
     },
     hi: {
         heroTitle_1: "अब",
@@ -43,11 +44,12 @@ export const translations = {
         createHeader: "वायरल इंस्टा रील बनाएं",
         createSubheader: "60 सेकंड से कम समय में अपने विचार को पोस्ट के लिए तैयार रील में बदलें",
         languageLabel: "भाषा",
-        videoIdeaLabel: "वीडियो का विचार",
+        videoIdeaLabel: "Video के लिए स्टोरी लिखिए",
         generateButton: "वीडियो बनाएं",
         generating: "बन रहा है",
         creditsLeft: "क्रेडिट खत्म हो गए हैं।",
-        buyMore: "और खरीदें"
+        buyMore: "और खरीदें",
+        suggestIdeas: "AI से आइडिया पाएं"
     }
 };
 

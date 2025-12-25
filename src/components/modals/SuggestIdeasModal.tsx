@@ -59,9 +59,10 @@ interface SuggestIdeasModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSelect: (text: string) => void;
+    selectedLanguage?: string;
 }
 
-export function SuggestIdeasModal({ isOpen, onClose, onSelect }: SuggestIdeasModalProps) {
+export function SuggestIdeasModal({ isOpen, onClose, onSelect, selectedLanguage = 'english' }: SuggestIdeasModalProps) {
     if (!isOpen) return null;
 
     return (
@@ -89,61 +90,68 @@ export function SuggestIdeasModal({ isOpen, onClose, onSelect }: SuggestIdeasMod
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                    {IDEAS.map((idea, index) => (
-                        <div key={index} className="space-y-2">
-                            <h3 className="text-sm font-black text-zinc-100 uppercase tracking-widest flex items-center gap-2">
-                                <span className="w-5 h-5 rounded-full bg-zinc-800 flex items-center justify-center text-[10px] text-zinc-400">
-                                    {index + 1}
-                                </span>
-                                {idea.title}
-                            </h3>
+                <div className="flex-1 overflow-y-auto p-4 space-y-6">
+                    {IDEAS.map((idea, index) => {
+                        const showHindi = selectedLanguage === 'hindi' || selectedLanguage === 'hinglish';
+                        const showEnglish = selectedLanguage === 'english';
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-1">
-                                {/* English Prompt */}
-                                <button
-                                    onClick={() => {
-                                        onSelect(idea.english);
-                                        onClose();
-                                    }}
-                                    className="group relative text-left bg-zinc-950/50 border border-zinc-800 hover:border-cyan-500/50 p-5 rounded-2xl transition-all hover:bg-zinc-800/50"
-                                >
-                                    <div className="flex items-center justify-between mb-2">
-                                        <span className="text-[10px] font-black text-cyan-500 uppercase tracking-wider">English Prompt</span>
-                                        <Wand2 className="w-4 h-4 text-zinc-600 group-hover:text-cyan-500 transition-colors" />
-                                    </div>
-                                    <p className="text-sm text-zinc-200 line-clamp-4 leading-relaxed group-hover:text-zinc-200 transition-colors">
-                                        {idea.english}
-                                    </p>
-                                    <div className="mt-4 flex items-center gap-1 text-[10px] font-bold text-cyan-500 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <span>USE THIS PROMPT</span>
-                                        <Sparkles className="w-3 h-3" />
-                                    </div>
-                                </button>
+                        return (
+                            <div key={index} className="space-y-3">
+                                <h3 className="text-sm font-black text-zinc-100 uppercase tracking-widest flex items-center gap-2">
+                                    <span className="w-5 h-5 rounded-full bg-zinc-800 flex items-center justify-center text-[10px] text-zinc-400">
+                                        {index + 1}
+                                    </span>
+                                    {idea.title}
+                                </h3>
 
-                                {/* Hindi Prompt */}
-                                <button
-                                    onClick={() => {
-                                        onSelect(idea.hindi);
-                                        onClose();
-                                    }}
-                                    className="group relative text-left bg-zinc-950/50 border border-zinc-800 hover:border-purple-500/50 p-5 rounded-2xl transition-all hover:bg-zinc-800/50"
-                                >
-                                    <div className="flex items-center justify-between mb-3">
-                                        <span className="text-[10px] font-black text-purple-500 uppercase tracking-wider">Hindi Prompt</span>
-                                        <Wand2 className="w-4 h-4 text-zinc-600 group-hover:text-purple-500 transition-colors" />
-                                    </div>
-                                    <p className="text-sm text-zinc-200 line-clamp-4 leading-relaxed group-hover:text-zinc-200 transition-colors font-hindi">
-                                        {idea.hindi}
-                                    </p>
-                                    <div className="mt-4 flex items-center gap-1 text-[10px] font-bold text-purple-500 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <span>USE THIS PROMPT</span>
-                                        <Sparkles className="w-3 h-3" />
-                                    </div>
-                                </button>
+                                <div className="grid grid-cols-1 gap-2">
+                                    {showEnglish && (
+                                        <button
+                                            onClick={() => {
+                                                onSelect(idea.english);
+                                                onClose();
+                                            }}
+                                            className="group relative text-left bg-zinc-950/50 border border-zinc-800 hover:border-cyan-500/50 p-5 rounded-2xl transition-all hover:bg-zinc-800/50"
+                                        >
+                                            <div className="flex items-center justify-between mb-2">
+                                                <span className="text-[10px] font-black text-cyan-500 uppercase tracking-wider">English Prompt</span>
+                                                <Wand2 className="w-4 h-4 text-zinc-600 group-hover:text-cyan-500 transition-colors" />
+                                            </div>
+                                            <p className="text-sm text-zinc-200 line-clamp-4 leading-relaxed group-hover:text-zinc-200 transition-colors">
+                                                {idea.english}
+                                            </p>
+                                            <div className="mt-4 flex items-center gap-1 text-[10px] font-bold text-cyan-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <span>USE THIS PROMPT</span>
+                                                <Sparkles className="w-3 h-3" />
+                                            </div>
+                                        </button>
+                                    )}
+
+                                    {showHindi && (
+                                        <button
+                                            onClick={() => {
+                                                onSelect(idea.hindi);
+                                                onClose();
+                                            }}
+                                            className="group relative text-left bg-zinc-950/50 border border-zinc-800 hover:border-purple-500/50 p-5 rounded-2xl transition-all hover:bg-zinc-800/50"
+                                        >
+                                            <div className="flex items-center justify-between mb-3">
+                                                <span className="text-[10px] font-black text-purple-500 uppercase tracking-wider">Hindi Prompt</span>
+                                                <Wand2 className="w-4 h-4 text-zinc-600 group-hover:text-purple-500 transition-colors" />
+                                            </div>
+                                            <p className="text-sm text-zinc-200 line-clamp-4 leading-relaxed group-hover:text-zinc-200 transition-colors font-hindi">
+                                                {idea.hindi}
+                                            </p>
+                                            <div className="mt-4 flex items-center gap-1 text-[10px] font-bold text-purple-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <span>USE THIS PROMPT</span>
+                                                <Sparkles className="w-3 h-3" />
+                                            </div>
+                                        </button>
+                                    )}
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
 
                 {/* Footer Decor */}

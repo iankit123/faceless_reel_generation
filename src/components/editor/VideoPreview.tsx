@@ -32,6 +32,9 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
     const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
     const [exportState, setExportState] = useState<'idle' | 'exporting' | 'success' | 'error'>('idle');
     const [exportError, setExportError] = useState<string | null>(null);
+    const [hasAudioError, setHasAudioError] = useState(false);
+
+    const regenerateAllAudio = useVideoStore(state => state.regenerateAllAudio);
 
     const handleExport = useCallback(async () => {
         setIsPlaying(false);
@@ -127,6 +130,7 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
     // Reset silence ref when scene changes
     useEffect(() => {
         silenceStartRef.current = null;
+        setHasAudioError(false);
     }, [scene.id]);
 
     // Handle forceAutoPlay
@@ -234,6 +238,7 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
                 const err = audio.error;
                 if (err && (err.code === 4 || currentAudioUrl.startsWith('blob:'))) {
                     console.warn(`Audio source failed for scene ${scene.id}. This often happens with stale session blobs.`);
+                    setHasAudioError(true);
                 }
             };
 
@@ -402,10 +407,10 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
                 if (error.name === 'AbortError') return;
                 console.error("Playback failed:", error);
 
-                // Alert user if the source is clearly broken
+                // Detect source errors without blocking alerts
                 const isSourceError = audioRef.current.error || error.name === 'NotSupportedError';
                 if (isSourceError && scene?.audioUrl?.startsWith('blob:')) {
-                    alert("Audio session expired. Please re-generate this scene to fix playback.");
+                    setHasAudioError(true);
                 }
 
                 setIsPlaying(false);
@@ -583,6 +588,25 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
                     ) : (
                         <div className="absolute inset-0 flex items-center justify-center text-zinc-700 bg-zinc-900">
                             <p className="text-sm">No Image Generated</p>
+                        </div>
+                    )}
+
+                    {/* Stale Audio Warning Banner */}
+                    {hasAudioError && (
+                        <div className="absolute top-0 left-0 right-0 z-40 bg-red-600/90 backdrop-blur-md p-3 flex flex-col items-center gap-2 animate-in slide-in-from-top duration-300">
+                            <div className="flex items-center gap-2 text-white">
+                                <Music className="w-4 h-4" />
+                                <span className="text-[10px] font-bold uppercase tracking-wider">Audio Session Expired</span>
+                            </div>
+                            <button
+                                onClick={() => {
+                                    regenerateAllAudio();
+                                    setHasAudioError(false);
+                                }}
+                                className="w-full bg-white text-red-600 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-zinc-100 transition-colors shadow-lg"
+                            >
+                                Re-generate All Audio
+                            </button>
                         </div>
                     )}
 

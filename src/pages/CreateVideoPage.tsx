@@ -14,6 +14,7 @@ import { getDeviceId } from '../utils/device';
 import { Footer } from '../components/layout/Footer';
 
 export function CreateVideoPage() {
+    console.log('DEBUG: [CreateVideoPage] Component Mounting');
     const navigate = useNavigate();
     const { user, signInWithGoogle, credits, refreshCredits } = useAuth();
     const uiLanguage = useVideoStore((s) => s.uiLanguage);
@@ -41,6 +42,7 @@ export function CreateVideoPage() {
     const initProject = useVideoStore((s) => s.initProject);
     const addScene = useVideoStore((s) => s.addScene);
     const saveProject = useVideoStore((s) => s.saveProject);
+    const setUILanguage = useVideoStore((s) => s.setUILanguage);
 
     const handleGenerate = async (overrideScript?: string, overrideLanguage?: string) => {
         const finalScript = overrideScript || script;
@@ -127,6 +129,7 @@ export function CreateVideoPage() {
     };
 
     useEffect(() => {
+        console.log('DEBUG: [CreateVideoPage] useEffect [user] triggered', { user: user?.id, postLogin: localStorage.getItem('is_generating_post_login') });
         const postLogin = localStorage.getItem('is_generating_post_login') === 'true';
         if (!user || !postLogin) return;
 
@@ -135,6 +138,7 @@ export function CreateVideoPage() {
 
         if (!s || !l) return;
 
+        console.log('DEBUG: [CreateVideoPage] Post-login generation detected, starting handleGenerate');
         // Clear BEFORE starting so we don't loop on failure
         localStorage.removeItem('is_generating_post_login');
         localStorage.removeItem('pending_video_script');
@@ -175,7 +179,16 @@ export function CreateVideoPage() {
                             </label>
                             <select
                                 value={language}
-                                onChange={(e) => setLanguage(e.target.value)}
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    setLanguage(val);
+                                    // Synchronize UI language
+                                    if (val === 'hindi') {
+                                        setUILanguage('hi');
+                                    } else {
+                                        setUILanguage('en');
+                                    }
+                                }}
                                 className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
                             >
                                 <option value="hinglish">Hinglish</option>
@@ -191,10 +204,10 @@ export function CreateVideoPage() {
                             label={t.videoIdeaLabel}
                             placeholder={
                                 language === 'english'
-                                    ? 'A dark village with a hidden secret...'
+                                    ? 'Enter video script... if need suggestions take from above'
                                     : language === 'hinglish'
-                                        ? 'Raja Harishchand ki kahani...'
-                                        : 'एक राजा की सच्चाई की कहानी...'
+                                        ? 'Video के लिए स्टोरी लिखिए... सुझाव चाइए तो उपर से ले सकते है'
+                                        : 'Video के लिए स्टोरी लिखिए... सुझाव चाइए तो उपर से ले सकते है'
                             }
                             language={language}
                         />
