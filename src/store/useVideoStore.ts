@@ -128,12 +128,8 @@ export const useVideoStore = create<VideoState>()(
                 };
             }),
             saveProject: async (userId) => {
-                if (!userId) {
-                    console.log('STORE: Guest mode, skipping Supabase save');
-                    return;
-                }
                 const { project } = get();
-                if (!project) return;
+                if (!project || !userId) return;
 
                 try {
                     await supabaseService.saveProject(project, userId);

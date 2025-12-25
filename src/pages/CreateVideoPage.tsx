@@ -10,6 +10,7 @@ import { PurchaseCreditModal } from '../components/modals/PurchaseCreditModal';
 import { supabaseService } from '../services/supabase';
 import { translations } from '../utils/translations';
 import { VideoCarousel } from '../components/VideoCarousel';
+import { getDeviceId } from '../utils/device';
 
 export function CreateVideoPage() {
     const navigate = useNavigate();
@@ -112,9 +113,9 @@ export function CreateVideoPage() {
             });
         });
 
-        if (user) {
-            await saveProject(user.id);
-        }
+        const persistenceId = user?.id || getDeviceId();
+        await saveProject(persistenceId);
+
         navigate('/scenes');
     };
 
