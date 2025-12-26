@@ -8,19 +8,19 @@ export function Footer() {
                 {/* Brand Section */}
                 <div className="space-y-4">
                     <div className="flex items-center gap-2 group">
-                        <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                        {/* <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center group-hover:scale-110 transition-transform">
                             <Video className="w-5 h-5 text-white" />
-                        </div>
-                        <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-zinc-500">
+                        </div> */}
+                        {/* <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-zinc-500">
                             ReelAI
-                        </span>
+                        </span> */}
                     </div>
-                    <p className="text-zinc-500 text-sm max-w-xs leading-relaxed">
+                    {/* <p className="text-zinc-500 text-sm max-w-xs leading-relaxed">
                         Create viral-ready reels from simple prompts or screenshots using state-of-the-art AI.
-                    </p>
+                    </p> */}
                 </div>
 
-                {/* Quick Links */}
+                {/* Quick Links
                 <div>
                     <h3 className="text-white font-semibold mb-4 uppercase text-xs tracking-widest">Platform</h3>
                     <ul className="space-y-3">
@@ -35,7 +35,7 @@ export function Footer() {
                             </Link>
                         </li>
                     </ul>
-                </div>
+                </div> */}
 
                 {/* Legal Section */}
                 <div>
