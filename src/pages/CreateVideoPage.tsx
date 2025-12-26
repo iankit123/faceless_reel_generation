@@ -229,10 +229,10 @@ export function CreateVideoPage() {
                             label={t.videoIdeaLabel}
                             placeholder={
                                 language === 'english'
-                                    ? 'Enter video script... if need suggestions take from above'
+                                    ? 'Enter video script... if need suggestions take from right side'
                                     : language === 'hinglish'
-                                        ? 'Video के लिए स्टोरी लिखिए... सुझाव चाइए तो उपर सफैद डब्बे से ले'
-                                        : 'Video के लिए स्टोरी लिखिए... सुझाव चाइए तो उपर सफैद डब्बे से ले'
+                                        ? 'Video के लिए स्टोरी लिखिए... सुझाव चाइए तो दाएँ से ले'
+                                        : 'Video के लिए स्टोरी लिखिए... सुझाव चाइए तो दाएँ से ले'
                             }
                             language={language}
                             onSelectNews={async (news) => {

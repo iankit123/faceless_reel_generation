@@ -155,7 +155,7 @@ export function ScriptInput({
                 </label>
             </div>
 
-            <div className="flex bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-cyan-500/30 focus-within:border-cyan-500/50 transition-all">
+            <div className="flex bg-zinc-900 border border-white/20 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-cyan-500/30 focus-within:border-cyan-500/50 transition-all">
                 {/* Left: Text Area */}
                 <div className="flex-1 relative">
                     <textarea
@@ -184,7 +184,7 @@ export function ScriptInput({
                 </div>
 
                 {/* Partition Line */}
-                <div className="w-px bg-zinc-800/50 self-stretch" />
+                <div className="w-px bg-white/20 self-stretch" />
 
                 {/* Right: Actions Column */}
                 <div className="w-40 p-3 flex flex-col gap-3 shrink-0 bg-zinc-900/40 backdrop-blur-sm self-stretch justify-center">
