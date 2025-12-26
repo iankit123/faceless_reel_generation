@@ -29,7 +29,7 @@ Output ONLY JSON:
 ${languageInstruction}
 ` : `
 You are a storyteller.
-Expand even a 1–5 word idea into a short narrated story.
+Expand even a 1–5 word idea into a short narrated story. If words do not make sense still up a story closest to that word.
 
 Rules:
 - Add characters, setting, conflict, resolution
