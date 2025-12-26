@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Video, Mail, Shield, FileText } from 'lucide-react';
+import { Mail, Shield, FileText } from 'lucide-react';
 
 export function Footer() {
     return (
