@@ -100,6 +100,14 @@ export function VideoEditorPage() {
                         duration,
                         status: 'ready'
                     });
+                } else if (project.isNews || project.isHoroscope) {
+                    // For News and Horoscope, do NOT generate AI images if missing
+                    console.log('AUTO_GEN: News/Horoscope missing image, skipping generation to avoid irrelevant visuals');
+                    updateScene(scene.id, {
+                        audioUrl,
+                        duration,
+                        status: 'ready'
+                    });
                 } else {
                     updateScene(scene.id, {
                         audioUrl,

@@ -76,5 +76,6 @@ export interface VideoProject {
     utmCampaign?: string;
     fixedImageUrl?: string;
     isHoroscope?: boolean;
+    isNews?: boolean;
     createdAt: Date;
 }

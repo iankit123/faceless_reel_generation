@@ -220,8 +220,12 @@ app.get('/api/news', async (req, res) => {
                 const titleMatch = itemXml.match(/<title>\s*<!\[CDATA\[([\s\S]*?)\]\]>\s*<\/title>/) || itemXml.match(/<title>([\s\S]*?)<\/title>/);
                 const descMatch = itemXml.match(/<description>\s*<!\[CDATA\[([\s\S]*?)\]\]>\s*<\/description>/) || itemXml.match(/<description>([\s\S]*?)<\/description>/);
 
-                // Image extraction: TOI uses <enclosure>, News18 uses <media:content> or <img>
-                let imageUrl = (itemXml.match(/<enclosure.*?url="(.*?)"/) || itemXml.match(/<media:content.*?url="(.*?)"/))?.[1] || null;
+                // Image extraction: TOI uses <enclosure>, News18 uses <media:content>
+                let imageUrl = (
+                    itemXml.match(/<enclosure[^>]*url=["'](.*?)["']/i) ||
+                    itemXml.match(/<media:content[^>]*url=["'](.*?)["']/i) ||
+                    itemXml.match(/<img[^>]*src=["'](.*?)["']/i)
+                )?.[1] || null;
 
                 if (titleMatch && descMatch) {
                     news.push({

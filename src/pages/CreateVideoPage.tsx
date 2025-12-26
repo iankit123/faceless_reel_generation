@@ -113,13 +113,18 @@ export function CreateVideoPage() {
         });
         initProject(story.theme, finalLanguage, finalScript, fixedImageUrl);
 
-        // Mark as horoscope in store if needed
-        if (isHoroscope) {
-            useVideoStore.getState().setProject({ ...useVideoStore.getState().project!, isHoroscope: true } as any);
+        // Mark as news/horoscope in store if needed
+        if (isHoroscope || isNews) {
+            useVideoStore.getState().setProject({
+                ...useVideoStore.getState().project!,
+                isHoroscope: !!isHoroscope,
+                isNews: !!isNews
+            } as any);
         }
 
-        // Use the passed fixedImageUrl or fall back to store (though they should be same now)
+        // Use the passed fixedImageUrl or fall back to store
         const activeFixedImageUrl = fixedImageUrl || useVideoStore.getState().project?.fixedImageUrl;
+        console.log("DEBUG: [CreateVideoPage] Image Check:", { fixedImageUrl, activeFixedImageUrl });
 
         const scenesWithIds: Scene[] = story.scenes.map((s) => ({
             id: crypto.randomUUID(),
