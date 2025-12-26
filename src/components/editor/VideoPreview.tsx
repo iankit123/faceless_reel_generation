@@ -40,19 +40,19 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
     const handleExport = useCallback(async () => {
         setIsPlaying(false);
 
-        // 1. Guest Check
-        if (!user) {
-            localStorage.setItem('pending_download', 'true');
-            setIsSignInModalOpen(true);
-            return;
-        }
-
-        // 2. Logging Demand
+        // 1. Logging Demand (Captured for all users, including guests)
         supabaseService.logEvent('download_click', {
             projectId: project?.id,
             videoTitle: project?.title,
             currentCredits: credits
         });
+
+        // 2. Guest Check
+        if (!user) {
+            localStorage.setItem('pending_download', 'true');
+            setIsSignInModalOpen(true);
+            return;
+        }
 
         // 3. Credit Check (Now requiring 5+ credits for export)
         if (credits !== null && credits >= 5) {
