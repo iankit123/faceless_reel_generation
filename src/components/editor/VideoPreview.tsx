@@ -10,6 +10,7 @@ import { UpgradeModal } from '../modals/UpgradeModal';
 import { PurchaseCreditModal } from '../modals/PurchaseCreditModal';
 import { useAuth } from '../../contexts/AuthContext';
 import { SignInModal } from '../modals/SignInModal';
+import { supabaseService } from '../../services/supabase';
 
 interface VideoPreviewProps {
     scenes: Scene[];
@@ -46,8 +47,15 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
             return;
         }
 
-        // 2. Credit Check (> 0 instead of > 2)
-        if (credits !== null && credits > 0) {
+        // 2. Logging Demand
+        supabaseService.logEvent('download_click', {
+            projectId: project?.id,
+            videoTitle: project?.title,
+            currentCredits: credits
+        });
+
+        // 3. Credit Check (Now requiring 5+ credits for export)
+        if (credits !== null && credits >= 5) {
             console.log('EXPORT: Initiation export request...');
             setExportState('exporting');
             setExportError(null);
@@ -90,7 +98,7 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
                 setExportError(error instanceof Error ? error.message : String(error));
             }
         } else {
-            setIsUpgradeModalOpen(true);
+            setIsPurchaseModalOpen(true);
         }
     }, [user, credits, scenes, project]);
 
