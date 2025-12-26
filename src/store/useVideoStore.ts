@@ -11,6 +11,7 @@ interface VideoState {
     utmCampaign?: string;
 
     // Actions
+    setScenes: (scenes: Scene[]) => void;
     initProject: (theme?: string, language?: string, prompt?: string, fixedImageUrl?: string) => void;
     captureUTMParams: () => void;
     setProject: (project: VideoProject) => void;
@@ -112,6 +113,16 @@ export const useVideoStore = create<VideoState>()(
             addScene: (scene) => set((state) => {
                 if (!state.project) return state;
                 return { project: { ...state.project, scenes: [...state.project.scenes, scene] } };
+            }),
+
+            setScenes: (scenes) => set((state) => {
+                if (!state.project) return state;
+                return {
+                    project: {
+                        ...state.project,
+                        scenes
+                    }
+                };
             }),
 
             addSceneAt: (index, scene) => set((state) => {

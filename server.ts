@@ -128,23 +128,31 @@ app.post('/api/tts', async (req, res) => {
         return res.status(400).json({ error: 'Missing text' });
     }
 
-    console.log('TTS_REQUEST:', { textLength: text.length, voice });
+    const selectedVoice = voice || 'hi-IN-SwaraNeural';
+    console.log(`TTS_REQUEST: TextLength=${text.length}, Voice=${selectedVoice}`);
 
     let lastError = null;
-    for (let i = 0; i <= 2; i++) {
+    for (let i = 0; i < 3; i++) {
         try {
-            const audioBuffer = await getTTSBuffer(text, voice);
+            console.log(`TTS: Attempt ${i + 1} starting...`);
+            const audioBuffer = await getTTSBuffer(text, selectedVoice);
+
+            console.log(`TTS: Success! Buffer size: ${audioBuffer.length} bytes`);
             res.set({
                 'Content-Type': 'audio/mpeg',
                 'Content-Length': audioBuffer.length.toString(),
+                'Cache-Control': 'public, max-age=3600'
             });
             return res.send(audioBuffer);
         } catch (error) {
-            console.error(`TTS Attempt ${i + 1} failed:`, error);
+            console.error(`TTS: Attempt ${i + 1} failed:`, error);
             lastError = error;
+            // Wait a bit before retry
+            await new Promise(r => setTimeout(r, 1000 * (i + 1)));
         }
     }
 
+    console.error('TTS: Critical failure after 3 attempts');
     return res.status(500).json({
         error: 'TTS generation failed after retries',
         details: lastError instanceof Error ? lastError.message : String(lastError)

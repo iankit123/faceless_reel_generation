@@ -8,7 +8,7 @@ export const storyService = {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ prompt: request.prompt, language: request.language }),
+                body: JSON.stringify(request),
             });
 
             if (!response.ok) {

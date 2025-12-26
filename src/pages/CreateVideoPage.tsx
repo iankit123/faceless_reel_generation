@@ -1,3 +1,4 @@
+import type { Scene } from '../types';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ScriptInput } from '../components/create/ScriptInput';
@@ -121,20 +122,24 @@ export function CreateVideoPage() {
         // Use the passed fixedImageUrl or fall back to store (though they should be same now)
         const activeFixedImageUrl = fixedImageUrl || useVideoStore.getState().project?.fixedImageUrl;
 
-        story.scenes.forEach((s) => {
-            addScene({
-                id: crypto.randomUUID(),
-                text: s.text,
-                duration: s.duration || 5,
-                imagePrompt: s.imagePrompt,
-                imageSettings: { width: 576, height: 1024, steps: 20, guidance: 7 },
-                imageUrl: activeFixedImageUrl || undefined,
-                motionType: s.motionType || 'zoom_in',
-                captionsEnabled: true,
-                isThumbnail: s.isThumbnail,
-                status: 'pending'
-            });
-        });
+        const scenesWithIds: Scene[] = story.scenes.map((s) => ({
+            id: crypto.randomUUID(),
+            text: s.text,
+            duration: s.duration || 5,
+            imagePrompt: s.imagePrompt,
+            imageSettings: { width: 576, height: 1024, steps: 20, guidance: 7 },
+            imageUrl: activeFixedImageUrl || undefined,
+            motionType: s.motionType || 'zoom_in',
+            captionsEnabled: true,
+            isThumbnail: s.isThumbnail,
+            status: 'pending'
+        }));
+
+        console.log("DEBUG_SCENES_COUNT:", scenesWithIds.length);
+
+
+        useVideoStore.getState().setScenes(scenesWithIds);
+
 
         const persistenceId = user?.id || getDeviceId();
         await saveProject(persistenceId);
