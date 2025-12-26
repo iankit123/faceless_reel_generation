@@ -594,7 +594,7 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
                         <div className="absolute inset-0 z-0">
                             <img
                                 src={scene.imageUrl}
-                                className="w-full h-full object-cover blur-2xl scale-110 opacity-60"
+                                className="w-full h-full object-cover blur-2xl scale-2000 opacity-100"
                                 alt=""
                             />
                         </div>
