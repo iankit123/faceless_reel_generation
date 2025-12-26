@@ -5,9 +5,11 @@ interface SignInModalProps {
     isOpen: boolean;
     onClose: () => void;
     redirectTo?: string;
+    title?: string;
+    message?: string;
 }
 
-export function SignInModal({ isOpen, onClose, redirectTo }: SignInModalProps) {
+export function SignInModal({ isOpen, onClose, redirectTo, title, message }: SignInModalProps) {
     const { signInWithGoogle } = useAuth();
 
     if (!isOpen) return null;
@@ -47,11 +49,11 @@ export function SignInModal({ isOpen, onClose, redirectTo }: SignInModalProps) {
                     </div>
 
                     <h2 className="text-2xl font-bold text-white mb-3">
-                        Sign in to Download
+                        {title || 'Sign in to Download'}
                     </h2>
 
                     <p className="text-zinc-400 text-sm leading-relaxed mb-8">
-                        Sign in with Google to save your video and download it in high quality.
+                        {message || 'Sign in with Google to save your video and download it in high quality.'}
                     </p>
 
                     <div className="space-y-3">

@@ -14,11 +14,12 @@ import { VideoCarousel } from '../components/VideoCarousel';
 import { getDeviceId } from '../utils/device';
 import { Footer } from '../components/layout/Footer';
 import { GenerationProgressModal } from '../components/modals/GenerationProgressModal';
+import { SignInModal } from '../components/modals/SignInModal';
 
 export function CreateVideoPage() {
     console.log('DEBUG: [CreateVideoPage] Component Mounting');
     const navigate = useNavigate();
-    const { user, signInWithGoogle, credits, refreshCredits } = useAuth();
+    const { user, credits, refreshCredits } = useAuth();
     const uiLanguage = useVideoStore((s) => s.uiLanguage);
     const t = translations[uiLanguage];
 
@@ -38,6 +39,7 @@ export function CreateVideoPage() {
     });
     const [script, setScript] = useState('');
     const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
+    const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
 
     const isGenerating = useVideoStore((s) => s.isGenerating);
     const setGenerating = useVideoStore((s) => s.setGenerating);
@@ -77,8 +79,9 @@ export function CreateVideoPage() {
                     console.log('FUNNEL: Guest count reached, requiring login for 2nd video');
                     localStorage.setItem('pending_video_script', finalScript);
                     localStorage.setItem('pending_video_language', finalLanguage);
+                    localStorage.setItem('pending_video_language', finalLanguage);
                     localStorage.setItem('is_generating_post_login', 'true');
-                    await signInWithGoogle();
+                    setIsSignInModalOpen(true);
                     setGenerating(false);
                     return;
                 }
@@ -177,6 +180,12 @@ export function CreateVideoPage() {
         <div className="min-h-screen bg-zinc-950 text-zinc-100 relative">
             <Header />
             <PurchaseCreditModal isOpen={isPurchaseModalOpen} onClose={() => setIsPurchaseModalOpen(false)} />
+            <SignInModal
+                isOpen={isSignInModalOpen}
+                onClose={() => setIsSignInModalOpen(false)}
+                title="Sign in to create free reels"
+                message="Sign in with Google to continue creating high-quality reels for free."
+            />
             <GenerationProgressModal isOpen={isGenerating} />
 
             <div className="absolute inset-0 opacity-10 pointer-events-none"

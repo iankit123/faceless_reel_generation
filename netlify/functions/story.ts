@@ -11,15 +11,13 @@ async function expandPromptToStory(groq: Groq, prompt: string, language: string,
 
     const systemPrompt = isNews ? `
 You are a viral news reporter.
-Expand a short news headline into a detailed narrated news report.
+Expand a short news headline into a detailed narrated news report. 
+CRITICAL: Fetch relevant facts regarding the news from the web, and include them in the report.
 
 Rules:
 - Professional, high-energy tone.
 - Mention current events as if reporting live.
-- Spoken narration style, not prose.
-- Short clear sentences.
-- NO scenes.
-- NO image prompts.
+- Spoken narration style, not prose
 
 Output ONLY JSON:
 {
