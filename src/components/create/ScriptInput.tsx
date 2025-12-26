@@ -163,9 +163,9 @@ export function ScriptInput({
                 {value && !disabled && (
                     <button
                         onClick={() => onChange('')}
-                        className="absolute bottom-2 left-2 flex items-center gap-1.5 px-2 py-1 rounded-md
+                        className="absolute bottom-3 left-2 flex items-center gap-1.5 px-2 py-1 rounded-md
                      text-zinc-500 hover:text-red-400 hover:bg-red-500/10
-                     transition-all text-[10px] font-bold uppercase tracking-wider group/clear"
+                     transition-all text-[12px] font-bold uppercase tracking-wider group/clear"
                         title={t.clearText}
                     >
                         <Trash2 className="w-3.5 h-3.5" />

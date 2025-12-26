@@ -25,7 +25,9 @@ export const translations = {
         creditsLeft: "No credits left.",
         buyMore: "Buy more",
         suggestIdeas: "Suggest Ideas",
-        clearText: "Clear text"
+        clearText: "Clear text",
+        generationStarting: "Your reel video will start generating now...",
+        pleaseWait: "Please wait, this may take a moment."
     },
     hi: {
         heroTitle_1: "अब",
@@ -51,7 +53,9 @@ export const translations = {
         creditsLeft: "क्रेडिट खत्म हो गए हैं।",
         buyMore: "और खरीदें",
         suggestIdeas: "AI से आइडिया पाएं",
-        clearText: "लिखा हुआ मिटाएं"
+        clearText: "लिखा हुआ मिटाएं",
+        generationStarting: "आपकी रील वीडियो अब बनना शुरू हो जाएगी...",
+        pleaseWait: "कृपया प्रतीक्षा करें, इसमें थोड़ा समय लग सकता है"
     }
 };
 

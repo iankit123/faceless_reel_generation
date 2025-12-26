@@ -13,6 +13,7 @@ import { translations } from '../utils/translations';
 import { VideoCarousel } from '../components/VideoCarousel';
 import { getDeviceId } from '../utils/device';
 import { Footer } from '../components/layout/Footer';
+import { GenerationProgressModal } from '../components/modals/GenerationProgressModal';
 
 export function CreateVideoPage() {
     console.log('DEBUG: [CreateVideoPage] Component Mounting');
@@ -176,6 +177,7 @@ export function CreateVideoPage() {
         <div className="min-h-screen bg-zinc-950 text-zinc-100 relative">
             <Header />
             <PurchaseCreditModal isOpen={isPurchaseModalOpen} onClose={() => setIsPurchaseModalOpen(false)} />
+            <GenerationProgressModal isOpen={isGenerating} />
 
             <div className="absolute inset-0 opacity-10 pointer-events-none"
                 style={{
@@ -244,17 +246,8 @@ export function CreateVideoPage() {
                             disabled={isGenerating || !script.trim()}
                             className="w-full bg-teal-600 hover:bg-teal-500 disabled:opacity-40 text-zinc-950 font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition"
                         >
-                            {isGenerating ? (
-                                <>
-                                    <div className="w-4 h-4 border-2 border-zinc-900/30 border-t-zinc-900 rounded-full animate-spin" />
-                                    {t.generating}
-                                </>
-                            ) : (
-                                <>
-                                    <Wand2 className="w-4 h-4" />
-                                    {t.generateButton}
-                                </>
-                            )}
+                            <Wand2 className="w-4 h-4" />
+                            {t.generateButton}
                         </button>
 
                         {credits !== null && credits === 0 && user && (
