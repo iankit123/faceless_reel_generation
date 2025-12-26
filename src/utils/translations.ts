@@ -27,7 +27,8 @@ export const translations = {
         suggestIdeas: "Suggest Ideas",
         clearText: "Clear text",
         generationStarting: "Your reel video will start generating now...",
-        pleaseWait: "Please wait, this may take a moment."
+        pleaseWait: "Please wait, this may take a moment.",
+        exportErrorServerless: "Production downloading is currently limited. Please use the local development server for full video exports."
     },
     hi: {
         heroTitle_1: "अब",
@@ -55,7 +56,8 @@ export const translations = {
         suggestIdeas: "AI से आइडिया पाएं",
         clearText: "लिखा हुआ मिटाएं",
         generationStarting: "आपकी रील वीडियो अब बनना शुरू हो जाएगी...",
-        pleaseWait: "कृपया प्रतीक्षा करें, इसमें थोड़ा समय लग सकता है"
+        pleaseWait: "कृपया प्रतीक्षा करें, इसमें थोड़ा समय लग सकता है",
+        exportErrorServerless: "प्रोडक्शन डाउनलोडिंग अभी सीमित है। पूर्ण वीडियो एक्सपोर्ट के लिए कृपया लोकल सर्वर का उपयोग करें।"
     }
 };
 

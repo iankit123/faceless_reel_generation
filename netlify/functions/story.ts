@@ -24,7 +24,7 @@ Rules:
 Output ONLY JSON:
 {
   "title": "...",
-  "theme": "...",
+  "theme": "Journalistic",
   "narration": "[Location] - [Date] | [Headline] ... [Investigation/Details]"
 }
 
@@ -35,6 +35,8 @@ Expand even a 1–5 word idea into a short narrated story.
 
 Rules:
 - Add characters, setting, conflict, resolution
+- Identify a CONSISTENT main character (age, gender, appearance)
+- Choose a CONSISTENT visual theme (one of: realistic, comic, cartoon, lego, 3d-animation, cinematic)
 - Spoken narration style, not prose
 - Short clear sentences
 - NO scenes
@@ -43,7 +45,8 @@ Rules:
 Output ONLY JSON:
 {
   "title": "...",
-  "theme": "...",
+  "theme": "chosen theme from list",
+  "mainCharacter": "detailed description of main character/species",
   "narration": "full story narration"
 }
 
@@ -101,67 +104,87 @@ export const handler = async (event: any) => {
             expandedStory = await expandPromptToStory(groq, prompt, language, isNews);
         }
 
-        const systemPrompt = isHoroscope ? `
+        let systemPrompt = "";
+
+        if (isHoroscope) {
+            systemPrompt = `
 You are an expert astrologer. Convert the provided horoscope text into EXACTLY 13 SCENES. NO MORE, NO LESS.
 CRITICAL: You MUST include every single zodiac sign. Do NOT truncate or stop early.
 
 Structure:
 1. Scene 1: THUMBNAIL. 'isThumbnail': true. Viral headline like "TODAY'S DESTINY: ALL 12 SIGNS REVEALED".
-2. Scene 2: Aries
-3. Scene 3: Taurus
-4. Scene 4: Gemini
-5. Scene 5: Cancer
-6. Scene 6: Leo
-7. Scene 7: Virgo
-8. Scene 8: Libra
-9. Scene 9: Scorpio
-10. Scene 10: Sagittarius
-11. Scene 11: Capricorn
-12. Scene 12: Aquarius
-13. Scene 13: Pisces
+2. Scenes 2-13: Each zodiac sign in order (Aries to Pisces).
 
 Rules:
 - Total scenes MUST BE EXACTLY 13.
-- All signs MUST be in the specified order.
+- Format 'imagePrompt' to be celestial and zodiac-specific for each sign.
 - Sign predictions MUST be extracted from the input data.
-- All scenes after the first one MUST have 'isThumbnail': false.
 
 Output ONLY JSON:
 {
   "title": "Daily Horoscope",
   "theme": "Astrology",
   "scenes": [
-    { "text": "...", "isThumbnail": true, "motionType": "zoom_in" },
-    { "text": "Aries: ...", "isThumbnail": false, "motionType": "zoom_in" },
+    { "text": "...", "imagePrompt": "celestial cosmic Aries sign...", "isThumbnail": true, "motionType": "zoom_in" },
     ...
   ]
 }
-` : `
-You convert a news report or story into Instagram Reel scenes.
+`;
+        } else if (isNews) {
+            systemPrompt = `
+You are a news video editor. Convert the news report into 7-10 Reel scenes.
 
 Rules:
-- Do NOT invent new story content
-- Use the narration exactly as given
-- 7–10 scenes total
-- FIRST scene MUST be thumbnail (isThumbnail=true)
-- Thumbnail text must be a short, viral BREAKING NEWS headline
-- LAST scene must conclude with the current status of the situation
-- Keep the visual theme consistent with news reporting
+- Professional, journalistic tone.
+- FIRST scene MUST be thumbnail (isThumbnail: true).
+- Thumbnail text: viral, short news headline.
+- imagePrompt: Realistic, photograph style, news reporting visuals.
+- LAST scene: conclude with current status.
 
 Output ONLY JSON:
 {
   "title": "...",
-  "theme": "...",
+  "theme": "News",
   "scenes": [
-    {
-      "text": "...",
-      "imagePrompt": "...",
-      "motionType": "zoom_in | pan_left | pan_right | pan_up | pan_down | none",
-      "isThumbnail": true
+    { "text": "...", "imagePrompt": "realistic photo of...", "isThumbnail": true, "motionType": "zoom_in" }
+  ]
+}
+`;
+        } else {
+            // General Video From Script
+            const theme = (expandedStory as any).theme || 'realistic';
+            const character = (expandedStory as any).mainCharacter || 'person';
+
+            systemPrompt = `
+You are a viral reel storyteller. Convert the story into 7-10 Reel scenes.
+
+CONSISTENCY RULES (CRITICAL):
+- Global Theme: ${theme}
+- Main Character: ${character}
+- EVERY 'imagePrompt' MUST strictly follow this format: 
+  (theme: ${theme}, person/species: ${character}, scene prompt: [detailed specific scene description])
+
+Rules:
+- Spoken, engaging narration.
+- FIRST scene MUST be thumbnail (isThumbnail: true).
+- Thumbnail text: catchy, short hook.
+- LAST scene: satisfying conclusion.
+
+Output ONLY JSON:
+{
+  "title": "...",
+  "theme": "${theme}",
+  "scenes": [
+    { 
+      "text": "...", 
+      "imagePrompt": "(theme: ${theme}, person/species: ${character}, scene prompt: ...)", 
+      "isThumbnail": true, 
+      "motionType": "zoom_in" 
     }
   ]
 }
 `;
+        }
 
         const completion = await groq.chat.completions.create({
             messages: [

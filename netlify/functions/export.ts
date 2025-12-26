@@ -67,7 +67,7 @@ export const handler = async (event: any) => {
                 headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
                 body: JSON.stringify({
                     error: 'FFmpeg not available',
-                    details: 'Serverless environment missing video processing binaries. Please use the local development server for exports.'
+                    details: 'You need a paid plan to download the video'
                 })
             };
         }
