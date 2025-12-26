@@ -11,11 +11,12 @@ interface NewsItem {
 
 interface NewsToReelModalProps {
     isOpen: boolean;
+    language: string;
     onClose: () => void;
     onSelect: (news: NewsItem) => void;
 }
 
-export function NewsToReelModal({ isOpen, onClose, onSelect }: NewsToReelModalProps) {
+export function NewsToReelModal({ isOpen, language, onClose, onSelect }: NewsToReelModalProps) {
     const [news, setNews] = useState<NewsItem[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -30,7 +31,7 @@ export function NewsToReelModal({ isOpen, onClose, onSelect }: NewsToReelModalPr
         setIsLoading(true);
         setError(null);
         try {
-            const response = await fetch('/api/news');
+            const response = await fetch(`/api/news?language=${language}`);
             if (!response.ok) throw new Error('Failed to fetch news');
             const data = await response.json();
             setNews(data);

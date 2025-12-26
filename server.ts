@@ -154,10 +154,17 @@ app.post('/api/tts', async (req, res) => {
 // NEWS RSS Endpoint
 app.get('/api/news', async (req, res) => {
     try {
-        const storiesUrl = 'https://timesofindia.indiatimes.com/rssfeedstopstories.cms';
+        const { language } = req.query;
+        const isHindi = language === 'hindi' || language === 'hinglish';
+
+        // News18 Hindi for Hindi/Hinglish, TOI for English
+        const storiesUrl = isHindi
+            ? 'https://hindi.news18.com/rss/khabar/nation/nation.xml'
+            : 'https://timesofindia.indiatimes.com/rssfeedstopstories.cms';
+
         const horoUrl = 'https://feeds.feedburner.com/dayhoroscope';
 
-        console.log('NEWS_RSS: Fetching feeds');
+        console.log(`NEWS_RSS: Fetching feeds for language: ${language}`);
         const [storiesRes, horoRes] = await Promise.all([
             fetch(storiesUrl),
             fetch(horoUrl)
@@ -176,7 +183,6 @@ app.get('/api/news', async (req, res) => {
             let combinedHoro = "";
             for (const m of hItems) {
                 const itemXml = m[1];
-                // Robust matching that ignores whitespace/newlines between tags and content
                 const title = (itemXml.match(/<title>\s*<!\[CDATA\[([\s\S]*?)\]\]>\s*<\/title>/) || itemXml.match(/<title>([\s\S]*?)<\/title>/))?.[1]?.trim() || "";
                 const desc = (itemXml.match(/<description>\s*<!\[CDATA\[([\s\S]*?)\]\]>\s*<\/description>/) || itemXml.match(/<description>([\s\S]*?)<\/description>/))?.[1]?.trim() || "";
                 if (title && desc) {
@@ -186,11 +192,13 @@ app.get('/api/news', async (req, res) => {
 
             if (combinedHoro) {
                 news.push({
-                    title: "✨ Daily Horoscope",
-                    description: "Your destiny for today! Get detailed readings for all 12 zodiac signs.",
+                    title: isHindi ? "✨ आज का राशिफल" : "✨ Daily Horoscope",
+                    description: isHindi
+                        ? "आपका आज का भाग्य! सभी 12 राशियों के लिए विस्तृत भविष्यफल प्राप्त करें।"
+                        : "Your destiny for today! Get detailed readings for all 12 zodiac signs.",
                     imageUrl: "/assets/horoscope_bg.jpg",
                     isHoroscope: true,
-                    fullContent: combinedHoro.substring(0, 15000) // Keep within reasonable limits
+                    fullContent: combinedHoro.substring(0, 15000)
                 });
             }
         }
@@ -200,18 +208,21 @@ app.get('/api/news', async (req, res) => {
             const itemMatches = xml.matchAll(/<item>(.*?)<\/item>/gs);
             for (const match of itemMatches) {
                 const itemXml = match[1];
-                const titleMatch = itemXml.match(/<title><!\[CDATA\[(.*?)\]\]><\/title>/) || itemXml.match(/<title>(.*?)<\/title>/);
-                const descMatch = itemXml.match(/<description><!\[CDATA\[(.*?)\]\]><\/description>/) || itemXml.match(/<description>(.*?)<\/description>/);
-                const imageMatch = itemXml.match(/<enclosure.*?url="(.*?)"/);
+                // Support both CDATA and plain text titles/descriptions
+                const titleMatch = itemXml.match(/<title>\s*<!\[CDATA\[([\s\S]*?)\]\]>\s*<\/title>/) || itemXml.match(/<title>([\s\S]*?)<\/title>/);
+                const descMatch = itemXml.match(/<description>\s*<!\[CDATA\[([\s\S]*?)\]\]>\s*<\/description>/) || itemXml.match(/<description>([\s\S]*?)<\/description>/);
+
+                // Image extraction: TOI uses <enclosure>, News18 uses <media:content> or <img>
+                let imageUrl = (itemXml.match(/<enclosure.*?url="(.*?)"/) || itemXml.match(/<media:content.*?url="(.*?)"/))?.[1] || null;
 
                 if (titleMatch && descMatch) {
                     news.push({
-                        title: titleMatch[1].trim(),
-                        description: descMatch[1].trim(),
-                        imageUrl: imageMatch ? imageMatch[1] : null
+                        title: titleMatch[1].trim().replace(/<[^>]*>/g, ''),
+                        description: descMatch[1].trim().replace(/<[^>]*>/g, ''),
+                        imageUrl: imageUrl
                     });
                 }
-                if (news.length >= 21) break;
+                if (news.length >= 25) break;
             }
         }
 
@@ -320,15 +331,28 @@ app.post('/api/story', async (req, res) => {
 
         // -------- STAGE 2: Convert story into reel scenes --------
         const systemPrompt = isHoroscope ? `
-You are an expert astrologer. Convert the provided horoscope text into exactly 13 scenes.
+You are an expert astrologer. Convert the provided horoscope text into EXACTLY 13 SCENES. NO MORE, NO LESS.
+CRITICAL: You MUST include every single zodiac sign. Do NOT truncate or stop early.
+
 Structure:
-1. Scene 1: THUMBNAIL. Must have 'isThumbnail': true. Text should be a short, viral summary like "TODAY'S DESTINY: WHAT THE STARS HOLD".
-2. Scenes 2-13: Individual signs in order: Aries, Taurus, Gemini, Cancer, Leo, Virgo, Libra, Scorpio, Sagittarius, Capricorn, Aquarius, Pisces. One scene per sign.
+1. Scene 1: THUMBNAIL. 'isThumbnail': true. Viral headline like "TODAY'S DESTINY: ALL 12 SIGNS REVEALED".
+2. Scene 2: Aries
+3. Scene 3: Taurus
+4. Scene 4: Gemini
+5. Scene 5: Cancer
+6. Scene 6: Leo
+7. Scene 7: Virgo
+8. Scene 8: Libra
+9. Scene 9: Scorpio
+10. Scene 10: Sagittarius
+11. Scene 11: Capricorn
+12. Scene 12: Aquarius
+13. Scene 13: Pisces
 
 Rules:
-- For each sign scene, extract the core prediction from the input.
-- Keep sign texts concise and inspiring.
 - Total scenes MUST BE EXACTLY 13.
+- All signs MUST be in the specified order.
+- Sign predictions MUST be extracted from the input data.
 - All scenes after the first one MUST have 'isThumbnail': false.
 
 Output ONLY JSON:
@@ -336,11 +360,8 @@ Output ONLY JSON:
   "title": "Daily Horoscope",
   "theme": "Astrology",
   "scenes": [
-    {
-      "text": "...",
-      "isThumbnail": true,
-      "motionType": "zoom_in"
-    },
+    { "text": "...", "isThumbnail": true, "motionType": "zoom_in" },
+    { "text": "Aries: ...", "isThumbnail": false, "motionType": "zoom_in" },
     ...
   ]
 }
@@ -379,7 +400,7 @@ Output ONLY JSON:
                 },
                 {
                     role: "user",
-                    content: isHoroscope ? `Horoscope Data:\n${expandedStory.narration}` : `
+                    content: isHoroscope ? `Horoscope Data (Convert to EXACTLY 13 SCENES: 1 Thumbnail + 12 Signs):\n${expandedStory.narration}` : `
 Title: ${expandedStory.title}
 Theme: ${expandedStory.theme}
 
@@ -391,8 +412,8 @@ ${isNews ? 'NOTE: This is a NEWS REPORT. Keep the tone professional and journali
                 }
             ],
             model: "llama-3.3-70b-versatile",
-            temperature: 0.6,
-            max_tokens: 1500,
+            temperature: 0.5,
+            max_tokens: 4000,
             response_format: { type: "json_object" }
         });
 
@@ -402,6 +423,12 @@ ${isNews ? 'NOTE: This is a NEWS REPORT. Keep the tone professional and journali
         }
 
         const story = JSON.parse(content);
+
+        if (isHoroscope && story.scenes?.length !== 13) {
+            console.warn(`HOROSCOPE_CHECK: Expected 13 scenes, got ${story.scenes?.length}. Attempting to force 13 in prompt.`);
+            // No retry logic here yet, but logging for visibility
+        }
+
         res.json(story);
 
 

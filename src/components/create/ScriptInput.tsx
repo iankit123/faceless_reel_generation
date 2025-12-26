@@ -107,6 +107,7 @@ export function ScriptInput({
 
             <NewsToReelModal
                 isOpen={isNewsModalOpen}
+                language={language}
                 onClose={() => setIsNewsModalOpen(false)}
                 onSelect={(news) => {
                     onSelectNews?.(news);
