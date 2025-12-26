@@ -298,6 +298,9 @@ Output ONLY JSON:
 
 ${languageInstruction}
 `;
+    console.log('--- STAGE 1: PROMPT EXPANSION START ---');
+    console.log('USER_PROMPT:', prompt);
+    console.log('SYSTEM_PROMPT:', systemPrompt);
 
     const completion = await groq.chat.completions.create({
         messages: [
@@ -318,6 +321,9 @@ ${languageInstruction}
 
     const content = completion.choices[0]?.message?.content;
     if (!content) throw new Error('Stage 1: No content received');
+
+    console.log('STAGE 1: OUTPUT:', content);
+    console.log('--- STAGE 1: PROMPT EXPANSION END ---');
 
     return JSON.parse(content);
 }
@@ -428,6 +434,20 @@ Output ONLY JSON:
 `;
         }
 
+        const userMsg = isHoroscope ? `Horoscope Data (Convert to EXACTLY 13 SCENES: 1 Thumbnail + 12 Signs):\n${expandedStory.narration}` : `
+Title: ${expandedStory.title}
+Theme: ${expandedStory.theme}
+
+Story:
+${expandedStory.narration}
+
+${isNews ? 'NOTE: This is a NEWS REPORT. Keep the tone professional and journalistic.' : ''}
+`;
+
+        console.log('--- STAGE 2: SCENE GENERATION START ---');
+        console.log('USER_MESSAGE:', userMsg);
+        console.log('SYSTEM_PROMPT:', systemPrompt);
+
         const completion = await groq.chat.completions.create({
             messages: [
                 {
@@ -436,15 +456,7 @@ Output ONLY JSON:
                 },
                 {
                     role: "user",
-                    content: isHoroscope ? `Horoscope Data (Convert to EXACTLY 13 SCENES: 1 Thumbnail + 12 Signs):\n${expandedStory.narration}` : `
-Title: ${expandedStory.title}
-Theme: ${expandedStory.theme}
-
-Story:
-${expandedStory.narration}
-
-${isNews ? 'NOTE: This is a NEWS REPORT. Keep the tone professional and journalistic.' : ''}
-`
+                    content: userMsg
                 }
             ],
             model: "llama-3.3-70b-versatile",
@@ -457,6 +469,9 @@ ${isNews ? 'NOTE: This is a NEWS REPORT. Keep the tone professional and journali
         if (!content) {
             throw new Error('Stage 2: No content received from Groq');
         }
+
+        console.log('STAGE 2: OUTPUT:', content);
+        console.log('--- STAGE 2: SCENE GENERATION END ---');
 
         const story = JSON.parse(content);
 

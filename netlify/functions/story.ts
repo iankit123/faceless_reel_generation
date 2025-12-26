@@ -53,6 +53,10 @@ Output ONLY JSON:
 ${languageInstruction}
 `;
 
+    console.log('--- STAGE 1: PROMPT EXPANSION START ---');
+    console.log('USER_PROMPT:', prompt);
+    console.log('SYSTEM_PROMPT:', systemPrompt);
+
     const completion = await groq.chat.completions.create({
         messages: [
             { role: 'system', content: systemPrompt },
@@ -63,7 +67,11 @@ ${languageInstruction}
         response_format: { type: 'json_object' }
     });
 
-    return JSON.parse(completion.choices[0]?.message?.content || '{}');
+    const content = completion.choices[0]?.message?.content || '{}';
+    console.log('STAGE 1: OUTPUT:', content);
+    console.log('--- STAGE 1: PROMPT EXPANSION END ---');
+
+    return JSON.parse(content);
 }
 
 export const handler = async (event: any) => {
@@ -186,14 +194,20 @@ Output ONLY JSON:
 `;
         }
 
+        const userMsg = isHoroscope
+            ? `Horoscope Data (Convert to EXACTLY 13 SCENES: 1 Thumbnail + 12 Signs):\n${expandedStory.narration}`
+            : `Title: ${expandedStory.title}\nTheme: ${expandedStory.theme}\nStory:\n${expandedStory.narration}\n${isNews ? 'NOTE: This is a NEWS REPORT. Keep the tone professional and journalistic.' : ''}`;
+
+        console.log('--- STAGE 2: SCENE GENERATION START ---');
+        console.log('USER_MESSAGE:', userMsg);
+        console.log('SYSTEM_PROMPT:', systemPrompt);
+
         const completion = await groq.chat.completions.create({
             messages: [
                 { role: "system", content: systemPrompt },
                 {
                     role: "user",
-                    content: isHoroscope
-                        ? `Horoscope Data (Convert to EXACTLY 13 SCENES: 1 Thumbnail + 12 Signs):\n${expandedStory.narration}`
-                        : `Title: ${expandedStory.title}\nTheme: ${expandedStory.theme}\nStory:\n${expandedStory.narration}\n${isNews ? 'NOTE: This is a NEWS REPORT. Keep the tone professional and journalistic.' : ''}`
+                    content: userMsg
                 }
             ],
             model: MODEL,
@@ -204,6 +218,9 @@ Output ONLY JSON:
 
         const content = completion.choices[0]?.message?.content;
         if (!content) throw new Error('No content received from Groq');
+
+        console.log('STAGE 2: OUTPUT:', content);
+        console.log('--- STAGE 2: SCENE GENERATION END ---');
 
         return {
             statusCode: 200,
