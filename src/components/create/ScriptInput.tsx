@@ -218,7 +218,7 @@ export function ScriptInput({
                         }`}
                 >
                     {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-                    {isListening ? 'Stop' : 'Speak'}
+                    {isListening ? 'Stop' : 'Speak and Write'}
                 </button>
 
                 <input
