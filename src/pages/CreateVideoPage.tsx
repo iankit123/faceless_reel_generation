@@ -41,7 +41,6 @@ export function CreateVideoPage() {
     const isGenerating = useVideoStore((s) => s.isGenerating);
     const setGenerating = useVideoStore((s) => s.setGenerating);
     const initProject = useVideoStore((s) => s.initProject);
-    const addScene = useVideoStore((s) => s.addScene);
     const saveProject = useVideoStore((s) => s.saveProject);
     const setUILanguage = useVideoStore((s) => s.setUILanguage);
 
