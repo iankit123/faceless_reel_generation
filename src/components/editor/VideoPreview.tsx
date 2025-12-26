@@ -53,7 +53,7 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
             setExportError(null);
 
             try {
-                const response = await fetch('http://localhost:3000/api/video/export', {
+                const response = await fetch('/api/video/export', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -61,7 +61,9 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
                         backgroundMusic: project?.backgroundMusic,
                         narrationVolume: project?.narrationVolume || 1.0,
                         language: project?.language || 'hindi',
-                        captionSettings: project?.captionSettings
+                        captionSettings: project?.captionSettings,
+                        fixedImageUrl: project?.fixedImageUrl,
+                        isHoroscope: project?.isHoroscope
                     })
                 });
 
@@ -242,18 +244,23 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
                 }
             };
 
-            // Auto-play if flag is set
-            const playPromise = audio.play();
-            if (playPromise !== undefined) {
-                playPromise
-                    .then(() => setIsPlaying(true))
-                    .catch(error => {
-                        if (error.name === 'AbortError') return; // Silence unmount interruptions
-                        console.error("Auto-play failed:", error);
-                        setIsPlaying(false);
-                    });
+            // Auto-play ONLY if flag is set (e.g. from scene transition or manual play intent)
+            if (autoPlayRef.current) {
+                const playPromise = audio.play();
+                if (playPromise !== undefined) {
+                    playPromise
+                        .then(() => setIsPlaying(true))
+                        .catch(error => {
+                            if (error.name === 'AbortError') return; // Silence unmount interruptions
+                            console.error("Auto-play failed:", error);
+                            setIsPlaying(false);
+                        });
+                }
+                autoPlayRef.current = false;
+            } else if (!isPlaying) {
+                // If not playing and no autoplay intent, ensure audio is paused
+                audio.pause();
             }
-            autoPlayRef.current = false;
         }
 
         return () => {
@@ -574,19 +581,33 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
                     "relative aspect-[9/16] bg-zinc-950 rounded-2xl border border-zinc-800 overflow-hidden shadow-2xl ring-1 ring-zinc-800",
                     isMobile ? "h-[60vh]" : "w-full"
                 )}>
+                    {/* Blurred Background Layer (Only for News/Fixed Image Reels) */}
+                    {scene.imageUrl && project?.fixedImageUrl && (
+                        <div className="absolute inset-0 z-0">
+                            <img
+                                src={scene.imageUrl}
+                                className="w-full h-full object-cover blur-2xl scale-110 opacity-60"
+                                alt=""
+                            />
+                        </div>
+                    )}
+
                     {/* Image Layer */}
                     {scene.imageUrl ? (
                         <img
                             src={scene.imageUrl}
-                            className="absolute inset-0 w-full h-full object-cover"
+                            className={cn(
+                                "absolute inset-0 w-full h-full z-10",
+                                project?.fixedImageUrl ? "object-contain" : "object-cover"
+                            )}
                             style={{
-                                transform: isPlaying ? getMotionStyle(scene.motionType) : 'scale(1)',
-                                transition: isPlaying ? `transform ${scene.duration}s ease-out` : 'none'
+                                transform: isPlaying && !project?.fixedImageUrl ? getMotionStyle(scene.motionType) : 'scale(1)',
+                                transition: isPlaying && !project?.fixedImageUrl ? `transform ${scene.duration}s ease-out` : 'none'
                             }}
                             alt="Scene Preview"
                         />
                     ) : (
-                        <div className="absolute inset-0 flex items-center justify-center text-zinc-700 bg-zinc-900">
+                        <div className="absolute inset-0 flex items-center justify-center text-zinc-700 bg-zinc-900 z-10">
                             <p className="text-sm">No Image Generated</p>
                         </div>
                     )}
@@ -610,12 +631,32 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
                         </div>
                     )}
 
+                    {/* Breaking News / Horoscope Banner (Only for News/Fixed Image Reels, only on Thumbnail) */}
+                    {scene.isThumbnail && project?.fixedImageUrl && (
+                        <div className="absolute top-1/15 left-0 right-0 z-10 flex flex-col items-center pointer-events-none">
+                            <div className={`${project.isHoroscope ? 'bg-indigo-600/90' : 'bg-red-600/90'} px-1 py-1 transform -skew-x-12 shadow-xl border-2 border-white/20`}>
+                                <span className="text-white text-xl font-black italic tracking-tighter uppercase leading-none drop-shadow-md">
+                                    {project.isHoroscope
+                                        ? (project.language === 'english' ? "TODAY'S" : "आज का")
+                                        : 'BREAKING'}
+                                </span>
+                            </div>
+                            <div className={`${project.isHoroscope ? 'bg-zinc-800' : 'bg-zinc-800'} px-1 py-1 -mt-1 transform -skew-x-12 shadow-xl border-b-4 ${project.isHoroscope ? 'border-amber-500' : 'border-indigo-500'}`}>
+                                <span className="text-white text-xl font-black italic tracking-widest uppercase leading-none">
+                                    {project.isHoroscope
+                                        ? (project.language === 'english' ? 'HOROSCOPE' : 'राशिफल')
+                                        : 'NEWS'}
+                                </span>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Thumbnail Title Overlay */}
                     {scene.isThumbnail && (
-                        <div className="absolute inset-0 flex items-center justify-center z-30 p-8">
-                            <div className="bg-black/60 p-6 rounded-2xl border border-white/20 shadow-1xl">
-                                <h2 className="text-2xl font-black text-yellow-400 text-center leading-tight uppercase tracking-tight drop-shadow-lg">
-                                    {scene.text} !!
+                        <div className="absolute inset-x-0 bottom-1/10 flex items-center justify-center z-30 p-1 pointer-events-none">
+                            <div className="bg-black/60 p-2 rounded-2xl border border-white/20 shadow-2xl backdrop-blur-md max-w-[100%]">
+                                <h2 className="text-xl font-black text-yellow-400 text-center leading-tight uppercase tracking-tight drop-shadow-lg">
+                                    {scene.text}
                                 </h2>
                             </div>
                         </div>

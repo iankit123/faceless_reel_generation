@@ -11,7 +11,7 @@ interface VideoState {
     utmCampaign?: string;
 
     // Actions
-    initProject: (theme?: string, language?: string, prompt?: string) => void;
+    initProject: (theme?: string, language?: string, prompt?: string, fixedImageUrl?: string) => void;
     captureUTMParams: () => void;
     setProject: (project: VideoProject) => void;
     updateScene: (sceneId: number | string, updates: Partial<Scene>) => void;
@@ -31,6 +31,7 @@ interface VideoState {
     setUILanguage: (lang: 'en' | 'hi') => void;
     timer: number;
     setTimer: (time: number | ((prev: number) => number)) => void;
+    setFixedImageUrl: (url: string | undefined) => void;
 }
 
 import { persist } from 'zustand/middleware';
@@ -68,7 +69,14 @@ export const useVideoStore = create<VideoState>()(
                 set({ uiLanguage: lang });
             },
 
-            initProject: (theme, language, prompt) => set({
+            setFixedImageUrl: (url) => set((state) => {
+                if (state.project) {
+                    return { project: { ...state.project, fixedImageUrl: url } };
+                }
+                return state;
+            }),
+
+            initProject: (theme, language, prompt, fixedImageUrl) => set({
                 timer: 150,
                 project: {
                     id: crypto.randomUUID(),
@@ -86,6 +94,7 @@ export const useVideoStore = create<VideoState>()(
                     language: language || 'hinglish',
                     utmSource: get().utmSource,
                     utmCampaign: get().utmCampaign,
+                    fixedImageUrl,
                     createdAt: getISTDate()
                 }
             }),

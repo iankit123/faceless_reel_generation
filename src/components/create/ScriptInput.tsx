@@ -1,7 +1,8 @@
-import { Mic, MicOff, Trash2, Lightbulb, Camera } from 'lucide-react';
+import { Mic, MicOff, Trash2, Lightbulb, Camera, Newspaper } from 'lucide-react';
 import { useSpeechRecognition } from '../../hooks/useSpeechRecognition';
 import { useRef, useEffect, useState } from 'react';
 import { SuggestIdeasModal } from '../modals/SuggestIdeasModal';
+import { NewsToReelModal } from '../modals/NewsToReelModal';
 import { useVideoStore } from '../../store/useVideoStore';
 import { translations } from '../../utils/translations';
 
@@ -12,6 +13,13 @@ interface ScriptInputProps {
     label?: string;
     placeholder?: string;
     language?: string;
+    onSelectNews?: (news: {
+        title: string;
+        description: string;
+        imageUrl: string | null;
+        isHoroscope?: boolean;
+        fullContent?: string;
+    }) => void;
 }
 
 export function ScriptInput({
@@ -20,11 +28,13 @@ export function ScriptInput({
     disabled,
     label = "Video Idea",
     placeholder = "Describe your idea...",
-    language = "english"
+    language = "english",
+    onSelectNews
 }: ScriptInputProps) {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [isIdeasModalOpen, setIsIdeasModalOpen] = useState(false);
+    const [isNewsModalOpen, setIsNewsModalOpen] = useState(false);
     const [isOCRProcessing, setIsOCRProcessing] = useState(false);
     const uiLanguage = useVideoStore(s => s.uiLanguage);
     const t = translations[uiLanguage];
@@ -93,6 +103,15 @@ export function ScriptInput({
                 onClose={() => setIsIdeasModalOpen(false)}
                 onSelect={onChange}
                 selectedLanguage={language}
+            />
+
+            <NewsToReelModal
+                isOpen={isNewsModalOpen}
+                onClose={() => setIsNewsModalOpen(false)}
+                onSelect={(news) => {
+                    onSelectNews?.(news);
+                    setIsNewsModalOpen(false);
+                }}
             />
 
             <div className="flex items-center justify-between">
@@ -186,6 +205,15 @@ export function ScriptInput({
                         <Camera className="w-4 h-4" />
                     )}
                     {isOCRProcessing ? 'Processing...' : 'Screenshot to story'}
+                </button>
+
+                <button
+                    onClick={() => setIsNewsModalOpen(true)}
+                    disabled={disabled}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm border border-pink-500/20 bg-pink-500/5 hover:bg-pink-500/10 hover:border-pink-500/40 text-pink-400 transition"
+                >
+                    <Newspaper className="w-4 h-4" />
+                    News to Reel
                 </button>
 
                 {isListening && (

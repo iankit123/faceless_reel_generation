@@ -151,19 +151,107 @@ app.post('/api/tts', async (req, res) => {
     });
 });
 
+// NEWS RSS Endpoint
+app.get('/api/news', async (req, res) => {
+    try {
+        const storiesUrl = 'https://timesofindia.indiatimes.com/rssfeedstopstories.cms';
+        const horoUrl = 'https://feeds.feedburner.com/dayhoroscope';
+
+        console.log('NEWS_RSS: Fetching feeds');
+        const [storiesRes, horoRes] = await Promise.all([
+            fetch(storiesUrl),
+            fetch(horoUrl)
+        ]);
+
+        const [xml, horoXml] = await Promise.all([
+            storiesRes.ok ? storiesRes.text() : '',
+            horoRes.ok ? horoRes.text() : ''
+        ]);
+
+        const news = [];
+
+        // 1. Prioritize Horoscope
+        if (horoXml) {
+            const hItems = horoXml.matchAll(/<item>(.*?)<\/item>/gs);
+            let combinedHoro = "";
+            for (const m of hItems) {
+                const itemXml = m[1];
+                // Robust matching that ignores whitespace/newlines between tags and content
+                const title = (itemXml.match(/<title>\s*<!\[CDATA\[([\s\S]*?)\]\]>\s*<\/title>/) || itemXml.match(/<title>([\s\S]*?)<\/title>/))?.[1]?.trim() || "";
+                const desc = (itemXml.match(/<description>\s*<!\[CDATA\[([\s\S]*?)\]\]>\s*<\/description>/) || itemXml.match(/<description>([\s\S]*?)<\/description>/))?.[1]?.trim() || "";
+                if (title && desc) {
+                    combinedHoro += `${title}\n${desc.replace(/<[^>]*>/g, '').trim()}\n\n`;
+                }
+            }
+
+            if (combinedHoro) {
+                news.push({
+                    title: "✨ Daily Horoscope",
+                    description: "Your destiny for today! Get detailed readings for all 12 zodiac signs.",
+                    imageUrl: "/assets/horoscope_bg.jpg",
+                    isHoroscope: true,
+                    fullContent: combinedHoro.substring(0, 15000) // Keep within reasonable limits
+                });
+            }
+        }
+
+        // 2. Regular News
+        if (xml) {
+            const itemMatches = xml.matchAll(/<item>(.*?)<\/item>/gs);
+            for (const match of itemMatches) {
+                const itemXml = match[1];
+                const titleMatch = itemXml.match(/<title><!\[CDATA\[(.*?)\]\]><\/title>/) || itemXml.match(/<title>(.*?)<\/title>/);
+                const descMatch = itemXml.match(/<description><!\[CDATA\[(.*?)\]\]><\/description>/) || itemXml.match(/<description>(.*?)<\/description>/);
+                const imageMatch = itemXml.match(/<enclosure.*?url="(.*?)"/);
+
+                if (titleMatch && descMatch) {
+                    news.push({
+                        title: titleMatch[1].trim(),
+                        description: descMatch[1].trim(),
+                        imageUrl: imageMatch ? imageMatch[1] : null
+                    });
+                }
+                if (news.length >= 21) break;
+            }
+        }
+
+        res.json(news);
+    } catch (error) {
+        console.error('NEWS_RSS_ERROR:', error);
+        res.status(500).json({ error: 'Failed to fetch news' });
+    }
+});
+
 // -------------------- STAGE 1: PROMPT EXPANSION --------------------
 
-async function expandPromptToStory(prompt: string, language: string) {
+async function expandPromptToStory(prompt: string, language: string, isNews: boolean = false) {
     let languageInstruction =
         language === 'english'
             ? 'Write in simple spoken English.'
             : 'Write in simple spoken Hindi (Devanagari).';
 
-    const completion = await groq.chat.completions.create({
-        messages: [
-            {
-                role: 'system',
-                content: `
+    const systemPrompt = isNews ? `
+You are a professional broadcast news reporter.
+Expand even a 1–5 word headline into a short news report.
+
+Rules:
+- Include a specific location (City/Place) and a recent date (e.g. 20-Jan-25) at the start.
+- Tone must be investigative, urgent, and professional.
+- Mention current events as if reporting live.
+- Spoken narration style, not prose.
+- Short clear sentences.
+- NO scenes.
+- NO image prompts.
+
+Output ONLY JSON:
+{
+  "title": "...",
+  "theme": "...",
+  "narration": "[Location] - [Date] | [Headline] ... [Investigation/Details]"
+}
+
+${languageInstruction}
+` : `
 You are a storyteller.
 Expand even a 1–5 word idea into a short narrated story.
 
@@ -182,7 +270,13 @@ Output ONLY JSON:
 }
 
 ${languageInstruction}
-`
+`;
+
+    const completion = await groq.chat.completions.create({
+        messages: [
+            {
+                role: 'system',
+                content: systemPrompt
             },
             {
                 role: 'user',
@@ -205,44 +299,62 @@ ${languageInstruction}
 // Story Generation Endpoint
 app.post('/api/story', async (req, res) => {
     try {
-        const { prompt, language } = req.body;
-        console.log('STORY_REQUEST:', { promptLength: prompt?.length, language });
+        const { prompt, language, isNews, isHoroscope } = req.body;
+        console.log('STORY_REQUEST:', { promptLength: prompt?.length, language, isNews, isHoroscope });
 
         if (!process.env.GROQ_API_KEY) {
             console.error('CRITICAL: GROQ_API_KEY is missing from environment');
             return res.status(500).json({ error: 'Server configuration error: Missing API Key' });
         }
 
-        console.log('Generating story for prompt:', prompt, 'in language:', language);
-        if (!prompt) {
-            return res.status(400).json({ error: 'Missing prompt' });
+        let expandedStory;
+        if (isHoroscope) {
+            expandedStory = {
+                title: "Daily Horoscope",
+                theme: "Astrology & Destiny",
+                narration: prompt // Prompt contains the aggregated RSS feed
+            };
+        } else {
+            expandedStory = await expandPromptToStory(prompt, language, isNews);
         }
-
-        let languageInstruction = "User input may be in Hindi or Hinglish. ALWAYS generate the 'text' field in Hindi (Devanagari script).";
-
-        if (language === 'english') {
-            languageInstruction = "Generate the 'text' field in English.";
-        }
-
-        // -------- STAGE 1: Expand short prompt into full story --------
-        const expandedStory = await expandPromptToStory(prompt, language);
 
         // -------- STAGE 2: Convert story into reel scenes --------
-        const completion = await groq.chat.completions.create({
-            messages: [
-                {
-                    role: "system",
-                    content: `
-You convert a narrated story into Instagram Reel scenes.
+        const systemPrompt = isHoroscope ? `
+You are an expert astrologer. Convert the provided horoscope text into exactly 13 scenes.
+Structure:
+1. Scene 1: THUMBNAIL. Must have 'isThumbnail': true. Text should be a short, viral summary like "TODAY'S DESTINY: WHAT THE STARS HOLD".
+2. Scenes 2-13: Individual signs in order: Aries, Taurus, Gemini, Cancer, Leo, Virgo, Libra, Scorpio, Sagittarius, Capricorn, Aquarius, Pisces. One scene per sign.
+
+Rules:
+- For each sign scene, extract the core prediction from the input.
+- Keep sign texts concise and inspiring.
+- Total scenes MUST BE EXACTLY 13.
+- All scenes after the first one MUST have 'isThumbnail': false.
+
+Output ONLY JSON:
+{
+  "title": "Daily Horoscope",
+  "theme": "Astrology",
+  "scenes": [
+    {
+      "text": "...",
+      "isThumbnail": true,
+      "motionType": "zoom_in"
+    },
+    ...
+  ]
+}
+` : `
+You convert a news report or story into Instagram Reel scenes.
 
 Rules:
 - Do NOT invent new story content
 - Use the narration exactly as given
 - 7–10 scenes total
 - FIRST scene MUST be thumbnail (isThumbnail=true)
-- Thumbnail text must be short viral hook
-- LAST scene must conclude or give moral
-- Keep characters and visual theme consistent
+- Thumbnail text must be a short, viral BREAKING NEWS headline
+- LAST scene must conclude with the current status of the situation
+- Keep the visual theme consistent with news reporting
 
 Output ONLY JSON:
 {
@@ -257,22 +369,30 @@ Output ONLY JSON:
     }
   ]
 }
-`
+`;
+
+        const completion = await groq.chat.completions.create({
+            messages: [
+                {
+                    role: "system",
+                    content: systemPrompt
                 },
                 {
                     role: "user",
-                    content: `
+                    content: isHoroscope ? `Horoscope Data:\n${expandedStory.narration}` : `
 Title: ${expandedStory.title}
 Theme: ${expandedStory.theme}
 
 Story:
 ${expandedStory.narration}
+
+${isNews ? 'NOTE: This is a NEWS REPORT. Keep the tone professional and journalistic.' : ''}
 `
                 }
             ],
             model: "llama-3.3-70b-versatile",
             temperature: 0.6,
-            max_tokens: 1000,
+            max_tokens: 1500,
             response_format: { type: "json_object" }
         });
 
@@ -382,8 +502,8 @@ app.post('/api/image/generate', async (req, res) => {
 // Background music is served from the public folder by Vite/Netlify
 
 app.post('/api/video/export', async (req, res) => {
-    const { scenes, backgroundMusic, narrationVolume, language, captionSettings } = req.body;
-    console.log('EXPORT_REQUEST: Starting export for', scenes?.length, 'scenes');
+    const { scenes, backgroundMusic, narrationVolume, language, captionSettings, fixedImageUrl, isHoroscope } = req.body;
+    console.log('EXPORT_REQUEST: Starting export for', scenes?.length, 'scenes', 'Fixed Image:', !!fixedImageUrl);
 
     if (!scenes || scenes.length === 0) {
         return res.status(400).json({ error: 'No scenes provided' });
@@ -408,13 +528,18 @@ app.post('/api/video/export', async (req, res) => {
                 const imgRes = await fetch(scene.imageUrl);
                 if (!imgRes.ok) throw new Error(`Failed to download image: ${scene.imageUrl}`);
                 fs.writeFileSync(imagePath, Buffer.from(await imgRes.arrayBuffer()));
-            } else if (scene.imageUrl?.startsWith('/')) {
-                const localPath = path.join(__dirname, 'public', scene.imageUrl);
+            } else if (scene.imageUrl?.startsWith('/') || scene.imageUrl?.startsWith('assets/')) {
+                // Remove leading slash for local resolution
+                const relativePath = scene.imageUrl.replace(/^\//, '');
+                const localPath = path.join(__dirname, 'public', relativePath);
+
                 console.log(`EXPORT: Using local image from ${localPath}`);
                 if (fs.existsSync(localPath)) {
                     fs.copyFileSync(localPath, imagePath);
+                } else if (fs.existsSync(path.join(__dirname, relativePath))) {
+                    fs.copyFileSync(path.join(__dirname, relativePath), imagePath);
                 } else {
-                    throw new Error(`Local image not found: ${localPath}`);
+                    throw new Error(`Local image not found: ${localPath} or ${path.join(__dirname, relativePath)}`);
                 }
             } else {
                 throw new Error(`Invalid image URL: ${scene.imageUrl}`);
@@ -451,79 +576,86 @@ app.post('/api/video/export', async (req, res) => {
                         '-shortest'
                     ]);
 
-                // Filters for Captions/Thumbnail
-                const filters = [];
+                // Filters for Visuals (Image Scaling/Blur/Motion)
+                const visualFilters = [];
+                let finalVisualLabel = '0:v';
 
-                // Scale and Crop to 9:16 + Motion Effects
-                if (scene.motionType && scene.motionType !== 'none') {
-                    // Pre-scale to a larger size for zoompan to avoid quality loss (2x 1080x1920)
-                    // CRITICAL: Use force_original_aspect_ratio and crop to prevent stretching
-                    filters.push('scale=w=2160:h=3840:force_original_aspect_ratio=increase,crop=2160:3840');
-
-                    const durationFrames = Math.ceil(scene.duration * 30);
-                    let zoompanFilter = '';
-
-                    switch (scene.motionType) {
-                        case 'zoom_in':
-                            zoompanFilter = `zoompan=z='min(zoom+0.001,1.5)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1:s=1080x1920:fps=30`;
-                            break;
-                        case 'pan_left':
-                            zoompanFilter = `zoompan=z='1.2':x='(1-on/${durationFrames})*(iw-iw/zoom)':y='ih/2-(ih/zoom/2)':d=1:s=1080x1920:fps=30`;
-                            break;
-                        case 'pan_right':
-                            zoompanFilter = `zoompan=z='1.2':x='(on/${durationFrames})*(iw-iw/zoom)':y='ih/2-(ih/zoom/2)':d=1:s=1080x1920:fps=30`;
-                            break;
-                        case 'pan_up':
-                            zoompanFilter = `zoompan=z='1.2':x='iw/2-(iw/zoom/2)':y='(1-on/${durationFrames})*(ih-ih/zoom)':d=1:s=1080x1920:fps=30`;
-                            break;
-                        case 'pan_down':
-                            zoompanFilter = `zoompan=z='1.2':x='iw/2-(iw/zoom/2)':y='(on/${durationFrames})*(ih-ih/zoom)':d=1:s=1080x1920:fps=30`;
-                            break;
-                        default:
-                            zoompanFilter = `scale=w=1080:h=1920:force_original_aspect_ratio=increase,crop=1080:1920`;
-                    }
-                    filters.push(zoompanFilter);
+                if (fixedImageUrl) {
+                    // Blurred background + fit-to-width foreground
+                    visualFilters.push(
+                        `split [v1][v2];` +
+                        `[v1] scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,boxblur=20:10 [bg];` +
+                        `[v2] scale=1080:-1 [fg];` +
+                        `[bg][fg] overlay=(W-w)/2:(H-h)/2`
+                    );
                 } else {
-                    filters.push('scale=w=1080:h=1920:force_original_aspect_ratio=increase,crop=1080:1920');
+                    // Standard Scaling/Motion Logic
+                    if (scene.motionType && scene.motionType !== 'none') {
+                        visualFilters.push('scale=w=2160:h=3840:force_original_aspect_ratio=increase,crop=2160:3840');
+                        const durationFrames = Math.ceil(scene.duration * 30);
+                        let zp = '';
+                        switch (scene.motionType) {
+                            case 'zoom_in': zp = `zoompan=z='min(zoom+0.001,1.5)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1:s=1080x1920:fps=30`; break;
+                            case 'pan_left': zp = `zoompan=z='1.2':x='(1-on/${durationFrames})*(iw-iw/zoom)':y='ih/2-(ih/zoom/2)':d=1:s=1080x1920:fps=30`; break;
+                            case 'pan_right': zp = `zoompan=z='1.2':x='(on/${durationFrames})*(iw-iw/zoom)':y='ih/2-(ih/zoom/2)':d=1:s=1080x1920:fps=30`; break;
+                            case 'pan_up': zp = `zoompan=z='1.2':x='iw/2-(iw/zoom/2)':y='(1-on/${durationFrames})*(ih-ih/zoom)':d=1:s=1080x1920:fps=30`; break;
+                            case 'pan_down': zp = `zoompan=z='1.2':x='iw/2-(iw/zoom/2)':y='(on/${durationFrames})*(ih-ih/zoom)':d=1:s=1080x1920:fps=30`; break;
+                            default: zp = `scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920`;
+                        }
+                        visualFilters.push(zp);
+                    } else {
+                        visualFilters.push('scale=w=1080:h=1920:force_original_aspect_ratio=increase,crop=1080:1920');
+                    }
                 }
 
+                // Add Captions/Thumbnail on top of the visual stream
                 const fontBold = '/System/Library/Fonts/Supplemental/Arial Bold.ttf';
                 const fontUnicode = '/Library/Fonts/Arial Unicode.ttf';
                 const fontComic = '/System/Library/Fonts/Supplemental/Comic Sans MS Bold.ttf';
                 const fontElegant = '/System/Library/Fonts/Supplemental/Georgia Bold.ttf';
 
                 let fontToUse = (language === 'hindi') ? fontUnicode : fontBold;
-
-                // Determine styling based on theme
                 let fontColor = 'yellow';
                 let boxColor = 'black@0.5';
                 let boxBorder = 20;
 
-                if (captionStyle === 'tiktok') {
-                    fontColor = 'white';
-                    boxColor = 'black@0.5';
-                } else if (captionStyle === 'beast') {
-                    fontColor = 'yellow';
-                    boxColor = 'black@0.8';
-                } else if (captionStyle === 'neon') {
-                    fontColor = '0x4ADE80'; // Neon Green
-                    boxColor = 'black@0.8';
-                } else if (captionStyle === 'comic') {
-                    fontToUse = fontComic;
-                    fontColor = '0xFFD700'; // Gold/Yellow
-                    boxColor = 'white@0.1';
-                } else if (captionStyle === 'elegant') {
-                    fontToUse = fontElegant;
-                    fontColor = 'white';
-                    boxColor = 'black@0.3';
-                }
+                if (captionStyle === 'tiktok') { fontColor = 'white'; boxColor = 'black@0.5'; }
+                else if (captionStyle === 'beast') { fontColor = 'yellow'; boxColor = 'black@0.8'; }
+                else if (captionStyle === 'neon') { fontColor = '0x4ADE80'; boxColor = 'black@0.8'; }
+                else if (captionStyle === 'comic') { fontToUse = fontComic; fontColor = '0xFFD700'; boxColor = 'white@0.1'; }
+                else if (captionStyle === 'elegant') { fontToUse = fontElegant; fontColor = 'white'; boxColor = 'black@0.3'; }
 
                 if (scene.isThumbnail) {
-                    // UPPERCASE for Thumbnail as in UI, Much Bigger
                     const wrapped = wrapText(scene.text.toUpperCase(), 12);
                     const txtPath = path.join(tempDir, `thumb_${i}.txt`);
                     fs.writeFileSync(txtPath, wrapped);
-                    filters.push(`drawtext=textfile='${txtPath}':fontfile='${fontToUse}':fontcolor=${fontColor}:fontsize=110:x=(w-text_w)/2:y=(h-text_h)/2:box=1:boxcolor=${boxColor}:boxborderw=60:line_spacing=40:shadowcolor=black@0.8:shadowx=5:shadowy=5:text_align=center`);
+
+                    if (fixedImageUrl) {
+                        // Branding Banners for News
+                        const padding = 20;
+                        const yBase = 400;
+                        const fontItalic = '/System/Library/Fonts/Supplemental/Arial Italic.ttf';
+                        const fontHoro = (language === 'english') ? fontItalic : fontUnicode;
+
+                        if (isHoroscope) {
+                            const line1 = (language === 'english') ? "TODAY'S" : "आज का";
+                            const line2 = (language === 'english') ? "HOROSCOPE" : "राशिफल";
+                            // Line 1: Indigo Box
+                            visualFilters.push(`drawtext=text='${line1}':fontfile='${fontHoro}':fontcolor=white:fontsize=120:x=(w-text_w)/2:y=${yBase}:box=1:boxcolor=0x4F46E5@0.9:boxborderw=40`);
+                            // Line 2: Dark Box with Amber accent (simulated with shadow or just box)
+                            visualFilters.push(`drawtext=text='${line2}':fontfile='${fontHoro}':fontcolor=white:fontsize=90:x=(w-text_w)/2:y=${yBase + 160}:box=1:boxcolor=0x1E1E1E@0.9:boxborderw=30`);
+                        } else {
+                            // BREAKING (Red)
+                            visualFilters.push(`drawtext=text='BREAKING':fontfile='${fontItalic}':fontcolor=white:fontsize=120:x=(w-text_w)/2:y=${yBase}:box=1:boxcolor=red@0.9:boxborderw=40`);
+                            // NEWS (Blue/Dark)
+                            visualFilters.push(`drawtext=text='NEWS':fontfile='${fontItalic}':fontcolor=white:fontsize=90:x=(w-text_w)/2:y=${yBase + 160}:box=1:boxcolor=0x1E1E1E@0.9:boxborderw=30`);
+                        }
+
+                        // Title Lower Down
+                        visualFilters.push(`drawtext=textfile='${txtPath}':fontfile='${fontToUse}':fontcolor=${fontColor}:fontsize=110:x=(w-text_w)/2:y=h*0.7:box=1:boxcolor=${boxColor}:boxborderw=60:line_spacing=40:shadowcolor=black@0.8:shadowx=5:shadowy=5:text_align=center`);
+                    } else {
+                        visualFilters.push(`drawtext=textfile='${txtPath}':fontfile='${fontToUse}':fontcolor=${fontColor}:fontsize=110:x=(w-text_w)/2:y=(h-text_h)/2:box=1:boxcolor=${boxColor}:boxborderw=60:line_spacing=40:shadowcolor=black@0.8:shadowx=5:shadowy=5:text_align=center`);
+                    }
                 } else if (scene.captionsEnabled) {
                     const segments = getTimedCaptions(scene.text, scene.duration);
                     segments.forEach((seg, idx) => {
@@ -531,11 +663,11 @@ app.post('/api/video/export', async (req, res) => {
                         const wrapped = wrapText(textToWrap, 25);
                         const txtPath = path.join(tempDir, `cap_${i}_${idx}.txt`);
                         fs.writeFileSync(txtPath, wrapped);
-                        filters.push(`drawtext=textfile='${txtPath}':fontfile='${fontToUse}':fontcolor=${fontColor}:fontsize=75:x=(w-text_w)/2:y=h*0.82-text_h/2:box=1:boxcolor=${boxColor}:boxborderw=${boxBorder}:line_spacing=20:enable='between(t,${seg.start},${seg.end})':shadowcolor=black@0.8:shadowx=3:shadowy=3:text_align=center`);
+                        visualFilters.push(`drawtext=textfile='${txtPath}':fontfile='${fontToUse}':fontcolor=${fontColor}:fontsize=75:x=(w-text_w)/2:y=h*0.82-text_h/2:box=1:boxcolor=${boxColor}:boxborderw=${boxBorder}:line_spacing=20:enable='between(t,${seg.start},${seg.end})':shadowcolor=black@0.8:shadowx=3:shadowy=3:text_align=center`);
                     });
                 }
 
-                f.videoFilters(filters)
+                f.videoFilters(visualFilters)
                     .on('end', () => {
                         console.log(`EXPORT: Scene ${i} rendered successfully`);
                         resolve(true);

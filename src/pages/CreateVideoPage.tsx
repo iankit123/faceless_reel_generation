@@ -44,7 +44,7 @@ export function CreateVideoPage() {
     const saveProject = useVideoStore((s) => s.saveProject);
     const setUILanguage = useVideoStore((s) => s.setUILanguage);
 
-    const handleGenerate = async (overrideScript?: string, overrideLanguage?: string) => {
+    const handleGenerate = async (overrideScript?: string, overrideLanguage?: string, fixedImageUrl?: string, isNews?: boolean, isHoroscope?: boolean) => {
         const finalScript = overrideScript || script;
         const finalLanguage = overrideLanguage || language;
 
@@ -69,7 +69,7 @@ export function CreateVideoPage() {
                     await supabaseService.logGuestPrompt(finalScript, finalLanguage);
 
                     // Proceed with generation
-                    await startGenerationFlow(finalScript, finalLanguage);
+                    await startGenerationFlow(finalScript, finalLanguage, fixedImageUrl, isNews, isHoroscope);
                     return;
                 } else {
                     // 2nd Video: Require Login
@@ -94,7 +94,7 @@ export function CreateVideoPage() {
             // Deduct credits and proceed
             await supabaseService.decrementCredits(user.id);
             await refreshCredits();
-            await startGenerationFlow(finalScript, finalLanguage);
+            await startGenerationFlow(finalScript, finalLanguage, fixedImageUrl, isNews, isHoroscope);
         } catch (e: any) {
             console.error('Generation Error:', e);
             // User-facing feedback to prevent "silent hangs"
@@ -104,9 +104,22 @@ export function CreateVideoPage() {
         }
     };
 
-    const startGenerationFlow = async (finalScript: string, finalLanguage: string) => {
-        const story = await storyService.generateStory({ prompt: finalScript, language: finalLanguage });
-        initProject(story.theme, finalLanguage, finalScript);
+    const startGenerationFlow = async (finalScript: string, finalLanguage: string, fixedImageUrl?: string, isNews?: boolean, isHoroscope?: boolean) => {
+        const story = await storyService.generateStory({
+            prompt: finalScript,
+            language: finalLanguage,
+            isNews,
+            isHoroscope
+        });
+        initProject(story.theme, finalLanguage, finalScript, fixedImageUrl);
+
+        // Mark as horoscope in store if needed
+        if (isHoroscope) {
+            useVideoStore.getState().setProject({ ...useVideoStore.getState().project!, isHoroscope: true } as any);
+        }
+
+        // Use the passed fixedImageUrl or fall back to store (though they should be same now)
+        const activeFixedImageUrl = fixedImageUrl || useVideoStore.getState().project?.fixedImageUrl;
 
         story.scenes.forEach((s) => {
             addScene({
@@ -115,6 +128,7 @@ export function CreateVideoPage() {
                 duration: s.duration || 5,
                 imagePrompt: s.imagePrompt,
                 imageSettings: { width: 576, height: 1024, steps: 20, guidance: 7 },
+                imageUrl: activeFixedImageUrl || undefined,
                 motionType: s.motionType || 'zoom_in',
                 captionsEnabled: true,
                 isThumbnail: s.isThumbnail,
@@ -210,6 +224,10 @@ export function CreateVideoPage() {
                                         : 'Video के लिए स्टोरी लिखिए... सुझाव चाइए तो उपर सफैद डब्बे से ले'
                             }
                             language={language}
+                            onSelectNews={async (news) => {
+                                const prompt = news.isHoroscope ? news.fullContent || news.description : news.title + ": " + news.description;
+                                handleGenerate(prompt, language, news.imageUrl || undefined, !news.isHoroscope, news.isHoroscope);
+                            }}
                         />
 
                         <button

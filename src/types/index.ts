@@ -32,6 +32,8 @@ export type MotionType = 'zoom_in' | 'pan_up' | 'pan_down' | 'pan_left' | 'pan_r
 export interface StoryRequest {
     prompt: string;
     language: string;
+    isNews?: boolean;
+    isHoroscope?: boolean;
 }
 
 export interface StoryResponse {
@@ -72,5 +74,7 @@ export interface VideoProject {
     language: string;
     utmSource?: string;
     utmCampaign?: string;
+    fixedImageUrl?: string;
+    isHoroscope?: boolean;
     createdAt: Date;
 }

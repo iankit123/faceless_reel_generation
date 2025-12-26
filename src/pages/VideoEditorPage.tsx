@@ -92,21 +92,31 @@ export function VideoEditorPage() {
                 ]);
                 const duration = Math.max(parseFloat(audio.duration.toFixed(1)), 0.5);
 
-                updateScene(scene.id, {
-                    audioUrl,
-                    duration,
-                    status: 'generating_image'
-                });
+                if (scene.imageUrl) {
+                    // Skip image generation if we already have a fixed image
+                    console.log('AUTO_GEN: Scene has pre-set image, skipping generation');
+                    updateScene(scene.id, {
+                        audioUrl,
+                        duration,
+                        status: 'ready'
+                    });
+                } else {
+                    updateScene(scene.id, {
+                        audioUrl,
+                        duration,
+                        status: 'generating_image'
+                    });
 
-                // Small delay between audio and image to be safe
-                await new Promise(r => setTimeout(r, 1000));
+                    // Small delay between audio and image to be safe
+                    await new Promise(r => setTimeout(r, 1000));
 
-                // 2. Generate Image
-                const { imageService } = await import('../services/imageService');
-                const fullPrompt = project.theme ? `${project.theme}. ${scene.imagePrompt || scene.text}` : (scene.imagePrompt || scene.text);
-                const imageUrl = await imageService.generateImage(fullPrompt, scene.imageSettings);
+                    // 2. Generate Image
+                    const { imageService } = await import('../services/imageService');
+                    const fullPrompt = project.theme ? `${project.theme}. ${scene.imagePrompt || scene.text}` : (scene.imagePrompt || scene.text);
+                    const imageUrl = await imageService.generateImage(fullPrompt, scene.imageSettings);
 
-                updateScene(scene.id, { imageUrl, status: 'ready' });
+                    updateScene(scene.id, { imageUrl, status: 'ready' });
+                }
 
                 // Cooldown before next scene starts
                 console.log('Scene processed:', scene.id, '. Cooling down...');
@@ -216,7 +226,10 @@ export function VideoEditorPage() {
                     <SceneList
                         scenes={project.scenes}
                         currentSceneId={currentSceneId}
-                        onSelectScene={setCurrentSceneId}
+                        onSelectScene={(id) => {
+                            setCurrentSceneId(id);
+                            setForceAutoPlay(true);
+                        }}
                         onViewVideo={handleViewVideo}
                     />
                 )}
