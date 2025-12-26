@@ -631,8 +631,8 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
                         </div>
                     )}
 
-                    {/* Breaking News / Horoscope Banner (Only for News/Fixed Image Reels, only on Thumbnail) */}
-                    {scene.isThumbnail && project?.fixedImageUrl && (
+                    {/* Breaking News / Horoscope Banner (Only for News or Horoscope Reels, only on Thumbnail) */}
+                    {scene.isThumbnail && (project?.isNews || project?.isHoroscope) && (
                         <div className="absolute top-1/15 left-0 right-0 z-10 flex flex-col items-center pointer-events-none">
                             <div className={`${project.isHoroscope ? 'bg-indigo-600/90' : 'bg-red-600/90'} px-1 py-1 transform -skew-x-12 shadow-xl border-2 border-white/20`}>
                                 <span className="text-white text-xl font-black italic tracking-tighter uppercase leading-none drop-shadow-md">
