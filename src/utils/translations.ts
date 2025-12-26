@@ -24,7 +24,8 @@ export const translations = {
         generating: "Generating",
         creditsLeft: "No credits left.",
         buyMore: "Buy more",
-        suggestIdeas: "Suggest Ideas"
+        suggestIdeas: "Suggest Ideas",
+        clearText: "Clear text"
     },
     hi: {
         heroTitle_1: "अब",
@@ -49,7 +50,8 @@ export const translations = {
         generating: "बन रहा है",
         creditsLeft: "क्रेडिट खत्म हो गए हैं।",
         buyMore: "और खरीदें",
-        suggestIdeas: "AI से आइडिया पाएं"
+        suggestIdeas: "AI से आइडिया पाएं",
+        clearText: "लिखा हुआ मिटाएं"
     }
 };
 

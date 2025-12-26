@@ -23,7 +23,12 @@ function LanguageRedirect({ lang }: { lang: string }) {
 
 function App() {
   const project = useVideoStore((state) => state.project);
+  const captureUTMParams = useVideoStore((s) => s.captureUTMParams);
   const { loading } = useAuth();
+
+  useEffect(() => {
+    captureUTMParams();
+  }, [captureUTMParams]);
 
   if (loading) {
     return (

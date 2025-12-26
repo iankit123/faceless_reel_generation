@@ -17,6 +17,8 @@ export const supabaseService = {
                 narration_volume: project.narrationVolume,
                 caption_settings: project.captionSettings,
                 background_music: project.backgroundMusic,
+                utm_source: project.utmSource,
+                utm_campaign: project.utmCampaign,
                 created_at: project.createdAt
             })
             .select()

@@ -7,9 +7,12 @@ interface VideoState {
     project: VideoProject | null;
     isGenerating: boolean;
     currentSceneId: number | string | null;
+    utmSource?: string;
+    utmCampaign?: string;
 
     // Actions
     initProject: (theme?: string, language?: string, prompt?: string) => void;
+    captureUTMParams: () => void;
     setProject: (project: VideoProject) => void;
     updateScene: (sceneId: number | string, updates: Partial<Scene>) => void;
     addScene: (scene: Scene) => void;
@@ -40,6 +43,21 @@ export const useVideoStore = create<VideoState>()(
             currentSceneId: null,
             uiLanguage: (localStorage.getItem('preferred_ui_lang') as 'en' | 'hi') || 'en',
             timer: 150,
+            utmSource: undefined,
+            utmCampaign: undefined,
+
+            captureUTMParams: () => {
+                const params = new URLSearchParams(window.location.search);
+                const utm_source = params.get('utm_source');
+                const utm_campaign = params.get('utm_campaign');
+
+                if (utm_source || utm_campaign) {
+                    set({
+                        utmSource: utm_source || undefined,
+                        utmCampaign: utm_campaign || undefined
+                    });
+                }
+            },
 
             setTimer: (time) => set((state) => ({
                 timer: typeof time === 'function' ? time(state.timer) : time
@@ -66,6 +84,8 @@ export const useVideoStore = create<VideoState>()(
                     },
                     narrationVolume: 3.0,
                     language: language || 'hinglish',
+                    utmSource: get().utmSource,
+                    utmCampaign: get().utmCampaign,
                     createdAt: getISTDate()
                 }
             }),

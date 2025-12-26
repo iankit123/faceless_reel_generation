@@ -130,14 +130,29 @@ export function ScriptInput({
 
             </div>
 
-            <textarea
-                ref={textareaRef}
-                value={value}
-                onChange={(e) => onChange(e.target.value)}
-                disabled={disabled}
-                placeholder={placeholder}
-                className="w-full min-h-[96px] bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-3 text-sm text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/30 resize-none overflow-hidden"
-            />
+            <div className="relative group/input">
+                <textarea
+                    ref={textareaRef}
+                    value={value}
+                    onChange={(e) => onChange(e.target.value)}
+                    disabled={disabled}
+                    placeholder={placeholder}
+                    className="w-full min-h-[96px] bg-zinc-900 border border-zinc-800 rounded-lg px-4 pt-3 pb-10 text-sm text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/30 resize-none overflow-hidden transition-all"
+                />
+
+                {value && !disabled && (
+                    <button
+                        onClick={() => onChange('')}
+                        className="absolute bottom-2 left-2 flex items-center gap-1.5 px-2 py-1 rounded-md
+                     text-zinc-500 hover:text-red-400 hover:bg-red-500/10
+                     transition-all text-[10px] font-bold uppercase tracking-wider group/clear"
+                        title={t.clearText}
+                    >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>{t.clearText}</span>
+                    </button>
+                )}
+            </div>
 
             <div className="flex items-center gap-2">
                 <button
@@ -179,17 +194,6 @@ export function ScriptInput({
                         <span className="text-[10px] font-bold text-red-400 uppercase tracking-tight">Auto-stop active</span>
                     </div>
                 )}
-
-                <div className="flex-1" />
-
-                <button
-                    onClick={() => onChange('')}
-                    disabled={disabled || !value || isOCRProcessing}
-                    className="p-2 text-zinc-500 hover:text-red-400 transition-colors disabled:opacity-0"
-                    title="Clear prompt"
-                >
-                    <Trash2 className="w-5 h-5" />
-                </button>
             </div>
         </div>
     );

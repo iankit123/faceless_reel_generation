@@ -70,5 +70,7 @@ export interface VideoProject {
     backgroundMusic?: BackgroundMusic;
     narrationVolume: number; // 0 to 3 (boosted)
     language: string;
+    utmSource?: string;
+    utmCampaign?: string;
     createdAt: Date;
 }
