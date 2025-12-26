@@ -55,8 +55,42 @@ export function ScriptInput({
             const reader = new FileReader();
             reader.readAsDataURL(file);
             reader.onload = () => {
-                const base64 = (reader.result as string).split(',')[1];
-                resolve(base64);
+                const img = new Image();
+                img.src = reader.result as string;
+                img.onload = () => {
+                    // Maximum dimension for OCR (1600px is more than enough for clear text)
+                    const MAX_DIM = 1600;
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > height) {
+                        if (width > MAX_DIM) {
+                            height *= MAX_DIM / width;
+                            width = MAX_DIM;
+                        }
+                    } else {
+                        if (height > MAX_DIM) {
+                            width *= MAX_DIM / height;
+                            height = MAX_DIM;
+                        }
+                    }
+
+                    const canvas = document.createElement('canvas');
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    if (!ctx) {
+                        resolve((reader.result as string).split(',')[1]);
+                        return;
+                    }
+
+                    ctx.drawImage(img, 0, 0, width, height);
+                    // Use jpeg with 0.8 quality to further reduce size
+                    const resizedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+                    const base64 = resizedDataUrl.split(',')[1];
+                    resolve(base64);
+                };
+                img.onerror = reject;
             };
             reader.onerror = error => reject(error);
         });
