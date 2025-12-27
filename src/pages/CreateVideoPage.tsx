@@ -244,6 +244,10 @@ export function CreateVideoPage() {
                                         : 'Video के लिए स्टोरी लिखिए... सुझाव चाइए तो दाएँ से ले'
                             }
                             language={language}
+                            onSelectPhotos={(images) => {
+                                useVideoStore.getState().initPhotoToReelProject(images);
+                                navigate('/scenes');
+                            }}
                             onSelectNews={async (news) => {
                                 const prompt = news.isHoroscope ? news.fullContent || news.description : news.title + ": " + news.description;
                                 handleGenerate(prompt, language, news.imageUrl || undefined, !news.isHoroscope, news.isHoroscope);

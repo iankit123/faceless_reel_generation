@@ -7,7 +7,11 @@ interface MusicFile {
     url: string;
 }
 
-export function AudioTab() {
+interface AudioTabProps {
+    onSelect?: () => void;
+}
+
+export function AudioTab({ onSelect }: AudioTabProps) {
     const project = useVideoStore((state) => state.project);
     const setBackgroundMusic = useVideoStore((state) => state.setBackgroundMusic);
     const [musicFiles, setMusicFiles] = useState<MusicFile[]>([]);
@@ -140,7 +144,10 @@ export function AudioTab() {
                                 </div>
 
                                 <button
-                                    onClick={() => setBackgroundMusic({ name: file.name, url: file.url, volume: 0.1 })}
+                                    onClick={() => {
+                                        setBackgroundMusic({ name: file.name, url: file.url, volume: 0.1 });
+                                        onSelect?.();
+                                    }}
                                     className={`text-xs px-3 py-1.5 rounded-md font-medium transition-colors ${isSelected
                                         ? 'bg-indigo-600 text-white'
                                         : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-200'

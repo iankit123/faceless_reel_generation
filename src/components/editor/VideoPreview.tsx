@@ -36,6 +36,7 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
     const [hasAudioError, setHasAudioError] = useState(false);
 
     const regenerateAllAudio = useVideoStore(state => state.regenerateAllAudio);
+    const updatePhotoReelDurations = useVideoStore(state => state.updatePhotoReelDurations);
 
     const handleExport = useCallback(async () => {
         setIsPlaying(false);
@@ -71,7 +72,8 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
                         language: project?.language || 'hindi',
                         captionSettings: project?.captionSettings,
                         fixedImageUrl: project?.fixedImageUrl,
-                        isHoroscope: project?.isHoroscope
+                        isHoroscope: project?.isHoroscope,
+                        isPhotoReel: project?.isPhotoReel
                     })
                 });
 
@@ -131,16 +133,45 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
     }, [scene?.text, scene?.duration]);
 
     const audioRef = useRef<HTMLAudioElement | null>(null);
+    const playbackStartTimeRef = useRef<number | null>(null);
     const autoPlayRef = useRef(false);
     // Ref for silence start
     const silenceStartRef = useRef<number | null>(null);
     // Ref for animation loop to avoid dependency cycles
     const requestRef = useRef<number | null>(null);
 
+    // Auto-play on mount for Photo Reels
+    useEffect(() => {
+        if (project?.isPhotoReel) {
+            const startPlayback = async () => {
+                try {
+                    if (audioCtxRef.current?.state === 'suspended') {
+                        await audioCtxRef.current.resume();
+                    }
+                    setIsPlaying(true);
+                    autoPlayRef.current = true;
+                    // Background music will start playing in its own effect when isPlaying changes
+                } catch (err) {
+                    console.error("Auto-play setup failed:", err);
+                }
+            };
+            startPlayback();
+        }
+        return () => {
+            setIsPlaying(false);
+            if (audioRef.current) audioRef.current.pause();
+            // bgMusicRef cleanup is handled in its own effect
+        };
+    }, [project?.isPhotoReel]);
+
     // Reset silence ref when scene changes
     useEffect(() => {
         silenceStartRef.current = null;
         setHasAudioError(false);
+        // Reset playback start time for the new scene if playing
+        if (isPlaying) {
+            playbackStartTimeRef.current = performance.now();
+        }
     }, [scene.id]);
 
     // Handle forceAutoPlay
@@ -366,9 +397,8 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
     const animate = useCallback(() => {
         if (!isPlaying) return;
 
+        let localTime = 0;
         if (audioRef.current) {
-            let localTime = 0;
-
             if (!audioRef.current.ended) {
                 localTime = audioRef.current.currentTime;
                 silenceStartRef.current = null;
@@ -380,18 +410,28 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
                 const silenceDuration = (performance.now() - silenceStartRef.current) / 1000;
                 localTime = (audioRef.current.duration || 0) + silenceDuration;
             }
-
-            // Update UI
-            setCurrentTime(currentSceneStartTime + localTime);
-
-            // Check completion
-            if (localTime >= scene.duration) {
-                triggerNextScene();
-                return; // Stop loop
+        } else if (project?.isPhotoReel) {
+            // Photo Reel Fallback (No narration)
+            if (playbackStartTimeRef.current === null) {
+                playbackStartTimeRef.current = performance.now() - ((currentTime - currentSceneStartTime) * 1000);
             }
+            localTime = (performance.now() - playbackStartTimeRef.current) / 1000;
         }
+
+        // Update UI
+        if (localTime >= 0) {
+            setCurrentTime(currentSceneStartTime + localTime);
+        }
+
+        // Check completion
+        if (localTime >= scene.duration) {
+            playbackStartTimeRef.current = null;
+            triggerNextScene();
+            return; // Stop loop
+        }
+
         requestRef.current = requestAnimationFrame(animate);
-    }, [isPlaying, currentSceneStartTime, scene.duration, triggerNextScene]);
+    }, [isPlaying, currentSceneStartTime, scene.duration, triggerNextScene, project?.title, currentTime]);
 
     useEffect(() => {
         if (isPlaying) {
@@ -405,17 +445,30 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
     }, [isPlaying, animate]);
 
     const togglePlayback = async () => {
-        if (!audioRef.current) return;
+        if (!audioRef.current && !project?.isPhotoReel) return;
+
+        // If at end of video, restart from beginning
+        if (!isPlaying && currentTime >= totalDuration - 0.1) {
+            setCurrentTime(0);
+            onSelectScene(scenes[0].id);
+            playbackStartTimeRef.current = performance.now();
+            if (audioRef.current) audioRef.current.currentTime = 0;
+        }
 
         if (isPlaying) {
-            audioRef.current.pause();
+            if (audioRef.current) audioRef.current.pause();
             setIsPlaying(false);
+            playbackStartTimeRef.current = null;
         } else {
             try {
                 if (audioCtxRef.current?.state === 'suspended') {
                     await audioCtxRef.current.resume();
                 }
-                await audioRef.current.play();
+                if (audioRef.current) {
+                    await audioRef.current.play();
+                } else if (project?.isPhotoReel) {
+                    playbackStartTimeRef.current = performance.now() - ((currentTime - currentSceneStartTime) * 1000);
+                }
                 setIsPlaying(true);
                 autoPlayRef.current = false;
             } catch (error: any) {
@@ -423,9 +476,11 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
                 console.error("Playback failed:", error);
 
                 // Detect source errors without blocking alerts
-                const isSourceError = audioRef.current.error || error.name === 'NotSupportedError';
-                if (isSourceError && scene?.audioUrl?.startsWith('blob:')) {
-                    setHasAudioError(true);
+                if (audioRef.current) {
+                    const isSourceError = audioRef.current.error || error.name === 'NotSupportedError';
+                    if (isSourceError && scene?.audioUrl?.startsWith('blob:')) {
+                        setHasAudioError(true);
+                    }
                 }
 
                 setIsPlaying(false);
@@ -485,6 +540,20 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
             const audio = new Audio(musicUrl);
             audio.crossOrigin = "anonymous";
             audio.loop = true;
+
+            // For Photo Reels, adjust scene durations to match audio length
+            if (project?.isPhotoReel) {
+                audio.onloadedmetadata = () => {
+                    if (audio.duration && audio.duration > 0) {
+                        updatePhotoReelDurations(audio.duration);
+                        // Reset playback to start for sync
+                        setCurrentTime(0);
+                        onSelectScene(scenes[0].id);
+                        playbackStartTimeRef.current = null;
+                    }
+                };
+            }
+
             bgMusicRef.current = audio;
         }
 
@@ -581,7 +650,13 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
                                 <X className="w-6 h-6" />
                             </button>
                         </div>
-                        {activeSubTab === 'captions' ? <CaptionsTab /> : <AudioTab />}
+                        {activeSubTab === 'captions' ? <CaptionsTab /> : <AudioTab onSelect={() => {
+                            setActiveSubTab('preview');
+                            if (project?.isPhotoReel) {
+                                setCurrentTime(0);
+                                playbackStartTimeRef.current = null;
+                            }
+                        }} />}
                     </div>
                 )}
 
@@ -681,32 +756,85 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
                 </div>
 
                 {isMobile && (
-                    <div className="w-full flex gap-2 mt-8 shrink-0">
-                        <button
-                            onClick={() => setActiveSubTab(activeSubTab === 'captions' ? 'preview' : 'captions')}
-                            className={cn(
-                                "flex-1 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider border transition-all flex items-center justify-center gap-2",
-                                activeSubTab === 'captions'
-                                    ? "bg-indigo-600 border-indigo-500 text-white"
-                                    : "bg-zinc-900 border-zinc-800 text-zinc-400"
-                            )}
-                        >
-                            <Type className="w-4 h-4" />
-                            Captions
-                        </button>
-                        <button
-                            onClick={() => setActiveSubTab(activeSubTab === 'audio' ? 'preview' : 'audio')}
-                            className={cn(
-                                "flex-1 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider border transition-all flex items-center justify-center gap-2",
-                                activeSubTab === 'audio'
-                                    ? "bg-indigo-600 border-indigo-500 text-white"
-                                    : "bg-zinc-900 border-zinc-800 text-zinc-400"
-                            )}
-                        >
-                            <Music className="w-4 h-4" />
-                            Background Music
-                        </button>
+                    <div className="w-full flex flex-col gap-3 mt-8 shrink-0">
+                        {project?.isPhotoReel && activeSubTab !== 'audio' && (
+                            <button
+                                onClick={() => setActiveSubTab('audio')}
+                                className="w-full py-3 bg-zinc-900/50 backdrop-blur-md border border-zinc-800 rounded-xl text-[10px] font-black uppercase tracking-widest text-indigo-400 hover:text-white hover:bg-indigo-600 transition-all flex items-center justify-center gap-3 shadow-lg"
+                            >
+                                <Music className="w-4 h-4" />
+                                Change Background Music
+                            </button>
+                        )}
+
+                        {!project?.isPhotoReel && (
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => setActiveSubTab(activeSubTab === 'captions' ? 'preview' : 'captions')}
+                                    className={cn(
+                                        "flex-1 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider border transition-all flex items-center justify-center gap-2",
+                                        activeSubTab === 'captions'
+                                            ? "bg-indigo-600 border-indigo-500 text-white"
+                                            : "bg-zinc-900 border-zinc-800 text-zinc-400"
+                                    )}
+                                >
+                                    <Type className="w-4 h-4" />
+                                    Captions
+                                </button>
+                                <button
+                                    onClick={() => setActiveSubTab(activeSubTab === 'audio' ? 'preview' : 'audio')}
+                                    className={cn(
+                                        "flex-1 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider border transition-all flex items-center justify-center gap-2",
+                                        activeSubTab === 'audio'
+                                            ? "bg-indigo-600 border-indigo-500 text-white"
+                                            : "bg-zinc-900 border-zinc-800 text-zinc-400"
+                                    )}
+                                >
+                                    <Music className="w-4 h-4" />
+                                    Background Music
+                                </button>
+                            </div>
+                        )}
                     </div>
+                )}
+
+                {/* Main Sidebar Actions */}
+                <div className="flex flex-col gap-3 py-2">
+                    {!project?.isPhotoReel && (
+                        <>
+                            <button
+                                onClick={() => setActiveSubTab('captions')}
+                                className={cn(
+                                    "p-3 rounded-2xl transition-all duration-300 group",
+                                    activeSubTab === 'captions' ? "bg-cyan-500 text-zinc-950 shadow-[0_0_15px_rgba(34,211,238,0.3)]" : "bg-zinc-900 text-zinc-400 hover:text-white hover:bg-zinc-800"
+                                )}
+                            >
+                                <Type className="w-6 h-6" />
+                            </button>
+                            <button
+                                onClick={() => setActiveSubTab('audio')}
+                                className={cn(
+                                    "p-3 rounded-2xl transition-all duration-300 group",
+                                    activeSubTab === 'audio' ? "bg-indigo-500 text-zinc-950 shadow-[0_0_15px_rgba(99,102,241,0.3)]" : "bg-zinc-900 text-zinc-400 hover:text-white hover:bg-zinc-800"
+                                )}
+                            >
+                                <Music className="w-6 h-6" />
+                            </button>
+                        </>
+                    )}
+                </div>
+
+                {/* Change Music Label for Photo Reels (Desktop only now as mobile is handled above) */}
+                {!isMobile && project?.isPhotoReel && activeSubTab !== 'audio' && (
+                    <button
+                        onClick={() => setActiveSubTab('audio')}
+                        className="absolute -left-48 top-1/2 -translate-y-1/2 bg-zinc-900/90 backdrop-blur-md border border-zinc-800 px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-2 group hover:bg-indigo-500 transition-all duration-500 animate-in slide-in-from-right-10"
+                    >
+                        <Music className="w-4 h-4 text-indigo-400 group-hover:text-white" />
+                        <span className="text-xs font-bold text-zinc-200 group-hover:text-white whitespace-nowrap">
+                            Change Background Music
+                        </span>
+                    </button>
                 )}
 
                 {isMobile && onBackToScenes && (
@@ -754,7 +882,7 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
                     <div className="flex justify-center items-center gap-4">
                         <button
                             onClick={togglePlayback}
-                            disabled={!scene.audioUrl}
+                            disabled={!scene.audioUrl && !project?.isPhotoReel}
                             className="p-4 rounded-full bg-zinc-100 text-zinc-900 hover:bg-white transition-colors shadow-lg shadow-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {isPlaying ? (

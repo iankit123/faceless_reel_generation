@@ -30,7 +30,8 @@ export const translations = {
         pleaseWait: "Please wait, this may take a moment.",
         exportErrorServerless: "Production downloading is currently limited. Please use the local development server for full video exports.",
         aiIdeasInside: "Take idea from AI",
-        newsReelInside: "News Reel"
+        newsReelInside: "News Reel",
+        photoToReel: "Photo to Reel"
     },
     hi: {
         heroTitle_1: "अब",
@@ -61,7 +62,8 @@ export const translations = {
         pleaseWait: "कृपया प्रतीक्षा करें, इसमें थोड़ा समय लग सकता है",
         exportErrorServerless: "प्रोडक्शन डाउनलोडिंग अभी सीमित है। पूर्ण वीडियो एक्सपोर्ट के लिए कृपया लोकल सर्वर का उपयोग करें।",
         aiIdeasInside: "AI से आईडिया लें",
-        newsReelInside: "News की रील बनाएं"
+        newsReelInside: "News की रील बनाएं",
+        photoToReel: "Photo से रील बनाएं"
     }
 };
 

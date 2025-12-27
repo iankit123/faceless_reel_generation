@@ -77,5 +77,6 @@ export interface VideoProject {
     fixedImageUrl?: string;
     isHoroscope?: boolean;
     isNews?: boolean;
+    isPhotoReel?: boolean;
     createdAt: Date;
 }

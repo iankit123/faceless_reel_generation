@@ -176,18 +176,20 @@ export function VideoEditorPage() {
                     <Layers className="w-6 h-6" />
                     Frames
                 </button>
-                <button
-                    onClick={() => setActiveTab('captions')}
-                    className={cn(
-                        "p-3 rounded-xl transition-all flex flex-col items-center gap-1 text-[10px] font-medium w-16",
-                        activeTab === 'captions'
-                            ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/20"
-                            : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900"
-                    )}
-                >
-                    <Type className="w-6 h-6" />
-                    Captions
-                </button>
+                {!project?.isPhotoReel && (
+                    <button
+                        onClick={() => setActiveTab('captions')}
+                        className={cn(
+                            "p-3 rounded-xl transition-all flex flex-col items-center gap-1 text-[10px] font-medium w-16",
+                            activeTab === 'captions'
+                                ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/20"
+                                : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900"
+                        )}
+                    >
+                        <Type className="w-6 h-6" />
+                        Captions
+                    </button>
+                )}
                 <button
                     onClick={() => setActiveTab('audio')}
                     className={cn(
@@ -241,8 +243,8 @@ export function VideoEditorPage() {
                         onViewVideo={handleViewVideo}
                     />
                 )}
-                {activeTab === 'captions' && <CaptionsTab />}
-                {activeTab === 'audio' && <AudioTab />}
+                {activeTab === 'captions' && !project?.isPhotoReel && <CaptionsTab />}
+                {activeTab === 'audio' && <AudioTab onSelect={() => setActiveTab('frames')} />}
             </div>
 
             {/* Desktop Main Editor Area */}

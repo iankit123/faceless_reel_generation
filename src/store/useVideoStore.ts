@@ -33,6 +33,8 @@ interface VideoState {
     timer: number;
     setTimer: (time: number | ((prev: number) => number)) => void;
     setFixedImageUrl: (url: string | undefined) => void;
+    initPhotoToReelProject: (images: string[]) => void;
+    updatePhotoReelDurations: (totalAudioDuration: number) => void;
 }
 
 import { persist } from 'zustand/middleware';
@@ -99,6 +101,62 @@ export const useVideoStore = create<VideoState>()(
                     createdAt: getISTDate()
                 }
             }),
+
+            initPhotoToReelProject: (images) => {
+                const projectId = crypto.randomUUID();
+                const scenes: Scene[] = images.map((url) => ({
+                    id: crypto.randomUUID(),
+                    text: '',
+                    duration: 3,
+                    imageUrl: url,
+                    imageSettings: { width: 576, height: 1024, steps: 20, guidance: 7 },
+                    motionType: 'zoom_in',
+                    captionsEnabled: false,
+                    status: 'ready'
+                }));
+
+                set({
+                    timer: 0,
+                    project: {
+                        id: projectId,
+                        title: 'Photo Reel',
+                        theme: 'Photo Montage',
+                        prompt: 'Uploaded photos montage',
+                        scenes,
+                        captionSettings: { style: 'default' },
+                        backgroundMusic: {
+                            name: 'Jalwa Hai Hamara.mp3',
+                            url: '/background_music/Jalwa Hai Hamara.mp3',
+                            volume: 0.5
+                        },
+                        narrationVolume: 0.0, // Music only
+                        language: 'hinglish',
+                        isHoroscope: false,
+                        isPhotoReel: true,
+                        utmSource: get().utmSource,
+                        utmCampaign: get().utmCampaign,
+                        createdAt: getISTDate()
+                    }
+                });
+            },
+
+            updatePhotoReelDurations: (totalAudioDuration: number) => {
+                const project = get().project;
+                if (!project || !project.isPhotoReel || !project.scenes.length) return;
+
+                const newDurationPerScene = totalAudioDuration / project.scenes.length;
+                const updatedScenes = project.scenes.map(scene => ({
+                    ...scene,
+                    duration: newDurationPerScene
+                }));
+
+                set({
+                    project: {
+                        ...project,
+                        scenes: updatedScenes
+                    }
+                });
+            },
 
             setProject: (project) => set({ project }),
 

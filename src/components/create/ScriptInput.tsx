@@ -1,4 +1,4 @@
-import { Mic, MicOff, Trash2, Lightbulb, Camera, Newspaper } from 'lucide-react';
+import { Mic, MicOff, Trash2, Lightbulb, Camera, Newspaper, Image as ImageIcon } from 'lucide-react';
 import { useSpeechRecognition } from '../../hooks/useSpeechRecognition';
 import { useRef, useEffect, useState } from 'react';
 import { SuggestIdeasModal } from '../modals/SuggestIdeasModal';
@@ -14,6 +14,7 @@ interface ScriptInputProps {
     label?: string;
     placeholder?: string;
     language?: string;
+    onSelectPhotos?: (images: string[]) => void;
     onSelectNews?: (news: {
         title: string;
         description: string;
@@ -29,11 +30,13 @@ export function ScriptInput({
     disabled,
     label = "Video Idea",
     placeholder = "Describe your idea...",
-    language = "english",
-    onSelectNews
+    language = 'hinglish',
+    onSelectPhotos,
+    onSelectNews,
 }: ScriptInputProps) {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const photoInputRef = useRef<HTMLInputElement>(null);
     const [isIdeasModalOpen, setIsIdeasModalOpen] = useState(false);
     const [isNewsModalOpen, setIsNewsModalOpen] = useState(false);
     const [isOCRProcessing, setIsOCRProcessing] = useState(false);
@@ -45,6 +48,7 @@ export function ScriptInput({
         language
     });
 
+    // Auto-resize textarea
     useEffect(() => {
         if (!textareaRef.current) return;
         textareaRef.current.style.height = 'auto';
@@ -135,6 +139,37 @@ export function ScriptInput({
         } finally {
             setIsOCRProcessing(false);
             if (fileInputRef.current) fileInputRef.current.value = '';
+        }
+    };
+
+    const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = Array.from(e.target.files || []);
+        if (files.length === 0) return;
+
+        setIsOCRProcessing(true); // Reuse this state to show loading if needed
+        try {
+            // 1. Create local blob URLs immediately for instant UI feedback
+            const blobUrls = files.map(file => URL.createObjectURL(file));
+
+            // 2. Trigger background uploads to Supabase for persistence
+            // We don't wait for these to complete before calling onSelectPhotos
+            files.forEach(async (file) => {
+                try {
+                    await supabaseService.uploadScreenshot(file);
+                } catch (err) {
+                    console.warn('Background photo upload failed:', err);
+                }
+            });
+
+            if (onSelectPhotos) {
+                onSelectPhotos(blobUrls);
+            }
+        } catch (error) {
+            console.error('Photo Upload Error:', error);
+            alert('Failed to process photos. Please try again.');
+        } finally {
+            setIsOCRProcessing(false);
+            if (photoInputRef.current) photoInputRef.current.value = '';
         }
     };
 
@@ -231,6 +266,24 @@ export function ScriptInput({
                             {t.newsReelInside}
                         </span>
                     </button>
+
+                    <button
+                        onClick={(e) => {
+                            e.preventDefault();
+                            photoInputRef.current?.click();
+                        }}
+                        className="flex-1 flex flex-col items-center justify-center gap-2 p-2 rounded-lg 
+                                 bg-zinc-800/50 border border-zinc-700/50 text-zinc-300
+                                 hover:bg-zinc-700/50 hover:border-teal-500/30 hover:text-white
+                                 hover:scale-[1.02] active:scale-95 transition-all group"
+                    >
+                        <div className="w-8 h-8 rounded-full bg-teal-500/10 flex items-center justify-center group-hover:bg-teal-500/20 transition-colors">
+                            <ImageIcon className="w-4 h-4 text-teal-400" />
+                        </div>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-center leading-tight">
+                            {t.photoToReel || "Photo to Reel"}
+                        </span>
+                    </button>
                 </div>
             </div>
 
@@ -252,6 +305,15 @@ export function ScriptInput({
                     ref={fileInputRef}
                     onChange={handleFileUpload}
                     accept="image/*"
+                    className="hidden"
+                />
+
+                <input
+                    type="file"
+                    ref={photoInputRef}
+                    onChange={handlePhotoUpload}
+                    accept="image/*"
+                    multiple
                     className="hidden"
                 />
 
