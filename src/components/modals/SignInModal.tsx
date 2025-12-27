@@ -1,4 +1,4 @@
-import { X, LogIn, Chrome } from 'lucide-react';
+import { LogIn, Chrome } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabaseService } from '../../services/supabase';
 
@@ -42,13 +42,6 @@ export function SignInModal({ isOpen, onClose, redirectTo, title, message }: Sig
                 {/* Header Decoration */}
                 <div className="h-2 bg-gradient-to-r from-cyan-500 via-indigo-500 to-purple-500" />
 
-                <button
-                    onClick={onClose}
-                    className="absolute top-4 right-4 p-2 rounded-full hover:bg-zinc-800 text-zinc-400 transition-colors"
-                >
-                    <X className="w-5 h-5" />
-                </button>
-
                 <div className="p-8 pt-10 text-center">
                     <div className="mx-auto w-16 h-16 bg-cyan-500/10 rounded-2xl flex items-center justify-center mb-6">
                         <LogIn className="w-8 h-8 text-cyan-400" />
@@ -69,13 +62,6 @@ export function SignInModal({ isOpen, onClose, redirectTo, title, message }: Sig
                         >
                             <Chrome className="w-5 h-5" />
                             Sign in with Google
-                        </button>
-
-                        <button
-                            onClick={onClose}
-                            className="w-full bg-transparent hover:bg-zinc-800 text-zinc-400 font-semibold py-4 rounded-2xl transition-colors"
-                        >
-                            Maybe Later
                         </button>
                     </div>
                 </div>
