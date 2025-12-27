@@ -798,19 +798,32 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
                     </div>
                 )}
 
-                {/* Main Sidebar Actions */}
-                <div className="flex flex-col gap-3 py-2">
-                    {!project?.isPhotoReel && (
-                        <>
-                            <button
-                                onClick={() => setActiveSubTab('captions')}
-                                className={cn(
-                                    "p-3 rounded-2xl transition-all duration-300 group",
-                                    activeSubTab === 'captions' ? "bg-cyan-500 text-zinc-950 shadow-[0_0_15px_rgba(34,211,238,0.3)]" : "bg-zinc-900 text-zinc-400 hover:text-white hover:bg-zinc-800"
-                                )}
-                            >
-                                <Type className="w-6 h-6" />
-                            </button>
+                {/* Main Sidebar Actions (Desktop Only) */}
+                {!isMobile && (
+                    <div className="flex flex-col gap-3 py-2">
+                        {!project?.isPhotoReel && (
+                            <>
+                                <button
+                                    onClick={() => setActiveSubTab('captions')}
+                                    className={cn(
+                                        "p-3 rounded-2xl transition-all duration-300 group",
+                                        activeSubTab === 'captions' ? "bg-cyan-500 text-zinc-950 shadow-[0_0_15px_rgba(34,211,238,0.3)]" : "bg-zinc-900 text-zinc-400 hover:text-white hover:bg-zinc-800"
+                                    )}
+                                >
+                                    <Type className="w-6 h-6" />
+                                </button>
+                                <button
+                                    onClick={() => setActiveSubTab('audio')}
+                                    className={cn(
+                                        "p-3 rounded-2xl transition-all duration-300 group",
+                                        activeSubTab === 'audio' ? "bg-indigo-500 text-zinc-950 shadow-[0_0_15px_rgba(99,102,241,0.3)]" : "bg-zinc-900 text-zinc-400 hover:text-white hover:bg-zinc-800"
+                                    )}
+                                >
+                                    <Music className="w-6 h-6" />
+                                </button>
+                            </>
+                        )}
+                        {project?.isPhotoReel && (
                             <button
                                 onClick={() => setActiveSubTab('audio')}
                                 className={cn(
@@ -820,9 +833,9 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
                             >
                                 <Music className="w-6 h-6" />
                             </button>
-                        </>
-                    )}
-                </div>
+                        )}
+                    </div>
+                )}
 
                 {/* Change Music Label for Photo Reels (Desktop only now as mobile is handled above) */}
                 {!isMobile && project?.isPhotoReel && activeSubTab !== 'audio' && (
