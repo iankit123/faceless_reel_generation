@@ -86,12 +86,6 @@ export function AITopicModal({ isOpen, onClose, onSubmit }: AITopicModalProps) {
                             </button>
                         </div>
                     </form>
-
-                    <div className="p-4 rounded-2xl bg-cyan-500/5 border border-cyan-500/10">
-                        <p className="text-[10px] text-cyan-400/70 font-bold uppercase tracking-widest text-center">
-                            AI will expand your topic into a professional story script
-                        </p>
-                    </div>
                 </div>
             </div>
         </div>
