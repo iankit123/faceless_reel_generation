@@ -195,7 +195,7 @@ export function CreateVideoPage() {
                 }}
             />
 
-            <div className="relative z-10 max-w-3xl mx-auto px-5 pt-24 pb-20">
+            <div className="relative z-10 max-w-3xl mx-auto px-2.5 pt-18 pb-20">
                 <div className="space-y-8">
                     <div className="space-y-2">
                         <h1 className="text-3xl font-extrabold tracking-tight">
