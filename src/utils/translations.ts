@@ -25,6 +25,7 @@ export const translations = {
         creditsLeft: "No credits left.",
         buyMore: "Buy more",
         clearText: "Clear text",
+        speak: "Speak",
         generationStarting: "Your reel video will start generating now...",
         pleaseWait: "Please wait, this may take a moment.",
         exportErrorServerless: "Production downloading is currently limited. Please use the local development server for full video exports.",
@@ -34,8 +35,7 @@ export const translations = {
         topicPopupTitle: "AI Script Writer",
         topicPlaceholder: "Enter topic of the story...",
         newsReelInside: "News Reel",
-        photoToReel: "Photo to Reel",
-        speakAndWrite: "Speak | AI Write | Clear"
+        photoToReel: "Photo to Reel"
     },
     hi: {
         heroTitle_1: "अब",
@@ -61,6 +61,7 @@ export const translations = {
         creditsLeft: "क्रेडिट खत्म हो गए हैं।",
         buyMore: "और खरीदें",
         clearText: "लिखा हुआ मिटाएं",
+        speak: "बोलें",
         generationStarting: "आपकी रील वीडियो अब बनना शुरू हो जाएगी...",
         pleaseWait: "कृपया प्रतीक्षा करें, इसमें थोड़ा समय लग सकता है",
         exportErrorServerless: "प्रोडक्शन डाउनलोडिंग अभी सीमित है। पूर्ण वीडियो एक्सपोर्ट के लिए कृपया लोकल सर्वर का उपयोग करें।",
@@ -70,8 +71,7 @@ export const translations = {
         topicPopupTitle: "AI स्क्रिप्ट राइटर",
         topicPlaceholder: "कहानी का विषय लिखें...",
         newsReelInside: "News से रील",
-        photoToReel: "Photo से रील",
-        speakAndWrite: "Speak | AI Write | Clear"
+        photoToReel: "Photo से रील"
     }
 };
 

@@ -246,36 +246,19 @@ export function ScriptInput({
                         className="w-full min-h-[160px] bg-transparent border-none px-4 pt-4 pb-12 text-sm text-zinc-100 placeholder:text-zinc-600 focus:outline-none resize-none overflow-hidden transition-all"
                     />
 
-                    {/* Bottom Embedded Actions: Speak | AI Write | Clear */}
-                    <div className="absolute bottom-1 flex items-center gap-1">
+                    {/* Bottom Embedded Actions: Speak | Clear */}
+                    <div className="absolute bottom-1.5 left-2 flex items-center gap-1">
                         <button
                             onClick={toggleListening}
                             disabled={disabled || isOCRProcessing}
-                            className={`flex items-center gap-1.5 px-2 py-1 rounded-md transition-all text-xs font-bold uppercase tracking-wider
+                            className={`flex items-center gap-1 px-1.5 py-0.5 rounded-md transition-all text-xs font-bold tracking-wider
                                      ${isListening
                                     ? 'text-red-400 bg-red-500/10 animate-pulse'
                                     : 'text-zinc-500 hover:text-white hover:bg-zinc-800'
                                 }`}
                         >
                             {isListening ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
-                            Speak
-                        </button>
-
-                        <div className="w-px h-3 bg-zinc-800" />
-
-                        <button
-                            onClick={() => handleAIExpand()}
-                            disabled={disabled || isOCRProcessing}
-                            className="flex items-center gap-1.5 px-2 py-1 rounded-md
-                                     text-zinc-500 hover:text-cyan-400 hover:bg-cyan-500/10
-                                     transition-all text-xs font-bold uppercase tracking-wider"
-                        >
-                            {isOCRProcessing ? (
-                                <div className="w-3.5 h-3.5 border-2 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin" />
-                            ) : (
-                                <Sparkles className="w-3.5 h-3.5" />
-                            )}
-                            {isOCRProcessing ? 'AI...' : 'AI Write'}
+                            {t.speak}
                         </button>
 
                         {value && !disabled && (
@@ -283,9 +266,9 @@ export function ScriptInput({
                                 <div className="w-px h-3 bg-zinc-800" />
                                 <button
                                     onClick={() => onChange('')}
-                                    className="flex items-center gap-1.5 px-2 py-1 rounded-md
+                                    className="flex items-center gap-1 px-1.5 py-0.5 rounded-md
                                              text-zinc-500 hover:text-red-400 hover:bg-red-500/10
-                                             transition-all text-xs font-bold uppercase tracking-wider"
+                                             transition-all text-xs font-bold"
                                 >
                                     <Trash2 className="w-3.5 h-3.5" />
                                     {t.clearText}
