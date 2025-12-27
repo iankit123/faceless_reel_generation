@@ -1,8 +1,9 @@
-import { Mic, MicOff, Trash2, Lightbulb, Camera, Newspaper, Image as ImageIcon } from 'lucide-react';
+import { Mic, MicOff, Trash2, Lightbulb, Camera, Newspaper, Sparkles } from 'lucide-react';
 import { useSpeechRecognition } from '../../hooks/useSpeechRecognition';
 import { useRef, useEffect, useState } from 'react';
 import { SuggestIdeasModal } from '../modals/SuggestIdeasModal';
 import { NewsToReelModal } from '../modals/NewsToReelModal';
+import { AITopicModal } from '../modals/AITopicModal';
 import { useVideoStore } from '../../store/useVideoStore';
 import { translations } from '../../utils/translations';
 import { supabaseService } from '../../services/supabase';
@@ -39,6 +40,7 @@ export function ScriptInput({
     const photoInputRef = useRef<HTMLInputElement>(null);
     const [isIdeasModalOpen, setIsIdeasModalOpen] = useState(false);
     const [isNewsModalOpen, setIsNewsModalOpen] = useState(false);
+    const [isTopicModalOpen, setIsTopicModalOpen] = useState(false);
     const [isOCRProcessing, setIsOCRProcessing] = useState(false);
     const uiLanguage = useVideoStore(s => s.uiLanguage);
     const t = translations[uiLanguage];
@@ -173,12 +175,46 @@ export function ScriptInput({
         }
     };
 
+    const handleAIExpand = async (topic?: string) => {
+        const targetTopic = topic || value;
+        if (!targetTopic.trim()) {
+            setIsTopicModalOpen(true);
+            return;
+        }
+
+        setIsOCRProcessing(true); // Use as loading state
+        try {
+            const response = await fetch('/api/expand', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ prompt: targetTopic, language })
+            });
+            if (!response.ok) throw new Error('Failed to expand story');
+            const data = await response.json();
+            if (data.narration) {
+                onChange(data.narration);
+            }
+        } catch (err) {
+            console.error('AI Expansion failed:', err);
+            alert('AI failed to write script. Please try again.');
+        } finally {
+            setIsOCRProcessing(false);
+        }
+    };
+
     return (
         <div className="space-y-4">
+            <AITopicModal
+                isOpen={isTopicModalOpen}
+                onClose={() => setIsTopicModalOpen(false)}
+                onSubmit={(topic) => handleAIExpand(topic)}
+            />
+
             <SuggestIdeasModal
                 isOpen={isIdeasModalOpen}
                 onClose={() => setIsIdeasModalOpen(false)}
                 onSelect={onChange}
+                onScreenshotClick={() => fileInputRef.current?.click()}
                 selectedLanguage={language}
             />
 
@@ -207,45 +243,98 @@ export function ScriptInput({
                         onChange={(e) => onChange(e.target.value)}
                         disabled={disabled}
                         placeholder={placeholder}
-                        className="w-full min-h-[140px] bg-transparent border-none px-4 pt-4 pb-12 text-sm text-zinc-100 placeholder:text-zinc-600 focus:outline-none resize-none overflow-hidden transition-all"
+                        className="w-full min-h-[160px] bg-transparent border-none px-4 pt-4 pb-12 text-sm text-zinc-100 placeholder:text-zinc-600 focus:outline-none resize-none overflow-hidden transition-all"
                     />
 
-                    {/* Bottom Left Action: Clear */}
-                    {value && !disabled && (
-                        <div className="absolute bottom-3 left-3">
-                            <button
-                                onClick={() => onChange('')}
-                                className="flex items-center gap-1 px-2 py-1 rounded-md
-                                         text-zinc-500 hover:text-red-400 hover:bg-red-500/10
-                                         transition-all text-[10px] font-bold uppercase tracking-wider"
-                            >
-                                <Trash2 className="w-3.5 h-3.5" />
-                                {t.clearText}
-                            </button>
-                        </div>
-                    )}
+                    {/* Bottom Embedded Actions: Speak | AI Write | Clear */}
+                    <div className="absolute bottom-3 left-3 flex items-center gap-2">
+                        <button
+                            onClick={toggleListening}
+                            disabled={disabled || isOCRProcessing}
+                            className={`flex items-center gap-1.5 px-2 py-1 rounded-md transition-all text-xs font-bold uppercase tracking-wider
+                                     ${isListening
+                                    ? 'text-red-400 bg-red-500/10 animate-pulse'
+                                    : 'text-zinc-500 hover:text-white hover:bg-zinc-800'
+                                }`}
+                        >
+                            {isListening ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
+                            Speak
+                        </button>
+
+                        <div className="w-px h-3 bg-zinc-800" />
+
+                        <button
+                            onClick={() => handleAIExpand()}
+                            disabled={disabled || isOCRProcessing}
+                            className="flex items-center gap-1.5 px-2 py-1 rounded-md
+                                     text-zinc-500 hover:text-cyan-400 hover:bg-cyan-500/10
+                                     transition-all text-xs font-bold uppercase tracking-wider"
+                        >
+                            {isOCRProcessing ? (
+                                <div className="w-3.5 h-3.5 border-2 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin" />
+                            ) : (
+                                <Sparkles className="w-3.5 h-3.5" />
+                            )}
+                            {isOCRProcessing ? 'AI...' : 'AI Write'}
+                        </button>
+
+                        {value && !disabled && (
+                            <>
+                                <div className="w-px h-3 bg-zinc-800" />
+                                <button
+                                    onClick={() => onChange('')}
+                                    className="flex items-center gap-1.5 px-2 py-1 rounded-md
+                                             text-zinc-500 hover:text-red-400 hover:bg-red-500/10
+                                             transition-all text-xs font-bold uppercase tracking-wider"
+                                >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                    {t.clearText}
+                                </button>
+                            </>
+                        )}
+                    </div>
                 </div>
 
                 {/* Partition Line */}
                 <div className="w-px bg-white/20 self-stretch" />
 
-                {/* Right: Actions Column */}
-                <div className="w-40 p-3 flex flex-col gap-3 shrink-0 bg-zinc-900/40 backdrop-blur-sm self-stretch justify-center">
+                <div className="w-px bg-white/20 self-stretch" />
+
+                {/* Right: Actions Column (Redesigned as horizontal rows) */}
+                <div className="w-42 p-3 flex flex-col gap-2 shrink-0 bg-zinc-900/40 backdrop-blur-sm self-stretch justify-center">
                     <button
                         onClick={(e) => {
                             e.preventDefault();
                             setIsIdeasModalOpen(true);
                         }}
-                        className="flex-1 flex flex-col items-center justify-center gap-2 p-2 rounded-lg 
+                        className="flex items-center gap-3 p-3 rounded-lg 
                                  bg-zinc-800/50 border border-zinc-700/50 text-zinc-300
                                  hover:bg-zinc-700/50 hover:border-cyan-500/30 hover:text-white
                                  hover:scale-[1.02] active:scale-95 transition-all group"
                     >
-                        <div className="w-8 h-8 rounded-full bg-yellow-500/10 flex items-center justify-center group-hover:bg-yellow-500/20 transition-colors">
+                        <div className="w-8 h-8 rounded-full bg-yellow-500/10 flex items-center justify-center shrink-0 group-hover:bg-yellow-500/20 transition-colors">
                             <Lightbulb className="w-4 h-4 text-yellow-500" />
                         </div>
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-center leading-tight">
-                            {t.aiIdeasInside}
+                        <span className="text-[10px] font-bold uppercase tracking-wider leading-tight">
+                            {t.readymadeStories}
+                        </span>
+                    </button>
+
+                    <button
+                        onClick={(e) => {
+                            e.preventDefault();
+                            handleAIExpand();
+                        }}
+                        className="flex items-center gap-3 p-3 rounded-lg 
+                                 bg-zinc-800/50 border border-zinc-700/50 text-zinc-300
+                                 hover:bg-zinc-700/50 hover:border-cyan-500/30 hover:text-white
+                                 hover:scale-[1.02] active:scale-95 transition-all group"
+                    >
+                        <div className="w-8 h-8 rounded-full bg-cyan-500/10 flex items-center justify-center shrink-0 group-hover:bg-cyan-500/20 transition-colors">
+                            <Sparkles className="w-4 h-4 text-cyan-400" />
+                        </div>
+                        <span className="text-[10px] font-bold uppercase tracking-wider leading-tight">
+                            {t.aiScriptWriter}
                         </span>
                     </button>
 
@@ -254,15 +343,15 @@ export function ScriptInput({
                             e.preventDefault();
                             setIsNewsModalOpen(true);
                         }}
-                        className="flex-1 flex flex-col items-center justify-center gap-2 p-2 rounded-lg 
+                        className="flex items-center gap-3 p-3 rounded-lg 
                                  bg-zinc-800/50 border border-zinc-700/50 text-zinc-300
                                  hover:bg-zinc-700/50 hover:border-pink-500/30 hover:text-white
                                  hover:scale-[1.02] active:scale-95 transition-all group"
                     >
-                        <div className="w-8 h-8 rounded-full bg-pink-500/10 flex items-center justify-center group-hover:bg-pink-500/20 transition-colors">
+                        <div className="w-8 h-8 rounded-full bg-pink-500/10 flex items-center justify-center shrink-0 group-hover:bg-pink-500/20 transition-colors">
                             <Newspaper className="w-4 h-4 text-pink-400" />
                         </div>
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-center leading-tight">
+                        <span className="text-[10px] font-bold uppercase tracking-wider leading-tight">
                             {t.newsReelInside}
                         </span>
                     </button>
@@ -272,64 +361,37 @@ export function ScriptInput({
                             e.preventDefault();
                             photoInputRef.current?.click();
                         }}
-                        className="flex-1 flex flex-col items-center justify-center gap-2 p-2 rounded-lg 
+                        className="flex items-center gap-3 p-3 rounded-lg 
                                  bg-zinc-800/50 border border-zinc-700/50 text-zinc-300
                                  hover:bg-zinc-700/50 hover:border-teal-500/30 hover:text-white
                                  hover:scale-[1.02] active:scale-95 transition-all group"
                     >
-                        <div className="w-8 h-8 rounded-full bg-teal-500/10 flex items-center justify-center group-hover:bg-teal-500/20 transition-colors">
-                            <ImageIcon className="w-4 h-4 text-teal-400" />
+                        <div className="w-8 h-8 rounded-full bg-teal-500/10 flex items-center justify-center shrink-0 group-hover:bg-teal-500/20 transition-colors">
+                            <Camera className="w-4 h-4 text-teal-400" />
                         </div>
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-center leading-tight">
-                            {t.photoToReel || "Photo to Reel"}
+                        <span className="text-[10px] font-bold uppercase tracking-wider leading-tight">
+                            {t.photoToReel}
                         </span>
                     </button>
                 </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-3">
-                <button
-                    onClick={toggleListening}
-                    disabled={disabled || isOCRProcessing}
-                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold border transition-all ${isListening
-                        ? 'border-red-500/40 text-red-400 bg-red-500/10 animate-pulse'
-                        : 'border-zinc-800 bg-zinc-900 hover:bg-zinc-800 text-zinc-300'
-                        }`}
-                >
-                    {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-                    {isListening ? 'Stop' : 'Speak and Write'}
-                </button>
+            <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileUpload}
+                accept="image/*"
+                className="hidden"
+            />
 
-                <input
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handleFileUpload}
-                    accept="image/*"
-                    className="hidden"
-                />
-
-                <input
-                    type="file"
-                    ref={photoInputRef}
-                    onChange={handlePhotoUpload}
-                    accept="image/*"
-                    multiple
-                    className="hidden"
-                />
-
-                <button
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={disabled || isOCRProcessing}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold border border-zinc-800 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 transition-all disabled:opacity-40"
-                >
-                    {isOCRProcessing ? (
-                        <div className="w-4 h-4 border-2 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin" />
-                    ) : (
-                        <Camera className="w-4 h-4" />
-                    )}
-                    {isOCRProcessing ? 'Processing' : 'Screenshot to story'}
-                </button>
-            </div>
+            <input
+                type="file"
+                ref={photoInputRef}
+                onChange={handlePhotoUpload}
+                accept="image/*"
+                multiple
+                className="hidden"
+            />
 
             {isListening && (
                 <div className="flex items-center justify-center gap-2 py-1">

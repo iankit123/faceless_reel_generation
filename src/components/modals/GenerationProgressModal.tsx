@@ -1,4 +1,4 @@
-import { Loader2, Wand2 } from 'lucide-react';
+import { Loader2, Sparkles } from 'lucide-react';
 import { translations } from '../../utils/translations';
 import { useVideoStore } from '../../store/useVideoStore';
 
@@ -21,7 +21,7 @@ export function GenerationProgressModal({ isOpen }: GenerationProgressModalProps
             <div className="relative w-full max-w-sm bg-zinc-900 border border-zinc-800 rounded-3xl p-8 shadow-2xl flex flex-col items-center text-center space-y-6 animate-in zoom-in-95 slide-in-from-bottom-4 duration-500">
                 <div className="relative">
                     <div className="w-20 h-20 bg-indigo-500/10 rounded-full flex items-center justify-center">
-                        <Wand2 className="w-10 h-10 text-indigo-400 animate-pulse" />
+                        <Sparkles className="w-10 h-10 text-indigo-400 animate-pulse" />
                     </div>
                     <div className="absolute -inset-2">
                         <Loader2 className="w-24 h-24 text-indigo-500/40 animate-spin-slow" />

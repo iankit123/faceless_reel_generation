@@ -2,7 +2,7 @@ import type { Scene } from '../types';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ScriptInput } from '../components/create/ScriptInput';
-import { Wand2, AlertCircle } from 'lucide-react';
+import { Sparkles, AlertCircle } from 'lucide-react';
 import { useVideoStore } from '../store/useVideoStore';
 import { useAuth } from '../contexts/AuthContext';
 import { storyService } from '../services/story';
@@ -267,7 +267,7 @@ export function CreateVideoPage() {
                             disabled={isGenerating || !script.trim()}
                             className="w-full bg-teal-600 hover:bg-teal-500 disabled:opacity-40 text-zinc-950 font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition"
                         >
-                            <Wand2 className="w-4 h-4" />
+                            <Sparkles className="w-6 h-6 text-white" />
                             {t.generateButton}
                         </button>
 

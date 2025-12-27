@@ -24,14 +24,18 @@ export const translations = {
         generating: "Generating",
         creditsLeft: "No credits left.",
         buyMore: "Buy more",
-        suggestIdeas: "Suggest Ideas",
         clearText: "Clear text",
         generationStarting: "Your reel video will start generating now...",
         pleaseWait: "Please wait, this may take a moment.",
         exportErrorServerless: "Production downloading is currently limited. Please use the local development server for full video exports.",
-        aiIdeasInside: "Take idea from AI",
+        readymadeStories: "Readymade Stories",
+        aiScriptWriter: "AI Script Writer",
+        screenshotToStoryInside: "Screenshot se story le",
+        topicPopupTitle: "AI Script Writer",
+        topicPlaceholder: "Enter topic of the story...",
         newsReelInside: "News Reel",
-        photoToReel: "Photo to Reel"
+        photoToReel: "Photo to Reel",
+        speakAndWrite: "Speak | AI Write | Clear"
     },
     hi: {
         heroTitle_1: "अब",
@@ -56,14 +60,18 @@ export const translations = {
         generating: "बन रहा है",
         creditsLeft: "क्रेडिट खत्म हो गए हैं।",
         buyMore: "और खरीदें",
-        suggestIdeas: "AI से आइडिया पाएं",
         clearText: "लिखा हुआ मिटाएं",
         generationStarting: "आपकी रील वीडियो अब बनना शुरू हो जाएगी...",
         pleaseWait: "कृपया प्रतीक्षा करें, इसमें थोड़ा समय लग सकता है",
         exportErrorServerless: "प्रोडक्शन डाउनलोडिंग अभी सीमित है। पूर्ण वीडियो एक्सपोर्ट के लिए कृपया लोकल सर्वर का उपयोग करें।",
-        aiIdeasInside: "AI से आईडिया लें",
-        newsReelInside: "News की रील बनाएं",
-        photoToReel: "Photo से रील बनाएं"
+        readymadeStories: "तैयार कहानियाँ",
+        aiScriptWriter: "AI स्क्रिप्ट राइटर",
+        screenshotToStoryInside: "Screenshot से स्टोरी लें",
+        topicPopupTitle: "AI स्क्रिप्ट राइटर",
+        topicPlaceholder: "कहानी का विषय लिखें...",
+        newsReelInside: "News से रील",
+        photoToReel: "Photo से रील",
+        speakAndWrite: "Speak | AI Write | Clear"
     }
 };
 

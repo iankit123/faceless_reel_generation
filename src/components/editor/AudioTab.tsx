@@ -14,14 +14,29 @@ interface AudioTabProps {
 export function AudioTab({ onSelect }: AudioTabProps) {
     const project = useVideoStore((state) => state.project);
     const setBackgroundMusic = useVideoStore((state) => state.setBackgroundMusic);
-    const [musicFiles, setMusicFiles] = useState<MusicFile[]>([]);
+    const [musicFiles, setMusicFiles] = useState<MusicFile[]>([
+        { name: 'Jalwa Hai Hamara', url: '/background_music/Jalwa Hai Hamara.mp3' },
+        { name: 'Guddu Bhaiya Dialogue', url: '/background_music/Mirzapur Guddu Bhaiya Dialogue.mp3' },
+        { name: 'Pathan Zinda Hai', url: '/background_music/Pathan Zinda Hai _ Pathaan Dialogue _ SRK.mp3' },
+        { name: 'Pushpa 2 Dialogue', url: '/background_music/Pushpa 2 Dialogue.mp3' },
+        { name: 'Sanjay Dutt Dialogue', url: '/background_music/Sanjay Dutt Dialogue.mp3' },
+        { name: 'Shivaji Maharaj Dialogue', url: '/background_music/Chhatrapati Shivaji Maharaj Ko Sher Kehte Hai Dialogue.mp3' },
+        { name: 'Fashion Ka Jalwa', url: '/background_music/Fashion Ka Jalwa Song.mp3' },
+        { name: 'Hindi Funny Ringtone', url: '/background_music/Hindi Funny Ringtone Download Mp3.mp3' },
+        { name: 'Kya Hasin Hai Sama', url: '/background_music/Kya Hasin Hai Sama - Shaam Bhi Khoob Hai _ Karz The Burden Of Truth _ Hindi.mp3' },
+        { name: 'Tu Jitna Bharat Ka Tha', url: '/background_music/Tu Jitna Bharat Ka Tha Utna Hi Hamara Hai - Ram Lala _ Vishal Mishra _ Bhakti.mp3' }
+    ]);
     const [playingPreview, setPlayingPreview] = useState<string | null>(null);
     const audioRef = useRef<HTMLAudioElement | null>(null);
 
     useEffect(() => {
         fetch('/api/music')
             .then(res => res.json())
-            .then(setMusicFiles)
+            .then(data => {
+                if (data && data.length > 0) {
+                    setMusicFiles(data);
+                }
+            })
             .catch(console.error);
 
         return () => {
@@ -145,6 +160,10 @@ export function AudioTab({ onSelect }: AudioTabProps) {
 
                                 <button
                                     onClick={() => {
+                                        if (audioRef.current) {
+                                            audioRef.current.pause();
+                                            setPlayingPreview(null);
+                                        }
                                         setBackgroundMusic({ name: file.name, url: file.url, volume: 0.1 });
                                         onSelect?.();
                                     }}

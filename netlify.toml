@@ -42,6 +42,11 @@
   status = 200
 
 [[redirects]]
+  from = "/api/expand"
+  to = "/.netlify/functions/expand"
+  status = 200
+
+[[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200

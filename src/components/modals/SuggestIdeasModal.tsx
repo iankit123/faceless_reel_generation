@@ -1,4 +1,4 @@
-import { X, Sparkles, Wand2 } from 'lucide-react';
+import { X, Sparkles, Camera } from 'lucide-react';
 
 interface Idea {
     title: string;
@@ -59,10 +59,11 @@ interface SuggestIdeasModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSelect: (text: string) => void;
+    onScreenshotClick: () => void;
     selectedLanguage?: string;
 }
 
-export function SuggestIdeasModal({ isOpen, onClose, onSelect, selectedLanguage = 'english' }: SuggestIdeasModalProps) {
+export function SuggestIdeasModal({ isOpen, onClose, onSelect, onScreenshotClick, selectedLanguage = 'english' }: SuggestIdeasModalProps) {
     if (!isOpen) return null;
 
     return (
@@ -70,17 +71,8 @@ export function SuggestIdeasModal({ isOpen, onClose, onSelect, selectedLanguage 
             <div className="absolute inset-0 bg-zinc-950/80 backdrop-blur-sm" onClick={onClose} />
 
             <div className="relative w-full max-w-2xl bg-zinc-900 border border-zinc-800 rounded-3xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col max-h-[85vh] mt-12 sm:mt-0">
-                {/* Header */}
-                <div className="p-6 border-b border-zinc-800 flex items-center justify-between bg-zinc-900/50 sticky top-0 z-10 backdrop-blur-md">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/20">
-                            <Sparkles className="w-6 h-6 text-white" />
-                        </div>
-                        <div>
-                            <h2 className="text-xl font-black text-white">Suggest Ideas</h2>
-                            <p className="text-xs text-zinc-400">Curated prompts for viral reels</p>
-                        </div>
-                    </div>
+                {/* Minimal Header */}
+                <div className="flex justify-end p-4">
                     <button
                         onClick={onClose}
                         className="p-2 text-zinc-500 hover:text-white transition-colors rounded-full hover:bg-zinc-800"
@@ -90,7 +82,24 @@ export function SuggestIdeasModal({ isOpen, onClose, onSelect, selectedLanguage 
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-6">
+                <div className="flex-1 overflow-y-auto p-4 pt-0 space-y-6">
+                    {/* Centralized Flow: Screenshot to Story */}
+                    <div className="px-4">
+                        <button
+                            onClick={onScreenshotClick}
+                            className="w-full flex items-center justify-center gap-4 p-6 rounded-2xl bg-gradient-to-br from-teal-500/10 via-emerald-500/5 to-transparent border border-teal-500/20 hover:border-teal-500/40 hover:from-teal-500/20 transition-all group"
+                        >
+                            <div className="w-12 h-12 rounded-xl bg-teal-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                <Camera className="w-6 h-6 text-teal-400" />
+                            </div>
+                            <div className="text-left">
+                                <h4 className="text-lg font-black text-white leading-tight">Screenshot se story le</h4>
+                                <p className="text-xs text-zinc-400">Upload screenshot and AI will write story</p>
+                            </div>
+                        </button>
+                    </div>
+
+                    <div className="h-px bg-zinc-800 mx-4" />
                     {IDEAS.map((idea, index) => {
                         const showHindi = selectedLanguage === 'hindi' || selectedLanguage === 'hinglish';
                         const showEnglish = selectedLanguage === 'english';
@@ -115,7 +124,7 @@ export function SuggestIdeasModal({ isOpen, onClose, onSelect, selectedLanguage 
                                         >
                                             <div className="flex items-center justify-between mb-2">
                                                 <span className="text-[10px] font-black text-cyan-500 uppercase tracking-wider">English Prompt</span>
-                                                <Wand2 className="w-4 h-4 text-zinc-600 group-hover:text-cyan-500 transition-colors" />
+                                                <Sparkles className="w-4 h-4 text-zinc-600 group-hover:text-cyan-500 transition-colors" />
                                             </div>
                                             <p className="text-sm text-zinc-200 line-clamp-4 leading-relaxed group-hover:text-zinc-200 transition-colors">
                                                 {idea.english}
@@ -137,7 +146,7 @@ export function SuggestIdeasModal({ isOpen, onClose, onSelect, selectedLanguage 
                                         >
                                             <div className="flex items-center justify-between mb-3">
                                                 <span className="text-[10px] font-black text-purple-500 uppercase tracking-wider">Hindi Prompt</span>
-                                                <Wand2 className="w-4 h-4 text-zinc-600 group-hover:text-purple-500 transition-colors" />
+                                                <Sparkles className="w-4 h-4 text-zinc-600 group-hover:text-purple-500 transition-colors" />
                                             </div>
                                             <p className="text-sm text-zinc-200 line-clamp-4 leading-relaxed group-hover:text-zinc-200 transition-colors font-hindi">
                                                 {idea.hindi}

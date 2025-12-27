@@ -328,6 +328,25 @@ ${languageInstruction}
     return JSON.parse(content);
 }
 
+// Prompt Expansion Endpoint
+app.post('/api/expand', async (req, res) => {
+    try {
+        const { prompt, language } = req.body;
+        console.log('EXPAND_REQUEST:', { promptLength: prompt?.length, language });
+
+        if (!process.env.GROQ_API_KEY) {
+            console.error('CRITICAL: GROQ_API_KEY is missing from environment');
+            return res.status(500).json({ error: 'Server configuration error: Missing API Key' });
+        }
+
+        const expandedStory = await expandPromptToStory(prompt, language);
+        res.json(expandedStory);
+    } catch (error) {
+        console.error('EXPAND_ERROR:', error);
+        res.status(500).json({ error: 'Expansion failed', details: error instanceof Error ? error.message : String(error) });
+    }
+});
+
 
 // Story Generation Endpoint
 app.post('/api/story', async (req, res) => {
