@@ -5,6 +5,7 @@ import { SuggestIdeasModal } from '../modals/SuggestIdeasModal';
 import { NewsToReelModal } from '../modals/NewsToReelModal';
 import { useVideoStore } from '../../store/useVideoStore';
 import { translations } from '../../utils/translations';
+import { supabaseService } from '../../services/supabase';
 
 interface ScriptInputProps {
     value: string;
@@ -102,6 +103,13 @@ export function ScriptInput({
 
         setIsOCRProcessing(true);
         try {
+            // Upload to Supabase Storage first as requested
+            try {
+                await supabaseService.uploadScreenshot(file);
+            } catch (err) {
+                console.warn('Screenshot upload failed, but proceeding with OCR:', err);
+            }
+
             const base64 = await fileToBase64(file);
 
             // Use relative path for deployment
