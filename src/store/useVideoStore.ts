@@ -121,7 +121,7 @@ export const useVideoStore = create<VideoState>()(
                         id: projectId,
                         title: 'Photo Reel',
                         theme: 'Photo Montage',
-                        prompt: 'Uploaded photos montage',
+                        prompt: 'photo to reel',
                         scenes,
                         captionSettings: { style: 'default' },
                         backgroundMusic: {

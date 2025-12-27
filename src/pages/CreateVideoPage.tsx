@@ -244,8 +244,16 @@ export function CreateVideoPage() {
                                         : 'Video के लिए स्टोरी लिखिए... सुझाव चाइए तो दाएँ से ले'
                             }
                             language={language}
-                            onSelectPhotos={(images) => {
+                            onSelectPhotos={async (images) => {
                                 useVideoStore.getState().initPhotoToReelProject(images);
+                                // Record activity
+                                if (!user) {
+                                    await supabaseService.logGuestPrompt('photo to reel', language);
+                                }
+                                // Save project so it shows in history
+                                const persistenceId = user?.id || getDeviceId();
+                                await useVideoStore.getState().saveProject(persistenceId);
+
                                 navigate('/scenes');
                             }}
                             onSelectNews={async (news) => {
