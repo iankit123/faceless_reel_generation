@@ -247,7 +247,7 @@ export function ScriptInput({
                     />
 
                     {/* Bottom Embedded Actions: Speak | AI Write | Clear */}
-                    <div className="absolute bottom-3 left-3 flex items-center gap-2">
+                    <div className="absolute bottom-1 flex items-center gap-1">
                         <button
                             onClick={toggleListening}
                             disabled={disabled || isOCRProcessing}
