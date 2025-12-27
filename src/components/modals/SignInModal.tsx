@@ -1,5 +1,6 @@
 import { X, LogIn, Chrome } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { supabaseService } from '../../services/supabase';
 
 interface SignInModalProps {
     isOpen: boolean;
@@ -16,6 +17,11 @@ export function SignInModal({ isOpen, onClose, redirectTo, title, message }: Sig
 
     const handleSignIn = async () => {
         try {
+            await supabaseService.logEvent('google_signin_click', {
+                source: 'signin_modal',
+                modal_title: title || 'Sign in to Download',
+                redirect_to: redirectTo
+            });
             await signInWithGoogle(redirectTo);
             onClose();
         } catch (error) {

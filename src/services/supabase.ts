@@ -161,23 +161,42 @@ export const supabaseService = {
     },
 
     async uploadScreenshot(file: File) {
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-        const filePath = `${fileName}`;
+        try {
+            const fileExt = file.name.split('.').pop() || 'png';
+            const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+            const filePath = `${fileName}`;
 
-        const { error: uploadError } = await supabase.storage
-            .from('screenshot')
-            .upload(filePath, file);
+            console.log('SUPABASE: Uploading screenshot...', { fileName, type: file.type });
 
-        if (uploadError) throw uploadError;
+            const { error: uploadError } = await supabase.storage
+                .from('screenshot')
+                .upload(filePath, file, {
+                    contentType: file.type,
+                    cacheControl: '3600',
+                    upsert: false
+                });
 
-        const { data: { publicUrl } } = supabase.storage
-            .from('screenshot')
-            .getPublicUrl(filePath);
+            if (uploadError) {
+                console.error('SUPABASE: Upload error details:', uploadError);
+                await this.logEvent('screenshot_upload_error', {
+                    error: uploadError.message,
+                    fileName,
+                    status: (uploadError as any).status
+                });
+                throw uploadError;
+            }
 
-        // Also log this as an event for easy tracking
-        await this.logEvent('screenshot_upload', { url: publicUrl });
+            const { data: { publicUrl } } = supabase.storage
+                .from('screenshot')
+                .getPublicUrl(filePath);
 
-        return publicUrl;
+            console.log('SUPABASE: Upload success!', publicUrl);
+            await this.logEvent('screenshot_upload_success', { url: publicUrl, fileName });
+
+            return publicUrl;
+        } catch (error: any) {
+            console.error('SUPABASE: uploadScreenshot catch:', error);
+            throw error;
+        }
     }
 };

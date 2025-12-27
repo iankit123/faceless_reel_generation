@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { LogOut, Coins, User as UserIcon, CreditCard } from 'lucide-react';
 import logoImg from '../../assets/logo.png';
+import { supabaseService } from '../../services/supabase';
 
 interface HeaderProps {
     hideUserMenu?: boolean;
@@ -12,6 +13,12 @@ export function Header({ hideUserMenu = false, isFixed = true }: HeaderProps) {
     const { user, credits, signOut, signInWithGoogle } = useAuth();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
+
+    const handleSignIn = async () => {
+        await supabaseService.logEvent('google_signin_click', { source: 'header' });
+        signInWithGoogle();
+        setIsMenuOpen(false);
+    };
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -87,10 +94,7 @@ export function Header({ hideUserMenu = false, isFixed = true }: HeaderProps) {
                                 ) : (
                                     <div className="p-2">
                                         <button
-                                            onClick={() => {
-                                                signInWithGoogle();
-                                                setIsMenuOpen(false);
-                                            }}
+                                            onClick={handleSignIn}
                                             className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-white bg-cyan-600 hover:bg-cyan-500 rounded-xl transition-all shadow-lg shadow-cyan-900/20 active:scale-95"
                                         >
                                             <UserIcon className="w-4 h-4" />

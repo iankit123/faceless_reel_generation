@@ -497,7 +497,7 @@ ${isNews ? 'NOTE: This is a NEWS REPORT. Keep the tone professional and journali
 app.post('/api/image/generate', async (req, res) => {
     const models = [
         "openai/gpt-image-1.5:free",
-        "bria/bria-3.2",
+        'HiDream-ai/HiDream-I1-Fast',
         "openai/gpt-image-1.5:free"
     ];
 

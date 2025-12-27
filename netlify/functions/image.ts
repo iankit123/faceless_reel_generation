@@ -42,9 +42,7 @@ export const handler = async (event: any) => {
 
         const models = [
             'openai/gpt-image-1.5:free',
-            'bria/bria-3.2',
-            'black-forest-labs/flux-1-schnell',
-            'stability-ai/sdxl'
+            'HiDream-ai/HiDream-I1-Fast'
         ];
 
         const tryModel = async (modelName: string) => {
