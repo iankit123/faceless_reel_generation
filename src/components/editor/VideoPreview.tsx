@@ -140,29 +140,16 @@ export function VideoPreview({ scenes, currentSceneId, onSelectScene, isMobile, 
     // Ref for animation loop to avoid dependency cycles
     const requestRef = useRef<number | null>(null);
 
-    // Auto-play on mount for Photo Reels
+    // Auto-play on mount removed to prevent unwanted music on Scenes tab. 
+    // Playback is now triggered by forceAutoPlay or manual user interaction.
     useEffect(() => {
-        if (project?.isPhotoReel) {
-            const startPlayback = async () => {
-                try {
-                    if (audioCtxRef.current?.state === 'suspended') {
-                        await audioCtxRef.current.resume();
-                    }
-                    setIsPlaying(true);
-                    autoPlayRef.current = true;
-                    // Background music will start playing in its own effect when isPlaying changes
-                } catch (err) {
-                    console.error("Auto-play setup failed:", err);
-                }
-            };
-            startPlayback();
-        }
         return () => {
+            console.log('VideoPreview: Unmounting, stopping all audio');
             setIsPlaying(false);
             if (audioRef.current) audioRef.current.pause();
-            // bgMusicRef cleanup is handled in its own effect
+            if (bgMusicRef.current) bgMusicRef.current.pause();
         };
-    }, [project?.isPhotoReel]);
+    }, []);
 
     // Reset silence ref when scene changes
     useEffect(() => {

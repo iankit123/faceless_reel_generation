@@ -144,7 +144,7 @@ export const useVideoStore = create<VideoState>()(
                 const project = get().project;
                 if (!project || !project.isPhotoReel || !project.scenes.length) return;
 
-                const newDurationPerScene = totalAudioDuration / project.scenes.length;
+                const newDurationPerScene = Math.round(totalAudioDuration / project.scenes.length);
                 const updatedScenes = project.scenes.map(scene => ({
                     ...scene,
                     duration: newDurationPerScene

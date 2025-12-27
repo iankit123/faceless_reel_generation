@@ -339,23 +339,25 @@ export function ScriptInput({
                         </span>
                     </button>
 
-                    <button
-                        onClick={(e) => {
-                            e.preventDefault();
-                            photoInputRef.current?.click();
-                        }}
-                        className="flex items-center gap-3 p-3 rounded-lg 
-                                 bg-zinc-800/50 border border-zinc-700/50 text-zinc-300
-                                 hover:bg-zinc-700/50 hover:border-teal-500/30 hover:text-white
-                                 hover:scale-[1.02] active:scale-95 transition-all group"
-                    >
-                        <div className="w-8 h-8 rounded-full bg-teal-500/10 flex items-center justify-center shrink-0 group-hover:bg-teal-500/20 transition-colors">
-                            <Camera className="w-4 h-4 text-teal-400" />
-                        </div>
-                        <span className="text-[10px] font-bold uppercase tracking-wider leading-tight">
-                            {t.photoToReel}
-                        </span>
-                    </button>
+                    {false && (
+                        <button
+                            onClick={(e) => {
+                                e.preventDefault();
+                                photoInputRef.current?.click();
+                            }}
+                            className="flex items-center gap-3 p-3 rounded-lg 
+                                     bg-zinc-800/50 border border-zinc-700/50 text-zinc-300
+                                     hover:bg-zinc-700/50 hover:border-teal-500/30 hover:text-white
+                                     hover:scale-[1.02] active:scale-95 transition-all group"
+                        >
+                            <div className="w-8 h-8 rounded-full bg-teal-500/10 flex items-center justify-center shrink-0 group-hover:bg-teal-500/20 transition-colors">
+                                <Camera className="w-4 h-4 text-teal-400" />
+                            </div>
+                            <span className="text-[10px] font-bold uppercase tracking-wider leading-tight">
+                                {t.photoToReel}
+                            </span>
+                        </button>
+                    )}
                 </div>
             </div>
 

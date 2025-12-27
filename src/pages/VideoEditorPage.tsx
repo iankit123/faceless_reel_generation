@@ -9,6 +9,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Layers, Type, Music, ArrowLeft, Play, PlusIcon } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { ConfirmModal } from '../components/ui/ConfirmModal';
+import { useMediaQuery } from '../hooks/useMediaQuery';
 
 type EditorTab = 'frames' | 'captions' | 'audio';
 
@@ -26,6 +27,7 @@ export function VideoEditorPage() {
     const [forceAutoPlay, setForceAutoPlay] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
     const processingRef = useRef(false);
+    const isDesktop = useMediaQuery('(min-width: 1024px)');
 
     // Confirmation Modal State
     const [confirmModal, setConfirmModal] = useState<{
@@ -248,22 +250,24 @@ export function VideoEditorPage() {
             </div>
 
             {/* Desktop Main Editor Area */}
-            <div className="hidden lg:flex flex-1 overflow-hidden">
-                {currentScene && (
-                    <>
-                        <SceneEditor
-                            scene={currentScene}
-                            index={project.scenes.findIndex(s => s.id === currentSceneId)}
-                            onUpdate={(updates) => updateScene(currentScene.id, updates)}
-                        />
-                        <VideoPreview
-                            scenes={project.scenes}
-                            currentSceneId={currentSceneId || project.scenes[0].id}
-                            onSelectScene={setCurrentSceneId}
-                        />
-                    </>
-                )}
-            </div>
+            {isDesktop && (
+                <div className="flex-1 overflow-hidden lg:flex">
+                    {currentScene && (
+                        <>
+                            <SceneEditor
+                                scene={currentScene}
+                                index={project.scenes.findIndex(s => s.id === currentSceneId)}
+                                onUpdate={(updates) => updateScene(currentScene.id, updates)}
+                            />
+                            <VideoPreview
+                                scenes={project.scenes}
+                                currentSceneId={currentSceneId || project.scenes[0].id}
+                                onSelectScene={setCurrentSceneId}
+                            />
+                        </>
+                    )}
+                </div>
+            )}
 
             {/* Mobile Layout */}
             <div className="flex lg:hidden flex-col h-full w-full overflow-hidden">
@@ -354,14 +358,16 @@ export function VideoEditorPage() {
                         </div>
                     ) : (
                         <div className="h-full flex flex-col">
-                            <VideoPreview
-                                scenes={project.scenes}
-                                currentSceneId={currentSceneId || project.scenes[0].id}
-                                onSelectScene={setCurrentSceneId}
-                                isMobile={true}
-                                forceAutoPlay={forceAutoPlay}
-                                onBackToScenes={() => setSearchParams({})}
-                            />
+                            {!isDesktop && (
+                                <VideoPreview
+                                    scenes={project.scenes}
+                                    currentSceneId={currentSceneId || project.scenes[0].id}
+                                    onSelectScene={setCurrentSceneId}
+                                    isMobile={true}
+                                    forceAutoPlay={forceAutoPlay}
+                                    onBackToScenes={() => setSearchParams({})}
+                                />
+                            )}
                         </div>
                     )}
 

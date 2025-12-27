@@ -83,21 +83,23 @@ export function SuggestIdeasModal({ isOpen, onClose, onSelect, onScreenshotClick
 
                 {/* Content */}
                 <div className="flex-1 overflow-y-auto p-4 pt-0 space-y-6">
-                    {/* Centralized Flow: Screenshot to Story */}
-                    <div className="px-4">
-                        <button
-                            onClick={onScreenshotClick}
-                            className="w-full flex items-center justify-center gap-4 p-6 rounded-2xl bg-gradient-to-br from-teal-500/10 via-emerald-500/5 to-transparent border border-teal-500/20 hover:border-teal-500/40 hover:from-teal-500/20 transition-all group"
-                        >
-                            <div className="w-12 h-12 rounded-xl bg-teal-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
-                                <Camera className="w-6 h-6 text-teal-400" />
-                            </div>
-                            <div className="text-left">
-                                <h4 className="text-lg font-black text-white leading-tight">Screenshot se story le</h4>
-                                <p className="text-xs text-zinc-400">Upload screenshot and AI will write story</p>
-                            </div>
-                        </button>
-                    </div>
+                    {/* Centralized Flow: Screenshot to Story (Hidden for now) */}
+                    {false && (
+                        <div className="px-4">
+                            <button
+                                onClick={onScreenshotClick}
+                                className="w-full flex items-center justify-center gap-4 p-6 rounded-2xl bg-gradient-to-br from-teal-500/10 via-emerald-500/5 to-transparent border border-teal-500/20 hover:border-teal-500/40 hover:from-teal-500/20 transition-all group"
+                            >
+                                <div className="w-12 h-12 rounded-xl bg-teal-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                    <Camera className="w-6 h-6 text-teal-400" />
+                                </div>
+                                <div className="text-left">
+                                    <h4 className="text-lg font-black text-white leading-tight">Screenshot se story le</h4>
+                                    <p className="text-xs text-zinc-400">Upload screenshot and AI will write story</p>
+                                </div>
+                            </button>
+                        </div>
+                    )}
 
                     <div className="h-px bg-zinc-800 mx-4" />
                     {IDEAS.map((idea, index) => {

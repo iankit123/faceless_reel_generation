@@ -59,7 +59,7 @@ export function SceneList({ scenes, currentSceneId, onSelectScene, onPlayScene, 
             <div className="p-4 border-b border-zinc-800 flex items-center justify-between bg-zinc-950/50 backdrop-blur-sm sticky top-0 z-30">
                 <div>
                     <h2 className="font-semibold text-zinc-100">Scenes</h2>
-                    <p className="text-xs text-zinc-500">{scenes.length} scenes • {scenes.reduce((acc, s) => acc + s.duration, 0).toFixed(1)}s total</p>
+                    <p className="text-xs text-zinc-500">{scenes.length} scenes • {scenes.reduce((acc, s) => acc + s.duration, 0).toFixed(0)}s total</p>
                 </div>
                 {onPlayAll && (
                     <button
